@@ -1,0 +1,65 @@
+networks:
+  portal_network:
+    driver: bridge
+
+services:
+  # Web Server (Nginx Alpine - Sangat Ringan)
+  web:
+    image: nginx:alpine
+    container_name: portal_web
+    restart: unless-stopped
+    ports:
+      - "8000:80" # Akses aplikasi di port 8000 (nantinya di-routing via NPM)
+    volumes:
+      - ./:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - portal_network
+
+  # PHP Application (Laravel 12)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portal_app
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=portal_gereja
+      - DB_USERNAME=church_user
+      - DB_PASSWORD=PasswordGereja123!
+    networks:
+      - portal_network
+
+  # Database (MariaDB dengan Tuning RAM)
+  db:
+    image: mariadb:10.11
+    container_name: portal_db
+    restart: unless-stopped
+    # TUNING CRUCIAL: Batasi buffer pool dan connections agar tidak OOM di RAM 1GB
+    command:
+      [
+        "mysqld",
+        "--innodb-buffer-pool-size=128M",
+        "--max-connections=50",
+        "--character-set-server=utf8mb4",
+        "--collation-server=utf8mb4_unicode_ci",
+      ]
+    environment:
+      - MARIADB_DATABASE=portal_gereja
+      - MARIADB_USER=church_user
+      - MARIADB_PASSWORD=PasswordGereja123!
+      - MARIADB_ROOT_PASSWORD=RootSecretPassword123!
+    volumes:
+      - portal_db_data:/var/lib/mysql
+    networks:
+      - portal_network
+
+volumes:
+  portal_db_data:

@@ -1,0 +1,201 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Filament\Clusters\Events\Resources\Event;
+
+use App\Filament\Clusters\Events\EventsCluster;
+use App\Filament\Clusters\Events\Resources\Event\Pages;
+use App\Models\Event;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+class EventResource extends Resource
+{
+    protected static ?string $model = Event::class;
+
+    protected static ?string $modelLabel = 'Acara';
+
+    protected static ?string $pluralModelLabel = 'Acara';
+
+    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
+
+    protected static ?string $cluster = EventsCluster::class;
+
+
+    protected static ?int $navigationSort = 7;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                Section::make('Detail Acara')
+                    ->schema([
+                        TextInput::make('title')
+                            ->label('Judul Acara')
+                            ->required()
+                            ->maxLength(255),
+                        Select::make('category_id')
+                            ->label('Kategori Acara')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->relationship(
+                                'category',
+                                'name',
+                                fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                            )
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->label('Nama Kategori')
+                                    ->required()
+                            ])
+                            ->createOptionAction(function (Action $action) {
+                                return $action
+                                    ->modalHeading('Tambah Kategori Baru')
+                                    ->modalWidth('md');
+                            }),
+                        DateTimePicker::make('start_datetime')
+                            ->label('Waktu Mulai')
+                            ->required(),
+                        DateTimePicker::make('end_datetime')
+                            ->label('Waktu Selesai')
+                            ->required(),
+                        TextInput::make('location')
+                            ->label('Lokasi')
+                            ->maxLength(255),
+                        Fieldset::make('Kehadiran')
+                            ->schema([
+                                TextInput::make('attendance_male')
+                                    ->label('Kehadiran Laki-laki')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->minValue(0),
+                                TextInput::make('attendance_female')
+                                    ->label('Kehadiran Perempuan')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->minValue(0),
+                            ])
+                            ->columns(2)
+                    ]),
+
+                Section::make('Petugas Acara')
+                    ->schema([
+                        Repeater::make('rosters')
+                            ->label('Daftar Petugas')
+                            ->relationship()
+                            ->schema([
+                                Select::make('member_id')
+                                    ->label('Anggota')
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->relationship(
+                                        'member',
+                                        'full_name',
+                                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                    ),
+                                Select::make('role_id')
+                                    ->label('Peran')
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->relationship(
+                                        'role',
+                                        'name',
+                                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                    ),
+                            ])
+                            ->columns(2)
+                            ->collapsible()
+                            ->reorderableWithButtons(),
+                    ]),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('title')
+                    ->label('Judul Acara')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('category.name')
+                    ->label('Kategori Acara')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('start_datetime')
+                    ->label('Waktu Mulai')
+                    ->dateTime()
+                    ->sortable(),
+                TextColumn::make('rosters_count')
+                    ->counts('rosters')
+                    ->label('Petugas')
+                    ->formatStateUsing(fn(int $state): string => "{$state} Petugas"),
+                TextColumn::make('total_attendance')
+                    ->label('Total Kehadiran')
+                    ->sortable(),
+                TextColumn::make('location')
+                    ->label('Lokasi')
+                    ->limit(40)
+                    ->toggleable(isToggledHiddenByDefault: false),
+                TextColumn::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('updated_at')
+                    ->label('Diperbarui Pada')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                //
+            ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListEvents::route('/'),
+            'create' => Pages\CreateEvent::route('/create'),
+            'edit' => Pages\EditEvent::route('/{record}/edit'),
+        ];
+    }
+}
