@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->dateTime('start_datetime');
             $table->dateTime('end_datetime');
             $table->string('location')->nullable();
+            $table->integer('attendance_male')->nullable()->default(0);
+            $table->integer('attendance_female')->nullable()->default(0);
             $table->timestamps();
         });
     }

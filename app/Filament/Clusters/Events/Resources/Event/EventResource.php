@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -103,14 +104,36 @@ class EventResource extends Resource
                             ->label('Daftar Petugas')
                             ->relationship()
                             ->schema([
+                                Select::make('assignee_type')
+                                    ->label('Tipe Petugas')
+                                    ->required()
+                                    ->options([
+                                        'member' => 'Jemaat Biasa',
+                                        'official' => 'Pendeta / Majelis',
+                                    ])
+                                    ->live()
+                                    ->native(false)
+                                    ->dehydrated(false),
                                 Select::make('member_id')
                                     ->label('Anggota')
                                     ->required()
                                     ->searchable()
                                     ->preload()
+                                    ->hidden(fn(Get $get): bool => $get('assignee_type') !== 'member')
                                     ->relationship(
                                         'member',
                                         'full_name',
+                                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                    ),
+                                Select::make('official_id')
+                                    ->label('Pendeta / Majelis')
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->hidden(fn(Get $get): bool => $get('assignee_type') !== 'official')
+                                    ->relationship(
+                                        'official',
+                                        'display_name',
                                         fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
                                     ),
                                 Select::make('role_id')

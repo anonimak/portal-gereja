@@ -53,4 +53,12 @@ class Member extends Model
     {
         return $this->hasMany(MemberSacrament::class);
     }
+
+    /**
+     * Official position(s) held by this member (if Majelis).
+     */
+    public function official(): HasMany
+    {
+        return $this->hasMany(Official::class);
+    }
 }

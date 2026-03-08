@@ -18,6 +18,7 @@ class EventRoster extends Model
     protected $fillable = [
         'member_id',
         'role_id',
+        'official_id',
     ];
 
     /**
@@ -42,5 +43,13 @@ class EventRoster extends Model
     public function role(): BelongsTo
     {
         return $this->belongsTo(MinistryRole::class);
+    }
+
+    /**
+     * Official assigned to this roster (if applicable).
+     */
+    public function official(): BelongsTo
+    {
+        return $this->belongsTo(Official::class);
     }
 }

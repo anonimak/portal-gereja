@@ -18,6 +18,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SacramentsRelationManager extends RelationManager
 {
@@ -45,9 +46,16 @@ class SacramentsRelationManager extends RelationManager
                         DatePicker::make('sacrament_date')
                             ->label('Tanggal Sakramen')
                             ->required(),
-                        TextInput::make('minister_name')
-                            ->label('Nama Pendeta')
-                            ->nullable(),
+                        Select::make('official_id')
+                            ->label('Pendeta/Majelis')
+                            ->nullable()
+                            ->searchable()
+                            ->preload()
+                            ->relationship(
+                                'official',
+                                'display_name',
+                                fn(Builder $query): Builder => $query->where('church_id', auth()->user()->church_id)
+                            ),
                         TextInput::make('certificate_number')
                             ->label('Nomor Sertifikat')
                             ->nullable(),
@@ -83,8 +91,8 @@ class SacramentsRelationManager extends RelationManager
                     ->label('Tanggal')
                     ->date('d M Y')
                     ->sortable(),
-                TextColumn::make('minister_name')
-                    ->label('Pendeta')
+                TextColumn::make('official.display_name')
+                    ->label('Pendeta/Majelis')
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('certificate_number')

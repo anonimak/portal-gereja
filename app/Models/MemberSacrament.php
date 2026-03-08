@@ -18,7 +18,7 @@ class MemberSacrament extends Model
     protected $fillable = [
         'type',
         'sacrament_date',
-        'minister_name',
+        'official_id',
         'certificate_number',
     ];
 
@@ -35,5 +35,13 @@ class MemberSacrament extends Model
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class);
+    }
+
+    /**
+     * Official that ministered this sacrament.
+     */
+    public function official(): BelongsTo
+    {
+        return $this->belongsTo(Official::class);
     }
 }
