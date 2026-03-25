@@ -133,9 +133,10 @@ class EventResource extends Resource
                                     ->hidden(fn(Get $get): bool => $get('assignee_type') !== 'official')
                                     ->relationship(
                                         'official',
-                                        'display_name',
+                                        'id',
                                         fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
-                                    ),
+                                    )
+                                    ->getOptionLabelUsing(fn($value) => $value?->display_name ?? ''),
                                 Select::make('role_id')
                                     ->label('Peran')
                                     ->required()

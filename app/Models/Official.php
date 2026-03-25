@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToChurch;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,15 +47,16 @@ class Official extends Model
      * - For Majelis Lokal: returns member's full name
      * - For Pendeta Internal: returns external_name
      */
-    #[Attribute]
-    public function displayName(): Attribute
+    public function getDisplayNameAttribute(): string
     {
-        return Attribute::make(
-            get: fn(): string => $this->type === 'pelayan_tamu' && $this->origin_church
-                ? "{$this->external_name} ({$this->origin_church})"
-                : ($this->member_id && $this->member
-                    ? $this->member->full_name
-                    : ($this->external_name ?? 'Unknown')),
-        );
+        if ($this->type === 'pelayan_tamu' && $this->origin_church) {
+            return "{$this->external_name} ({$this->origin_church})";
+        }
+
+        if ($this->member_id && $this->member) {
+            return $this->member->full_name;
+        }
+
+        return $this->external_name ?? 'Unknown';
     }
 }

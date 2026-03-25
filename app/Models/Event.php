@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToChurch;
-use Illuminate\Database\Eloquent\Attributes\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,11 +54,8 @@ class Event extends Model
     /**
      * Calculate total attendance from male and female attendees.
      */
-    #[Attribute]
-    protected function totalAttendance(): Attribute
+    public function getTotalAttendanceAttribute(): int
     {
-        return Attribute::make(
-            get: fn($value): int => ($this->attendance_male ?? 0) + ($this->attendance_female ?? 0),
-        );
+        return ($this->attendance_male ?? 0) + ($this->attendance_female ?? 0);
     }
 }
