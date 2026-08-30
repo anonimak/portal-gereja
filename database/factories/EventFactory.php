@@ -22,6 +22,7 @@ class EventFactory extends Factory
     public function definition(): array
     {
         $startDateTime = $this->faker->dateTimeBetween('-1 month', '+1 month');
+        $endDateTime = (clone $startDateTime)->modify('+3 hours');
 
         return [
             // Satu church yang sama untuk event DAN kategori (cegah silang-gereja).
@@ -35,7 +36,8 @@ class EventFactory extends Factory
             },
             'title' => $this->faker->sentence(3),
             'start_datetime' => $startDateTime,
-            'end_datetime' => $this->faker->dateTimeBetween($startDateTime, '+3 hours'),
+            // End dihitung dari START (bukan relatif ke now) — hindari start > end.
+            'end_datetime' => $endDateTime,
             'location' => $this->faker->address(),
         ];
     }

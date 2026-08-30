@@ -24,12 +24,12 @@ echo "[entrypoint] Menunggu database ${DB_HOST:-db}:${DB_PORT:-3306} siap..."
 php -r '
   $host = getenv("DB_HOST") ?: "db";
   $port = (int) (getenv("DB_PORT") ?: 3306);
-  for ($i = 0; $i < 30; $i++) {
+  for ($i = 0; $i < 60; $i++) {
     $c = @fsockopen($host, $port, $errno, $errstr, 2);
     if ($c) { fclose($c); exit(0); }
     sleep(2);
   }
-  fwrite(STDERR, "[entrypoint] Database tidak dapat dijangkau setelah 60 detik.\n");
+  fwrite(STDERR, "[entrypoint] Database tidak dapat dijangkau setelah 120 detik.\n");
   exit(1);
 '
 
