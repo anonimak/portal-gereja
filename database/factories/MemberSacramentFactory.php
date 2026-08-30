@@ -15,19 +15,42 @@ class MemberSacramentFactory extends Factory
 {
     protected $model = MemberSacrament::class;
 
+    private ?int $cachedMemberChurchId = null;
+
+    /**
+     * Church id yang sama untuk sakramen dan member-nya (memoized per instance).
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function sacramentChurchId(array $attributes): ?int
+    {
+        if ($this->cachedMemberChurchId !== null) {
+            return $this->cachedMemberChurchId;
+        }
+
+        $value = $attributes['member_id'] ?? null;
+        if ($value instanceof Member) {
+            return $value->church_id;
+        }
+
+        return is_numeric($value) ? (int) $value : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            // Sakramen mengikuti gereja member (cegah silang-gereja).
-            'member_id' => Member::factory(),
-            'church_id' => function (array $attributes) {
-                return $attributes['member_id'] instanceof Member
-                    ? $attributes['member_id']->church_id
-                    : $attributes['member_id'];
+            // Urutan penting: member dulu (mengisi church member), lalu church_id
+            // memakai church yang sama dengan member.
+            'member_id' => function (): int {
+                $member = Member::factory()->create();
+                $this->cachedMemberChurchId = $member->church_id;
+
+                return $member->id;
             },
+            'church_id' => fn (array $attributes): ?int => $this->sacramentChurchId($attributes),
             'type' => $this->faker->randomElement(['penyerahan', 'baptis_anak', 'sidi', 'baptis_dewasa', 'nikah']),
             'sacrament_date' => $this->faker->dateTimeBetween('-5 years', 'now'),
             'official_id' => null,

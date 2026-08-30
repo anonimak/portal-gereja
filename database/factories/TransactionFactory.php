@@ -17,28 +17,29 @@ class TransactionFactory extends Factory
 {
     protected $model = Transaction::class;
 
+    private ?int $cachedChurchId = null;
+
+    /**
+     * Church id yang sama untuk transaksi, fund, dan kategori (memoized per instance).
+     */
+    private function churchId(): int
+    {
+        return $this->cachedChurchId ??= Church::factory()->create()->id;
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            // Satu church yang sama untuk transaksi, fund, DAN kategori (cegah silang-gereja).
-            'church_id' => Church::factory(),
-            'fund_id' => function (array $attributes) {
-                $churchId = $attributes['church_id'] instanceof Church
-                    ? $attributes['church_id']->id
-                    : $attributes['church_id'];
-
-                return Fund::factory()->create(['church_id' => $churchId])->id;
-            },
-            'category_id' => function (array $attributes) {
-                $churchId = $attributes['church_id'] instanceof Church
-                    ? $attributes['church_id']->id
-                    : $attributes['church_id'];
-
-                return FinancialCategory::factory()->create(['church_id' => $churchId])->id;
-            },
+            'church_id' => fn (): int => $this->churchId(),
+            'fund_id' => fn (): int => Fund::factory()->create([
+                'church_id' => $this->churchId(),
+            ])->id,
+            'category_id' => fn (): int => FinancialCategory::factory()->create([
+                'church_id' => $this->churchId(),
+            ])->id,
             'type' => $this->faker->randomElement(['debit', 'credit']),
             'amount' => $this->faker->numberBetween(10000, 10000000),
             'transaction_date' => $this->faker->dateTimeBetween('-1 year', 'now'),

@@ -16,6 +16,17 @@ class EventFactory extends Factory
 {
     protected $model = Event::class;
 
+    private ?int $cachedChurchId = null;
+
+    /**
+     * Church id yang sama untuk seluruh entitas dalam satu factory instance
+     * (memoized) — mencegah silang-gereja antar atribut.
+     */
+    private function churchId(): int
+    {
+        return $this->cachedChurchId ??= Church::factory()->create()->id;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -25,15 +36,11 @@ class EventFactory extends Factory
         $endDateTime = (clone $startDateTime)->modify('+3 hours');
 
         return [
-            // Satu church yang sama untuk event DAN kategori (cegah silang-gereja).
-            'church_id' => Church::factory(),
-            'category_id' => function (array $attributes) {
-                $churchId = $attributes['church_id'] instanceof Church
-                    ? $attributes['church_id']->id
-                    : $attributes['church_id'];
-
-                return EventCategory::factory()->create(['church_id' => $churchId])->id;
-            },
+            // Urutan penting: church_id dulu, lalu kategori memakai church yang sama.
+            'church_id' => fn (): int => $this->churchId(),
+            'category_id' => fn (): int => EventCategory::factory()->create([
+                'church_id' => $this->churchId(),
+            ])->id,
             'title' => $this->faker->sentence(3),
             'start_datetime' => $startDateTime,
             // End dihitung dari START (bukan relatif ke now) — hindari start > end.

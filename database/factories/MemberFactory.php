@@ -16,18 +16,26 @@ class MemberFactory extends Factory
 {
     protected $model = Member::class;
 
+    private ?int $cachedChurchId = null;
+
+    /**
+     * Church id yang sama untuk member dan keluarganya (memoized per instance).
+     */
+    private function churchId(): int
+    {
+        return $this->cachedChurchId ??= Church::factory()->create()->id;
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            // Keluarga dibuat dalam gereja yang SAMA dengan member (cegah silang-gereja).
-            'church_id' => Church::factory(),
+            // Urutan penting: church_id dulu, lalu keluarga memakai church yang sama.
+            'church_id' => fn (): int => $this->churchId(),
             'family_id' => function (array $attributes) {
-                $churchId = $attributes['church_id'] instanceof Church
-                    ? $attributes['church_id']->id
-                    : $attributes['church_id'];
+                $churchId = $attributes['church_id'] ?? $this->churchId();
 
                 return Family::factory()->create(['church_id' => $churchId])->id;
             },
