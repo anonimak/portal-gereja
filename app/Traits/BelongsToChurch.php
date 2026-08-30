@@ -30,9 +30,17 @@ trait BelongsToChurch
         });
 
         static::creating(function ($model) {
-            // Auto-assign church_id from authenticated user if not already set
-            if (auth()->check() && empty($model->church_id)) {
-                $model->church_id = auth()->user()->church_id;
+            $actor = auth()->user();
+
+            // Non-super_admin DIPAKSA menulis ke gereja sendiri — menutup celah
+            // mass-assignment yang mengarahkan church_id ke gereja lain.
+            if ($actor && $actor->role !== 'super_admin') {
+                $model->church_id = $actor->church_id;
+            }
+
+            // Tanpa aktor terautentikasi: isi otomatis jika kosong (fallback).
+            if (empty($model->church_id) && $actor) {
+                $model->church_id = $actor->church_id;
             }
         });
     }

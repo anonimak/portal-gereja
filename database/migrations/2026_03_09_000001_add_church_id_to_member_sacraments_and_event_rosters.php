@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\Schema;
  *  - Backfill aman dari parent (member → church_id, event → church_id).
  *  - Baris orphan / parent NULL dibiarkan NULL = unknown (tidak tampil di gereja mana pun).
  *  - Tidak ada data dihapus atau dipindah antar gereja.
+ *
+ * Catatan portabilitas: backfill dilakukan baris-per-baris di PHP agar berjalan
+ * di MySQL DAN SQLite (sintaks UPDATE...JOIN gaya MySQL tidak didukung SQLite,
+ * yang dipakai untuk unit/feature test dengan database :memory:).
  */
 return new class extends Migration {
     public function up(): void
@@ -27,20 +31,34 @@ return new class extends Migration {
             $table->foreignId('church_id')->nullable()->after('member_id')->constrained('churches')->nullOnDelete();
         });
 
-        // Backfill dari members
-        DB::statement('UPDATE member_sacraments ms
-            LEFT JOIN members m ON m.id = ms.member_id
-            SET ms.church_id = m.church_id');
+        // Backfill dari members (portabel lintas driver)
+        $sacraments = DB::table('member_sacraments')->whereNull('church_id')->get(['id', 'member_id']);
+        foreach ($sacraments as $sacrament) {
+            $churchId = $sacrament->member_id
+                ? DB::table('members')->where('id', $sacrament->member_id)->value('church_id')
+                : null;
+
+            if ($churchId !== null) {
+                DB::table('member_sacraments')->where('id', $sacrament->id)->update(['church_id' => $churchId]);
+            }
+        }
 
         // ---------- event_rosters ----------
         Schema::table('event_rosters', function (Blueprint $table): void {
             $table->foreignId('church_id')->nullable()->after('event_id')->constrained('churches')->nullOnDelete();
         });
 
-        // Backfill dari events
-        DB::statement('UPDATE event_rosters er
-            LEFT JOIN events e ON e.id = er.event_id
-            SET er.church_id = e.church_id');
+        // Backfill dari events (portabel lintas driver)
+        $rosters = DB::table('event_rosters')->whereNull('church_id')->get(['id', 'event_id']);
+        foreach ($rosters as $roster) {
+            $churchId = $roster->event_id
+                ? DB::table('events')->where('id', $roster->event_id)->value('church_id')
+                : null;
+
+            if ($churchId !== null) {
+                DB::table('event_rosters')->where('id', $roster->id)->update(['church_id' => $churchId]);
+            }
+        }
 
         // Index untuk performa scope query
         Schema::table('member_sacraments', function (Blueprint $table): void {
