@@ -3,6 +3,9 @@
 use App\Filament\Pages\LaporanRapatPage;
 use Illuminate\Support\Facades\Route;
 
+// Liveness/healthcheck — dipakai healthcheck container nginx (GET /up)
+Route::get('/up', fn () => response('ok', 200));
+
 Route::get('/', function () {
     return view('welcome');
 });
