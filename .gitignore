@@ -1,24 +1,39 @@
+# ===== Log & cache =====
 *.log
 .DS_Store
+.phpunit.result.cache
+.phpactor.json
+
+# ===== Environment — SEMUA file .env kecuali contoh =====
 .env
+.env.*
+!.env.example
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
+.env.local
+
+# ===== Secret / credentials =====
+/auth.json
+/storage/*.key
+
+# ===== IDE & tools =====
 /.fleet
 /.idea
 /.nova
 /.phpunit.cache
 /.vscode
 /.zed
-/auth.json
+
+# ===== Dependensi & build artefak =====
 /node_modules
+/vendor
 /public/build
 /public/hot
+
+# ===== Storage runtime =====
 /public/storage
-/storage/*.key
 /storage/pail
-/vendor
+
 Homestead.json
 Homestead.yaml
 Thumbs.db

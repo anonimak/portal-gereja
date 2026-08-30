@@ -1,0 +1,15 @@
+# Hindari context build membawa artefak lokal / secret
+.git
+.gitignore
+analisis
+node_modules
+vendor
+public/build
+.env
+.env.*
+!.env.example
+storage/logs/*.log
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+*.md
