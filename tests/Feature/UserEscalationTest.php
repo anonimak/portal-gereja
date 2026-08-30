@@ -16,8 +16,11 @@ class UserEscalationTest extends TestCase
     use RefreshDatabase;
 
     private Church $churchA;
+
     private Church $churchB;
+
     private User $adminA;
+
     private User $superAdmin;
 
     protected function setUp(): void
@@ -121,10 +124,10 @@ class UserEscalationTest extends TestCase
 
     public function test_user_policy_hanya_super_admin(): void
     {
-        Gate::forUser($this->adminA)->denies('viewAny', User::class);
-        Gate::forUser($this->adminA)->denies('update', $this->superAdmin);
-        Gate::forUser($this->superAdmin)->allows('viewAny', User::class);
-        Gate::forUser($this->superAdmin)->allows('update', $this->adminA);
-        Gate::forUser($this->superAdmin)->denies('delete', $this->superAdmin);
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('viewAny', User::class));
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('update', $this->superAdmin));
+        $this->assertTrue(Gate::forUser($this->superAdmin)->allows('viewAny', User::class));
+        $this->assertTrue(Gate::forUser($this->superAdmin)->allows('update', $this->adminA));
+        $this->assertTrue(Gate::forUser($this->superAdmin)->denies('delete', $this->superAdmin));
     }
 }

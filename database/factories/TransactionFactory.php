@@ -28,18 +28,47 @@ class TransactionFactory extends Factory
     }
 
     /**
+     * Resolve church id: prioritaskan church_id eksplisit (int / instance Church),
+     * fallback ke memoized churchId().
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function resolveChurchId(array $attributes): int
+    {
+        $church = $attributes['church_id'] ?? null;
+
+        if ($church instanceof Church) {
+            return $church->id;
+        }
+        if (is_numeric($church)) {
+            return (int) $church;
+        }
+
+        return $this->churchId();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
+            // Urutan penting: church_id dulu, lalu fund/kategori memakai church yang sama.
             'church_id' => fn (): int => $this->churchId(),
-            'fund_id' => fn (): int => Fund::factory()->create([
-                'church_id' => $this->churchId(),
-            ])->id,
-            'category_id' => fn (): int => FinancialCategory::factory()->create([
-                'church_id' => $this->churchId(),
-            ])->id,
+            'fund_id' => function (array $attributes) {
+                $churchId = $this->resolveChurchId($attributes);
+
+                return Fund::factory()->create([
+                    'church_id' => $churchId,
+                ])->id;
+            },
+            'category_id' => function (array $attributes) {
+                $churchId = $this->resolveChurchId($attributes);
+
+                return FinancialCategory::factory()->create([
+                    'church_id' => $churchId,
+                ])->id;
+            },
             'type' => $this->faker->randomElement(['debit', 'credit']),
             'amount' => $this->faker->numberBetween(10000, 10000000),
             'transaction_date' => $this->faker->dateTimeBetween('-1 year', 'now'),
@@ -49,14 +78,14 @@ class TransactionFactory extends Factory
 
     public function income(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'type' => 'debit',
         ]);
     }
 
     public function expense(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'type' => 'credit',
         ]);
     }

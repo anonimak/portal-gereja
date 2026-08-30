@@ -10,6 +10,7 @@ use App\Models\Fund;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ExportRouteTest extends TestCase
@@ -112,9 +113,9 @@ class ExportRouteTest extends TestCase
             'church_id' => $church->id,
             'role' => 'church_admin',
         ]);
-        // Role 'church_admin' TIDAK valid bagi observer → buat user dgn role sah
-        // lalu manipulasi role di DB untuk mensimulasikan user non-panel.
-        $guest->forceFill(['role' => 'reader'])->save();
+
+        // Update langsung via query builder — bypass observer (observer menolak role non-whitelist)
+        DB::table('users')->where('id', $guest->id)->update(['role' => 'reader']);
 
         $this->actingAs($guest->fresh());
 

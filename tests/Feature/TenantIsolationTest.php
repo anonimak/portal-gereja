@@ -21,8 +21,11 @@ class TenantIsolationTest extends TestCase
     use RefreshDatabase;
 
     private Church $churchA;
+
     private Church $churchB;
+
     private User $adminA;
+
     private User $superAdmin;
 
     /** @var array<string, mixed> */
@@ -113,14 +116,14 @@ class TenantIsolationTest extends TestCase
         $transactionB = $this->fixturesB['transaction'];
         $rosterB = $this->fixturesB['roster'];
 
-        Gate::forUser($this->adminA)->denies('view', $memberB);
-        Gate::forUser($this->adminA)->denies('update', $memberB);
-        Gate::forUser($this->adminA)->denies('delete', $memberB);
-        Gate::forUser($this->adminA)->denies('view', $transactionB);
-        Gate::forUser($this->adminA)->denies('view', $rosterB);
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('view', $memberB));
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('update', $memberB));
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('delete', $memberB));
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('view', $transactionB));
+        $this->assertTrue(Gate::forUser($this->adminA)->denies('view', $rosterB));
 
-        Gate::forUser($this->adminA)->allows('view', $this->fixturesA['member']);
-        Gate::forUser($this->adminA)->allows('update', $this->fixturesA['member']);
+        $this->assertTrue(Gate::forUser($this->adminA)->allows('view', $this->fixturesA['member']));
+        $this->assertTrue(Gate::forUser($this->adminA)->allows('update', $this->fixturesA['member']));
     }
 
     public function test_super_admin_dapat_melihat_semua_gereja(): void

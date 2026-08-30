@@ -28,6 +28,26 @@ class EventFactory extends Factory
     }
 
     /**
+     * Resolve church id: prioritaskan church_id eksplisit (int / instance Church),
+     * fallback ke memoized churchId().
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function resolveChurchId(array $attributes): int
+    {
+        $church = $attributes['church_id'] ?? null;
+
+        if ($church instanceof Church) {
+            return $church->id;
+        }
+        if (is_numeric($church)) {
+            return (int) $church;
+        }
+
+        return $this->churchId();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -38,9 +58,13 @@ class EventFactory extends Factory
         return [
             // Urutan penting: church_id dulu, lalu kategori memakai church yang sama.
             'church_id' => fn (): int => $this->churchId(),
-            'category_id' => fn (): int => EventCategory::factory()->create([
-                'church_id' => $this->churchId(),
-            ])->id,
+            'category_id' => function (array $attributes) {
+                $churchId = $this->resolveChurchId($attributes);
+
+                return EventCategory::factory()->create([
+                    'church_id' => $churchId,
+                ])->id;
+            },
             'title' => $this->faker->sentence(3),
             'start_datetime' => $startDateTime,
             // End dihitung dari START (bukan relatif ke now) — hindari start > end.

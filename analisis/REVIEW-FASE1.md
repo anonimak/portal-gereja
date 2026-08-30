@@ -1,126 +1,192 @@
-# REVIEW FASE 1 — QA Gate (Vera)
+# REVIEW FASE 1 — QA Gate FINAL (Vera) — Eksekusi Nyata
 
-> **Repo yang direview:** `~/.hermes/workspace-main/portal-gereja/` (repo bersama)
-> **HEAD:** `8c9b508` (T1-followup) — diverifikasi via `git rev-parse HEAD` ✅
-> **Cakupan review ini:** commit `8c9b508` (T1-followup) + commit `c270cea` (ops container-only)
-> **Metode:** inspeksi statis (baca kode + grep + git diff). Server tidak dijalankan.
-> **Catatan proses:** sandbox QA (`workspace-vera/portal-gereja`) TERTINGGAL di `7cf3828` dan TIDAK dipakai; seluruh review memakai path repo bersama.
+> **Repo:** `~/.hermes/workspace-main/portal-gereja/` (repo bersama, path tunggal tim)
+> **HEAD saat review:** `581821e` (test: tambah kasus export guard) — `git rev-parse HEAD` ✅
+> **Status Byte:** commit final **BELUM ADA** — 2 file WIP masih unstaged
+> (`database/factories/EventRosterFactory.php`, `tests/Feature/ExportRouteTest.php`)
+> **Status artefak:** `analisis/HASIL-TEST-FASE1.md` **BELUM ADA**
+> **Metode:** EKSEKUSI NYATA — `php vendor/bin/phpunit` dijalankan sendiri (bukan klaim tim),
+> PHP 8.4.4 (`/home/anonimak/bin/php`), DB `sqlite :memory:`, PHPUnit 11.5.55.
+> **Tanggal review:** 2026-08-30
 
 ---
 
-## Ringkasan Verdict
+## 0) Status Proses (penting)
 
-| Item | Commit | Verdict |
+| Item | Status |
+|---|---|
+| Commit Byte terbaru (`git log --oneline -5`) | `581821e` — fix terakhir **belum di-commit** (unstaged) |
+| `analisis/HASIL-TEST-FASE1.md` | ❌ tidak ada |
+| `git status` | 🔶 **TIDAK bersih** — 2 file modified (WIP Byte) |
+| Suite test dijalankan sendiri | ❌ **MERAH**: 1 error + 2 risky (27 tests) |
+
+Sesuai instruksi Nova: karena commit Byte belum ada, deliverables review ini adalah
+**(a) checklist QA berbasis AC Fase 1** + **(b) hasil eksekusi suite saat ini** sebagai
+bukti gate. Verdict final APPROVED **belum bisa** diberikan sampai Byte commit + re-run hijau.
+
+---
+
+## 1) Checklist QA Fase 1 (berbasis ACCEPTANCE-CRITERIA-FASE1.md)
+
+### T1 — Isolasi church_id
+| AC | Pemeriksaan | Status (kode + test) |
 |---|---|---|
-| 1a. Trait `BelongsToChurch` — paksa church_id aktor (anti mass-assignment) | `8c9b508` | ✅ **APPROVED** |
-| 1b. Migrasi backfill portabel SQLite/MySQL | `8c9b508` | ✅ **APPROVED** (dengan catatan performa & gap AC NOT NULL) |
-| 2. Ops workflow container-only (`/up`, Makefile, setup-env, DEPLOY.md, compose podman) | `c270cea` | ✅ **APPROVED** (dengan catatan non-blocking) |
+| AC-T1-01 | Migrasi `church_id` nullable→NOT NULL + index di `member_sacraments` & `event_rosters` | 🟡 **BELUM penuh** — kolom ada + index, tapi **tetap nullable** (no migrasi NOT NULL lanjutan) |
+| AC-T1-02 | Backfill dari relasi parent (bukan NULL/hardcode) | ✅ migrasi `2026_03_09_000001` backfill via parent (portabel) |
+| AC-T1-03 | Trait `BelongsToChurch` di `MemberSacrament` & `EventRoster` | ✅ `use BelongsToChurch, HasFactory;` di kedua model |
+| AC-T1-04 | Global scope non-super_admin; super_admin bebas; auto-fill creating | ✅ `BelongsToChurchGuardTest` hijau (2/2 pass, 1 error di factory test) |
+| AC-T1-05 | Widget `StatsOverview` & `CashFlowChart` ter-scope | ✅ `WartaJemaatTest::test_stat_widget...` pass |
+| AC-T1-06 | `SacramentsRelationManager` & roster EventResource ter-scope | ✅ kode + factory satu-gereja (test factory ❌ error, lihat §3) |
+| AC-T1-07 | Warta: 4 query ter-scope | ✅ `WartaJemaatTest` pass (events/sakramen/birthday/transaksi A saja) |
+| AC-T1-08 | Anti crafted POST cross-church; `events.church_id` NOT NULL | 🟡 forcing di trait `creating` ✅; **`events.church_id` masih nullable** (belum ada migrasi) |
+| AC-T1-09 | Accept utama: query apa pun tidak memuat gereja lain | ✅ `TenantIsolationTest` pass (counts + find null lintas gereja + super_admin 2x) |
 
-Tidak ada item BLOCKED. Namun ada **temuan residual non-blocking** yang wajib dijadwalkan sebelum owner sign-off (lihat §5).
-
----
-
-## 1) Commit `8c9b508` — T1-followup
-
-### 1a. `app/Traits/BelongsToChurch.php` — paksa church_id aktor → ✅ APPROVED
-
-Perubahan (baris 32–44):
-```php
-static::creating(function ($model) {
-    $actor = auth()->user();
-    if ($actor && $actor->role !== 'super_admin') {
-        $model->church_id = $actor->church_id;      // baris 37-38
-    }
-    if (empty($model->church_id) && $actor) {
-        $model->church_id = $actor->church_id;      // baris 42-43
-    }
-});
-```
-
-**Apakah benar menutup celah?**
-- Ya. Untuk non-`super_admin`, `church_id` **selalu ditimpa** dengan `church_id` aktor pada event `creating` — terlepas dari apa pun yang dikirim via mass-assignment/crafted POST (mis. `church_id=GerejaB`). Ini menutup K1/AC-T1-08 di lapisan model (defense-in-depth terakhir setelah form & policy).
-
-**Dampak samping yang dicek:**
-- **Import/seed tanpa auth** (CLI, seeder, queue, tinker): `auth()->user()` = null → kedua `if` tidak dieksekusi → `church_id` tetap sesuai nilai eksplisit (atau null). Tidak ada regresi vs perilaku lama. ✅
-- **super_admin assign ke gereja lain**: `if` pertama di-skip (role = super_admin) → nilai `church_id` eksplisit dipertahankan. Super admin tetap bisa membuat record untuk gereja mana pun. ✅
-- **super_admin tanpa church_id eksplisit**: fallback `empty() && $actor` mengisi ke `church_id` milik super_admin sendiri (bisa null → tetap null). Perilaku ini SAMA dengan kode lama, bukan regresi.
-- **Global scope** (baris 27) tidak berubah → konsisten dengan AC-T1-04.
-
-**Temuan residual (non-blocking):**
-- 🟡 **Tidak ada guard di event `updating`** — non-super_admin masih bisa memindahkan record milik gereja sendiri ke gereja lain via update (data integrity; bukan leak lintas-gereja karena global scope membatasi query). Rekomendasi: tambahkan hook `updating` simetris (baris ~46) untuk menutup jalur update.
-- 🟡 **Aktor non-super_admin dengan `church_id = null`** (user yatim hasil bug C5 di masa lalu): record baru akan dibuat dengan `church_id = null` → yatim/tidak terlihat siapa pun. Aman (fails-closed) tapi sebaiknya `abort`/tolak daripada diam-diam membuat orphan. Sebagian sudah dicegah oleh `UserPolicy`/`UserObserver` (T3).
-
-### 1b. Migrasi `2026_03_09_000001` — backfill portabel → ✅ APPROVED
-
-**Kebenaran logika (baris 35–42 & 52–59):**
-- Hanya memproses baris `whereNull('church_id')` (semua baris saat migrasi pertama dijalankan; idempotent jika diulang).
-- `member_sacraments.church_id` ← `members.church_id` via `member_id`; `event_rosters.church_id` ← `events.church_id` via `event_id`. Sesuai AC-T1-02.
-- Baris orphan (parent null/tidak ditemukan) dibiarkan NULL = "unknown" → tidak tampil di gereja mana pun. **Tidak ada data dipindah/dihapus.** ✅
-- Portabel MySQL + SQLite (`:memory:` untuk test). ✅
-
-**Performa (catatan, bukan bug):**
-- ⚠️ Pola N+1: per baris sakramen/roster → 1 query ke `members`/`events` (baris 38, 55), plus `->get()` memuat seluruh tabel ke memori (baris 35, 52). Untuk dataset besar (mis. >50rb baris) bisa lambat/makan memori. Rekomendasi: preload map `DB::table('members')->pluck('church_id','id')` sekali + `chunkById`/`cursor`. Untuk skala gereja tipikal (ribuan) acceptable.
-
-**Gap vs AC (sudah ada sejak 7f69313, bukan regresi commit ini):**
-- 🟡 **AC-T1-01 tidak terpenuhi penuh**: tidak ada migrasi lanjutan yang mengubah `church_id` menjadi **NOT NULL** pada `member_sacraments` & `event_rosters` (tetap `nullable()` baris 31, 48). Changelog menyatakan orphan sengaja dibiarkan NULL — keputusan defensif, tapi menyimpang dari AC. Rekomendasi: tambah migrasi backfill-orphan/cleanup lalu `nullable(false)` + index, ATAU amend AC secara eksplisit.
-- 🟡 **AC-T1-08 (events.church_id NOT NULL) belum ada** — migrasi `2026_03_07_000011` masih `nullable()`. Bukan bagian commit ini, tapi tetap terbuka.
-
----
-
-## 2) Commit `c270cea` — ops: workflow container-only → ✅ APPROVED
-
-**Yang dicek:**
-- `routes/web.php` → `GET /up` (baris 6-8) untuk healthcheck nginx. Publik tanpa auth — aman (hanya string `ok`), tidak membocorkan data; konsisten dengan healthcheck `web` (`wget http://127.0.0.1/up`, compose baris 142-147). ✅
-- `Makefile` + `scripts/compose.sh` → auto-select podman/podman-compose/docker compose; host tidak perlu PHP/Composer/Node. ✅
-- `scripts/setup-env.sh` → generate `APP_KEY` (base64 32 byte — format Laravel benar), `DB_PASSWORD`, `MARIADB_ROOT_PASSWORD` via `openssl`; tidak menimpa nilai yang sudah ada. ✅
-- `DEPLOY.md` → dokumentasi cukup jelas (prasyarat, quickstart, perintah harian, port, keamanan, update, troubleshooting). ✅
-- `docker-compose.yml` → service `db/app/queue/scheduler/web` + healthcheck + volume `portal_db_data`/`portal_storage` + network `portal_network` — **tidak ada konflik port/volume/service** dengan `013d1fc` (port web tetap 8000 default, kini `WEB_PORT` configurable baris 139; target Dockerfile `app`/`nginx` masih valid). Root password tidak diteruskan ke container aplikasi (baris 61, 94, 119). ✅
-
-**Catatan non-blocking:**
-- 🟡 **Guard `:?` dihilangkan** (sebelumnya `DB_PASSWORD:?`, `MARIADB_ROOT_PASSWORD:?`, `APP_KEY:?` → kini variabel polos, baris 27-28, 53, 87, 112). Ini melemahkan fail-fast bila seseorang menjalankan `docker compose up` TANPA `make env` (secret kosong diam-diam). Alasan: kompatibilitas podman-compose yang tidak mendukung interpolasi `:?`. Rekomendasi: tambahkan preflight check di `scripts/compose.sh` (validasi `APP_KEY`, `DB_PASSWORD`, `MARIADB_ROOT_PASSWORD` non-kosong di `.env` sebelum `up`) — menjaga keamanan + kompatibilitas.
-- 🟡 **`depends_on.condition: service_healthy`** (baris 44-47, 76-79, 100-103, 132-135) didukung `docker compose` & `podman compose`, tapi **podman-compose (Python) punya dukungan terbatas** untuk `condition` ini — klaim "kompatibel podman-compose" perlu diverifikasi runtime. Safety net sudah ada: entrypoint menunggu DB ≤60 detik, jadi walau ordering diabaikan, app tetap menunggu DB. Non-blocking.
-- 🟡 **`setup-env.sh`**: `sed -i` GNU-only (gagal di macOS); dan `.env` tidak di-`chmod 600` (default 644 — terbaca user lain di host shared). Rekomendasi: tambah `chmod 600 .env` di akhir script.
-- 🟡 **Healthcheck `db`** memakai `-p$$MARIADB_ROOT_PASSWORD` dalam CMD-SHELL (baris 32) — aman selama password hasil generator base64 (tanpa spasi/metachar); bila user set password manual dengan karakter spesial, healthcheck bisa gagal. Catatan minor.
-
----
-
-## 3) Regresi & interaksi antar perubahan
-
-- **Trait baru vs global scope T1**: konsisten — scope membaca `role !== 'super_admin'`, hook `creating` membaca `role` sama; tidak ada konflik. ✅
-- **Trait vs factory/seed tanpa auth**: tidak terdampak (kedua `if` butuh `auth()->user()`). ✅
-- **Compose c270cea vs Dockerfile/entrypoint 013d1fc**: target stage `app`/`nginx`, entrypoint `docker/entrypoint.sh`, `nginx.conf` root, `.dockerignore` (mengecualikan `.env`, `*.md`, `analisis`, `vendor`, `public/build`) — semua masih cocok. ✅
-- **`/up` route vs middleware**: berada di `routes/web.php` (group `web`), tanpa `auth` — disengaja untuk liveness; tidak bentrok dengan route lain. ✅
-- **UserObserver & EventFactory (uncommitted)**: bukan bagian 2 commit ini, tapi terlihat memperbaiki self-edit role & `end_datetime` factory. Perlu di-commit (lihat §5).
-
----
-
-## 4) Verdict AC terkait (ringkas)
-
+### T2 — RBAC + Policy
 | AC | Status |
 |---|---|
-| AC-T1-02 (backfill dari relasi) | ✅ terpenuhi (portabel) |
-| AC-T1-03 (trait di 2 model) | ✅ terpenuhi (sudah sejak 7f69313) |
-| AC-T1-04 (scope & auto-fill, super_admin bebas) | ✅ terpenuhi |
-| AC-T1-08 (anti crafted POST lintas gereja) | ✅ diperkuat (forcing di `creating`) — namun events.church_id NOT NULL masih terbuka 🟡 |
-| AC-T1-01 (NOT NULL setelah backfill) | 🟡 belum — tetap nullable (keputusan defensif, perlu amend AC/migrasi lanjutan) |
-| AC-T7-01..06 (DevOps) | ✅ tidak diregresi oleh c270cea; guard `:?` dihilangkan 🟡 |
+| AC-T2-01 Policy ada & terdaftar (14 policy + Gate::policy) | ✅ `app/Policies/` 14 file; `Gate::policy` di `AppServiceProvider` |
+| AC-T2-02 System cluster super_admin only | ✅ `SystemCluster::canAccess()` + `UserResource::can*`; sebagian diverifikasi test policy |
+| AC-T2-03 finance_admin dibatasi | 🟡 tidak ada test khusus finance_admin (perlu tambahan) |
+| AC-T2-04 `canAccessPanel` batasi role | ✅ kode; test export guard `reader` → 403 pass |
+| AC-T2-05 Actions hormati policy | ✅ policy ada; sebagian via `UserEscalationTest` |
+| AC-T2-06 Halaman report & route export terproteksi | ✅ `ExportRouteTest` (unauth→302, admin A→OK, B tidak bocor, reader→403) |
+
+### T3 — Fix Privilege Escalation
+| AC | Status |
+|---|---|
+| AC-T3-01 Validasi server-side role | ✅ `UserEscalationTest` pass (super_admin, gereja lain, role invalid → HttpException) |
+| AC-T3-02 church_admin tak bisa edit/delete user gereja lain / super_admin | ✅ test pass |
+| AC-T3-03 church_id fallback & tidak bisa pindah gereja | ✅ `UserObserver` + `mutateFormDataBeforeCreate`; test pass |
+| AC-T3-04 Password `dehydrated(false)` saat edit | ✅ kode |
+| AC-T3-05 DeleteAction & BulkDelete terproteksi | ✅ `UserPolicy` (super_admin tak bisa delete diri sendiri) |
+
+### T4 — Fix Crash Warta
+| AC | Status |
+|---|---|
+| AC-T4-01 Roster null-safe (member/official/placeholder) | ✅ `WartaJemaatTest::test_get_report_data_tidak_crash...` pass (roster official tanpa member) |
+| AC-T4-02 `minister_name` dihapus | ✅ grep 0 di app/resources/factories (hanya di `down()` migrasi) |
+| AC-T4-03 Guard `Carbon::parse(null)` | ✅ `whereNotNull('birth_date')` + guard |
+
+### T5 — Enum keuangan debit/credit
+| AC | Status |
+|---|---|
+| AC-T5-01 Options `debit`/`credit` | ✅ `FinanceTypeTest` pass (0 kategori in/out; seeder 7 debit/8 credit) |
+| AC-T5-02 Kategori UI muncul di form transaksi | ✅ konsisten `debit`/`credit` di resource/factory/seeder |
+| AC-T5-03 Alur kategori→transaksi→laporan | ✅ `FinanceTypeTest` pass (income/expense sum) |
+| AC-T5-04 Badge/label konsisten | ✅ |
+
+### T6 — Fix Filament v5 BadgeColumn
+| AC | Status |
+|---|---|
+| AC-T6-01 `grep BadgeColumn app/` = 0 | ✅ 0 match |
+| AC-T6-02 `->colors(` = 0 di kolom | ✅ |
+| AC-T6-03 Pola `TextColumn->badge()->color()` valid | ✅ kode |
+| AC-T6-04 Import tidak stale | ✅ |
+| AC-T6-05 Accept utama (resource render tanpa error) | 🟡 **belum diverifikasi runtime** (tidak ada test render resource; hanya inspeksi) |
+
+### T7 — DevOps (sudah di-review commit `013d1fc`/`c270cea`/`8c9b508`)
+| AC | Status |
+|---|---|
+| AC-T7-01..05 (secrets, APP_KEY, Dockerfile, queue/scheduler, nginx) | ✅ APPROVED sebelumnya (review `8c9b508`/`c270cea`) |
+| AC-T7-06 Smoke `docker compose up` | 🟡 **belum diverifikasi ulang di gate ini** (milik Ray/podman stack) |
 
 ---
 
-## 5) Temuan residual yang wajib dijadwalkan (non-blocking untuk 2 commit ini)
+## 2) Hasil Eksekusi Suite — SAYA JALANKAN SENDIRI (bukan klaim Byte)
 
-**Prioritas tinggi (sebelum owner sign-off):**
-1. **Migrasi NOT NULL `church_id`** untuk `member_sacraments` & `event_rosters` (AC-T1-01) + backfill/cleanup orphan, ATAU amend AC. — `database/migrations/2026_03_09_000001`
-2. **Migrasi `events.church_id` NOT NULL** (AC-T1-08) + backfill baris NULL. — `2026_03_07_000011`
-3. **Guard `updating` di trait `BelongsToChurch`** (tutup jalur update pindah gereja). — `app/Traits/BelongsToChurch.php:46+`
-4. **Preflight secret di `scripts/compose.sh`** (ganti guard `:?` yang dihapus). — `docker-compose.yml:27-28,53,87,112`
+Command: `/home/anonimak/bin/php vendor/bin/phpunit --no-coverage`
+Config: `phpunit.xml` (sqlite `:memory:`, RefreshDatabase tiap test)
 
-**Prioritas sedang:**
-5. Optimasi backfill (preload map + chunk) untuk dataset besar. — migrasi `2026_03_09_000001:35-59`
-6. `chmod 600 .env` di `setup-env.sh`; catat keterbatasan `sed -i` GNU.
-7. Verifikasi runtime podman-compose: `depends_on.condition: service_healthy` & healthcheck.
-8. **Uncommitted working tree**: `app/Models/Member.php` (import `AsArrayObject`), `app/Observers/UserObserver.php` (fix self-edit role), `database/factories/EventFactory.php` (fix end_datetime) — **belum di-commit**. Segera commit agar state repo bersih & reviewable.
+```
+PHPUnit 11.5.55 by Sebastian Bergmann and contributors.
+Runtime: PHP 8.4.4
+Configuration: /home/anonimak/.hermes/workspace-main/portal-gereja/phpunit.xml
+
+...E...........R.......R...   27 / 27 (100%)
+Time: 00:01.257, Memory: 70.50 MB
+
+ERRORS!
+Tests: 27, Assertions: 64, Errors: 1, Risky: 2.
+```
+
+**Hasil per class (saya jalankan ulang satu per satu):**
+
+| Test class | Tests | Hasil |
+|---|---|---|
+| BelongsToChurchGuardTest | 3 | ❌ **1 ERROR** (2 pass) |
+| TenantIsolationTest | 4 | ⚠️ 1 RISKY (no assertions) |
+| UserEscalationTest | 7 | ⚠️ 1 RISKY (no assertions) |
+| FinanceTypeTest | 4 | ✅ OK (8 assertions) |
+| WartaJemaatTest | 3 | ✅ OK (14 assertions) |
+| ExportRouteTest | 4 | ✅ OK (12 assertions) |
+| ExampleTest (Unit+Feature) | 2 | ✅ OK |
+
+**Kesimpulan eksekusi: ❌ TIDAK 0 failure / 0 error / 0 risky.** Gate TIDAK lolos.
 
 ---
 
-*Ditulis oleh Vera (QA Gate). Verdict akhir 2 commit: APPROVED — tidak ada BLOCKED. Temuan residual di atas bukan penghambat merge commit ini, tapi wajib masuk backlog sebelum deklarasi siap ke owner.*
+## 3) Akar masalah (diagnosis dari stack trace + sumber vendor)
+
+### 🔴 Error — `BelongsToChurchGuardTest.php:61` → `EventRosterFactory.php:70`
+```
+SQLSTATE[23000]: NOT NULL constraint failed: members.church_id
+insert into "members" ("church_id", "family_id", ...) values (?, 1, ...)  -- church_id = NULL
+```
+- Pemicu: `EventRoster::factory()->create(['event_id' => $event])` — `event_id` di-pass sebagai **model instance**.
+- Mekanisme (vendor `Factory::expandAttributes`, baris 566–598): nilai atribut yang berupa `Model` diubah ke `getKey()` **sebelum closure berikutnya dipanggil**. Jadi saat closure `church_id`/`member_id` dijalankan, `$attributes['event_id']` sudah berupa **int**, bukan `Event`.
+- `EventRosterFactory::rosterChurchId()` (baris 28–48, WIP unstaged) hanya menangani `$event instanceof Event` dan `is_numeric($church)` — **tidak menangani `event_id` berupa int**. Karena `cachedEventChurchId` juga tidak terisi (closure `event_id` di-skip karena nilai sudah diberikan), hasilnya `null` → member dibuat dengan `church_id=null` → NOT NULL violation.
+- **Artinya fix EventRosterFactory Byte (unstaged) BELUM tuntas** — persis skenario yang diuji test baru masih gagal.
+
+### ⚠️ Risky 1 — `TenantIsolationTest.php:110` `test_policy_menolak_idor_lintas_gereja`
+- Memakai `Gate::forUser($adminA)->denies(...)` / `->allows(...)` **tanpa assertion** → PHPUnit: "This test did not perform any assertions". Harus dibungkus `$this->assertTrue(Gate::forUser(...)->denies(...))` / `assertFalse(...)`.
+
+### ⚠️ Risky 2 — `UserEscalationTest.php:122` `test_user_policy_hanya_super_admin`
+- Pola sama: `Gate::forUser(...)->denies(...)` / `->allows(...)` tanpa assertion → risky. Perlu `assertTrue`/`assertFalse`.
+
+Catatan: kedua "risky tests" ini berada di scope kerja Byte ("risky tests" yang ia sebut sedang diperbaiki) — **belum selesai**.
+
+---
+
+## 4) Verdict per Task
+
+| Task | Verdict | Bukti |
+|---|---|---|
+| T1 Isolasi church_id | 🔴 **NEEDS_FIX** | Tenant/Warta/widget test hijau, tapi factory roster masih error (NOT NULL) → T1-06/T1-09 belum 100% |
+| T2 RBAC + Policy | 🟡 **NEEDS_FIX (minor)** | Policy & guard pass; 1 risky test (belum assert) + finance_admin belum dites |
+| T3 Escalation | 🟡 **NEEDS_FIX (minor)** | Semua skenario pass; 1 risky test (belum assert) |
+| T4 Crash Warta | ✅ **APPROVED** | WartaJemaatTest 3/3 pass (roster official, isolasi, widget) |
+| T5 Enum keuangan | ✅ **APPROVED** | FinanceTypeTest 4/4 pass |
+| T6 Filament v5 | ✅ **APPROVED (statis)** | grep 0 BadgeColumn/colors; runtime render belum dites |
+| T7 DevOps | ✅ **APPROVED (sebelumnya)** | review commit 013d1fc/c270cea/8c9b508; smoke podman milik Ray |
+
+**Verdict keseluruhan saat ini: 🔴 BLOCKED** — karena suite yang saya jalankan sendiri menghasilkan
+**1 error + 2 risky**, bukan 0/0/0, dan commit Byte + `HASIL-TEST-FASE1.md` belum ada.
+
+---
+
+## 5) Yang WAJIB diperbaiki sebelum APPROVED (gate)
+
+**Prioritas 1 (blocker):**
+1. **Fix `EventRosterFactory`** agar `event_id` berupa **int** (hasil konversi model) tetap bisa di-resolve ke `church_id`
+   — mis. `if (is_numeric($event)) return Event::find($event)?->church_id;` (atau resolve via `$attributes['church_id']` numeric yang sudah di-set). — `database/factories/EventRosterFactory.php:28-48`
+2. **Fix 2 risky tests** → bungkus `Gate::forUser(...)->denies/allows` dengan `assertTrue/assertFalse`.
+   — `tests/Feature/TenantIsolationTest.php:110-124`, `tests/Feature/UserEscalationTest.php:122-130`
+3. **Byte commit** fix-nya + tulis `analisis/HASIL-TEST-FASE1.md`; `git status` harus bersih.
+
+**Prioritas 2 (sebelum owner sign-off, non-blocker commit):**
+4. Tambah migrasi `church_id` **NOT NULL** di `member_sacraments` & `event_rosters` (AC-T1-01) + `events.church_id` NOT NULL (AC-T1-08).
+5. Tambah test khusus `finance_admin` (AC-T2-03) & test render resource Filament (AC-T6-05 runtime).
+6. Verifikasi smoke podman (AC-T7-06) oleh Ray + catat hasilnya di file yang sama.
+
+---
+
+## 6) Catatan sinkronisasi workspace
+
+- Repo bersama `/home/anonimak/.hermes/workspace-main/portal-gereja/` = **sumber kebenaran** ✅.
+- Sandbox `workspace-vera` tertinggal (HEAD `7cf3828`) dan **tidak dipakai** — konsisten kesepakatan tim.
+- HEAD repo bersama `581821e`, 9 commit di depan origin (belum di-push) — **jangan lupa push** setelah commit Byte.
+
+---
+
+*Ditulis oleh Vera (QA Gate) — berbasis eksekusi nyata, bukan inspeksi statis.*
+*Status: BLOCKED (interim). Akan di-update ke APPROVED setelah commit Byte + re-run hijau (0 error / 0 failure / 0 risky) + HASIL-TEST-FASE1.md ada + git status bersih.*

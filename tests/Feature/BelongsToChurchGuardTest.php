@@ -74,4 +74,29 @@ class BelongsToChurchGuardTest extends TestCase
         $sacrament = \App\Models\MemberSacrament::factory()->create();
         $this->assertSame($sacrament->church_id, $sacrament->member->church_id);
     }
+
+    public function test_factory_resolve_church_dari_event_id_int(): void
+    {
+        $church = Church::factory()->create();
+        $event = \App\Models\Event::factory()->create(['church_id' => $church->id]);
+
+        // event_id diberikan sebagai INT (bukan instance) — church_id harus tetap ter-resolve.
+        $roster = \App\Models\EventRoster::factory()->create(['event_id' => $event->id]);
+
+        $this->assertSame($church->id, $roster->church_id);
+        $this->assertSame($church->id, $roster->member->church_id);
+        $this->assertSame($church->id, $roster->member->family->church_id);
+    }
+
+    public function test_factory_resolve_church_dari_member_id_int(): void
+    {
+        $church = Church::factory()->create();
+        $member = Member::factory()->create(['church_id' => $church->id]);
+
+        // member_id diberikan sebagai INT (bukan instance) — church_id harus ter-resolve.
+        $sacrament = \App\Models\MemberSacrament::factory()->create(['member_id' => $member->id]);
+
+        $this->assertSame($church->id, $sacrament->church_id);
+        $this->assertSame($church->id, $sacrament->member->church_id);
+    }
 }

@@ -37,3 +37,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# ===== Backup dump (QA/reset) — jangan pernah di-commit =====
+/backups
