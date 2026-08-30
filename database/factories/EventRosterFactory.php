@@ -22,13 +22,28 @@ class EventRosterFactory extends Factory
      */
     public function definition(): array
     {
-        $event = Event::factory();
-
         return [
-            'event_id' => $event,
-            'church_id' => $event->church_id,
-            'member_id' => Member::factory()->state(['church_id' => $event->church_id]),
-            'role_id' => MinistryRole::factory()->state(['church_id' => $event->church_id]),
+            // Semua entitas dalam gereja yang SAMA dengan event (cegah silang-gereja).
+            'event_id' => Event::factory(),
+            'church_id' => function (array $attributes) {
+                return $attributes['event_id'] instanceof Event
+                    ? $attributes['event_id']->church_id
+                    : $attributes['event_id'];
+            },
+            'member_id' => function (array $attributes) {
+                $churchId = $attributes['church_id'] instanceof \App\Models\Church
+                    ? $attributes['church_id']->id
+                    : $attributes['church_id'];
+
+                return Member::factory()->create(['church_id' => $churchId])->id;
+            },
+            'role_id' => function (array $attributes) {
+                $churchId = $attributes['church_id'] instanceof \App\Models\Church
+                    ? $attributes['church_id']->id
+                    : $attributes['church_id'];
+
+                return MinistryRole::factory()->create(['church_id' => $churchId])->id;
+            },
             'official_id' => null,
         ];
     }

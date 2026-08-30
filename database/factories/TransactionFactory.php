@@ -22,12 +22,23 @@ class TransactionFactory extends Factory
      */
     public function definition(): array
     {
-        $church = Church::factory();
-
         return [
-            'church_id' => $church,
-            'fund_id' => Fund::factory()->state(['church_id' => $church]),
-            'category_id' => FinancialCategory::factory()->state(['church_id' => $church]),
+            // Satu church yang sama untuk transaksi, fund, DAN kategori (cegah silang-gereja).
+            'church_id' => Church::factory(),
+            'fund_id' => function (array $attributes) {
+                $churchId = $attributes['church_id'] instanceof Church
+                    ? $attributes['church_id']->id
+                    : $attributes['church_id'];
+
+                return Fund::factory()->create(['church_id' => $churchId])->id;
+            },
+            'category_id' => function (array $attributes) {
+                $churchId = $attributes['church_id'] instanceof Church
+                    ? $attributes['church_id']->id
+                    : $attributes['church_id'];
+
+                return FinancialCategory::factory()->create(['church_id' => $churchId])->id;
+            },
             'type' => $this->faker->randomElement(['debit', 'credit']),
             'amount' => $this->faker->numberBetween(10000, 10000000),
             'transaction_date' => $this->faker->dateTimeBetween('-1 year', 'now'),

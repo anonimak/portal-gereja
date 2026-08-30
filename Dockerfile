@@ -10,7 +10,7 @@
 ###############################################################################
 # STAGE 1 — builder: dependensi PHP + aset frontend
 ###############################################################################
-FROM php:8.4-fpm-alpine AS builder
+FROM docker.io/library/php:8.4-fpm-alpine AS builder
 
 # Toolchain build + library sistem (nodejs/npm untuk build frontend)
 RUN apk add --no-cache \
@@ -31,7 +31,7 @@ RUN apk add --no-cache \
 RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl intl bcmath opcache
 
 # Composer: pin major 2 (hindari :latest yang non-reproducible)
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=docker.io/library/composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
@@ -57,7 +57,7 @@ RUN composer dump-autoload --optimize --no-dev \
 ###############################################################################
 # STAGE 2 — runtime PHP-FPM (image aplikasi)
 ###############################################################################
-FROM php:8.4-fpm-alpine AS app
+FROM docker.io/library/php:8.4-fpm-alpine AS app
 
 # Library runtime (tanpa toolchain build -> image kecil & permukaan serangan kecil)
 RUN apk add --no-cache \
@@ -96,7 +96,7 @@ CMD ["php-fpm"]
 ###############################################################################
 # STAGE 3 — nginx (hanya public/ + konfigurasi, tanpa source code)
 ###############################################################################
-FROM nginx:1.27-alpine AS nginx
+FROM docker.io/library/nginx:1.27-alpine AS nginx
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder --chown=nginx:nginx /var/www/html/public /var/www/html/public

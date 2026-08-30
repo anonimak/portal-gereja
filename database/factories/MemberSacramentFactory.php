@@ -20,11 +20,14 @@ class MemberSacramentFactory extends Factory
      */
     public function definition(): array
     {
-        $member = Member::factory();
-
         return [
-            'church_id' => $member->church_id,
-            'member_id' => $member,
+            // Sakramen mengikuti gereja member (cegah silang-gereja).
+            'member_id' => Member::factory(),
+            'church_id' => function (array $attributes) {
+                return $attributes['member_id'] instanceof Member
+                    ? $attributes['member_id']->church_id
+                    : $attributes['member_id'];
+            },
             'type' => $this->faker->randomElement(['penyerahan', 'baptis_anak', 'sidi', 'baptis_dewasa', 'nikah']),
             'sacrament_date' => $this->faker->dateTimeBetween('-5 years', 'now'),
             'official_id' => null,

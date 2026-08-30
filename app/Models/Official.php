@@ -17,6 +17,7 @@ class Official extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'church_id',
         'type',
         'member_id',
         'external_name',

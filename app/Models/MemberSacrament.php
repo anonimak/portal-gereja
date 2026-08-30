@@ -17,6 +17,7 @@ class MemberSacrament extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'church_id',
         'type',
         'sacrament_date',
         'official_id',

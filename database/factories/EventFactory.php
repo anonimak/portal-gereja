@@ -21,12 +21,18 @@ class EventFactory extends Factory
      */
     public function definition(): array
     {
-        $church = Church::factory();
         $startDateTime = $this->faker->dateTimeBetween('-1 month', '+1 month');
 
         return [
-            'church_id' => $church,
-            'category_id' => EventCategory::factory()->state(['church_id' => $church]),
+            // Satu church yang sama untuk event DAN kategori (cegah silang-gereja).
+            'church_id' => Church::factory(),
+            'category_id' => function (array $attributes) {
+                $churchId = $attributes['church_id'] instanceof Church
+                    ? $attributes['church_id']->id
+                    : $attributes['church_id'];
+
+                return EventCategory::factory()->create(['church_id' => $churchId])->id;
+            },
             'title' => $this->faker->sentence(3),
             'start_datetime' => $startDateTime,
             'end_datetime' => $this->faker->dateTimeBetween($startDateTime, '+3 hours'),

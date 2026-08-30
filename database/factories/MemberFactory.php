@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Church;
 use App\Models\Family;
 use App\Models\Member;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,8 +22,15 @@ class MemberFactory extends Factory
     public function definition(): array
     {
         return [
-            'family_id' => Family::factory(),
-            'church_id' => fn(array $attributes) => $attributes['family_id']->church_id,
+            // Keluarga dibuat dalam gereja yang SAMA dengan member (cegah silang-gereja).
+            'church_id' => Church::factory(),
+            'family_id' => function (array $attributes) {
+                $churchId = $attributes['church_id'] instanceof Church
+                    ? $attributes['church_id']->id
+                    : $attributes['church_id'];
+
+                return Family::factory()->create(['church_id' => $churchId])->id;
+            },
             'id_card_number' => $this->faker->unique()->numerify('###.###.###-###'),
             'full_name' => $this->faker->name(),
             'gender' => $this->faker->randomElement(['m', 'f']),
