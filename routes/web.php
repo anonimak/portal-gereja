@@ -7,9 +7,17 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Export routes
+// Export routes — hanya user terautentikasi yang boleh mengakses halaman Laporan Rapat
 Route::post('/admin/laporan-rapat/export-excel', function () {
     $page = app(LaporanRapatPage::class);
-    $page->form->fill(request()->only(['period_type', 'month', 'quarter', 'year']));
+
+    // Guard: hanya user dengan akses ke halaman (role valid + ter-autentikasi)
+    if (! $page::canView()) {
+        abort(403, 'Tidak diizinkan mengekspor laporan.');
+    }
+
+    // Isi data periode langsung (tanpa lifecycle Livewire) — baca dari request
+    $page->data = request()->only(['period_type', 'month', 'quarter', 'year']);
+
     return $page->exportToExcel();
 })->middleware(['auth', 'verified'])->name('laporan-rapat.export-excel');

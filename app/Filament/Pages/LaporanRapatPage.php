@@ -133,12 +133,12 @@ class LaporanRapatPage extends Page implements HasForms
      */
     public function getReportData(): array
     {
-        $data = $this->form->getRawState();
-        // Fallback jika form belum ter-fill
-        $periodType = $data['period_type'] ?? 'monthly';
-        $year       = (int) ($data['year']    ?? now()->year);
-        $month      = (int) ($data['month']   ?? now()->month);
-        $quarter    = (int) ($data['quarter'] ?? ceil(now()->month / 3));
+        // Baca dari properti $data (ter-sync dengan form via statePath('data') di Livewire,
+        // dan bisa diisi langsung dari route export tanpa lifecycle Livewire).
+        $periodType = $this->data['period_type'] ?? 'monthly';
+        $year       = (int) ($this->data['year']    ?? now()->year);
+        $month      = (int) ($this->data['month']   ?? now()->month);
+        $quarter    = (int) ($this->data['quarter'] ?? ceil(now()->month / 3));
 
         $churchId = auth()->user()->church_id;
 
@@ -175,7 +175,6 @@ class LaporanRapatPage extends Page implements HasForms
         $closingBalance = $openingBalance + $totalIncome - $totalExpenses;
 
         return [
-            // gunakan variabel lokal, bukan $data langsung
             'startDate'      => $startDate,
             'endDate'        => $endDate,
             'events'         => $events,
@@ -254,8 +253,6 @@ class LaporanRapatPage extends Page implements HasForms
 
     /**
      * Get human-readable period label.
-     *
-     * @param  array<string, mixed>  $data
      */
     private function getPeriodLabel(string $periodType, int $month, int $quarter, int $year): string
     {
