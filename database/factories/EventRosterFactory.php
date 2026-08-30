@@ -26,8 +26,10 @@ class EventRosterFactory extends Factory
 
         return [
             'event_id' => $event,
+            'church_id' => $event->church_id,
             'member_id' => Member::factory()->state(['church_id' => $event->church_id]),
             'role_id' => MinistryRole::factory()->state(['church_id' => $event->church_id]),
+            'official_id' => null,
         ];
     }
 }

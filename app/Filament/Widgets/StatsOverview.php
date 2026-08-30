@@ -17,14 +17,20 @@ class StatsOverview extends StatsOverviewWidget
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
 
-        $activeMembersCount = Member::where('status', 'aktif')->count();
+        $churchId = auth()->user()?->church_id;
+
+        $activeMembersCount = Member::where('status', 'aktif')
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
+            ->count();
 
         $incomeThisMonth = Transaction::where('type', 'debit')
             ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->sum('amount');
 
         $expenseThisMonth = Transaction::where('type', 'credit')
             ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth])
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->sum('amount');
 
         return [

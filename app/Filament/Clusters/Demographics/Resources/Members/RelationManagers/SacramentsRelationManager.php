@@ -65,8 +65,15 @@ class SacramentsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $churchId = auth()->user()?->church_id;
+
         return $table
             ->recordTitleAttribute('type')
+            ->modifyQueryUsing(
+                fn(Builder $query): Builder => $churchId
+                    ? $query->where('church_id', $churchId)
+                    : $query
+            )
             ->columns([
                 TextColumn::make('type')
                     ->label('Jenis Sakramen')

@@ -39,17 +39,21 @@ class WartaJemaat extends Page
     {
         $startDate = $this->startDate ?? Carbon::now()->startOfWeek(Carbon::SUNDAY);
         $endDate = $this->endDate ?? Carbon::now()->endOfWeek(Carbon::SATURDAY);
+        $churchId = auth()->user()?->church_id;
 
-        // Fetch events with rosters
+        // Fetch events with rosters (scoped to church)
         $events = Event::with(['category', 'rosters' => function ($query) {
-            $query->with(['member', 'role']);
+            $query->with(['member', 'official', 'role']);
         }])
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->whereBetween('start_datetime', [$startDate->startOfDay(), $endDate->endOfDay()])
             ->orderBy('start_datetime')
             ->get();
 
-        // Fetch birthdays in date range
+        // Fetch birthdays in date range (scoped to church, null-safe)
         $birthdays = Member::where('status', 'aktif')
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
+            ->whereNotNull('birth_date')
             ->get()
             ->filter(function ($member) use ($startDate, $endDate) {
                 $birthDate = Carbon::parse($member->birth_date);
@@ -62,16 +66,18 @@ class WartaJemaat extends Page
             })
             ->values();
 
-        // Fetch transactions grouped by type
+        // Fetch transactions grouped by type (scoped to church)
         $transactions = Transaction::whereBetween('transaction_date', [$startDate, $endDate])
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->orderBy('transaction_date')
             ->get()
             ->groupBy(function ($transaction) {
                 return $transaction->type === 'debit' ? 'Pemasukan' : 'Pengeluaran';
             });
 
-        // Fetch member sacraments
-        $sacraments = MemberSacrament::with(['member'])
+        // Fetch member sacraments (scoped to church)
+        $sacraments = MemberSacrament::with(['member', 'official'])
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->whereBetween('sacrament_date', [$startDate, $endDate])
             ->orderBy('sacrament_date')
             ->get();

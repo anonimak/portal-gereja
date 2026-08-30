@@ -20,7 +20,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,6 +35,34 @@ class OfficialResource extends Resource
     protected static ?string $cluster = SystemCluster::class;
 
     protected static ?int $navigationSort = 3;
+
+    /**
+     * Hanya Super Admin yang dapat mengelola Official (cluster System).
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->role === 'super_admin';
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canEdit($record): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canDelete($record): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return static::canViewAny();
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -94,19 +121,21 @@ class OfficialResource extends Resource
                     ->label('Nama Pelayan')
                     ->searchable(['external_name', 'member.full_name', 'origin_church'])
                     ->sortable(),
-                BadgeColumn::make('type')
+                TextColumn::make('type')
                     ->label('Tipe Pelayan')
+                    ->badge()
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'majelis_lokal' => 'Majelis Lokal',
                         'pendeta_internal' => 'Pendeta Internal',
                         'pelayan_tamu' => 'Pelayan Tamu',
                         default => $state,
                     })
-                    ->colors([
-                        'success' => 'majelis_lokal',
-                        'primary' => 'pendeta_internal',
-                        'warning' => 'pelayan_tamu',
-                    ])
+                    ->color(fn(string $state): string => match ($state) {
+                        'majelis_lokal' => 'success',
+                        'pendeta_internal' => 'primary',
+                        'pelayan_tamu' => 'warning',
+                        default => 'gray',
+                    })
                     ->sortable(),
                 TextColumn::make('start_date')
                     ->label('Tanggal Mulai Melayani')

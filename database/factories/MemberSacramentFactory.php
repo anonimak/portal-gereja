@@ -20,11 +20,14 @@ class MemberSacramentFactory extends Factory
      */
     public function definition(): array
     {
+        $member = Member::factory();
+
         return [
-            'member_id' => Member::factory(),
+            'church_id' => $member->church_id,
+            'member_id' => $member,
             'type' => $this->faker->randomElement(['penyerahan', 'baptis_anak', 'sidi', 'baptis_dewasa', 'nikah']),
             'sacrament_date' => $this->faker->dateTimeBetween('-5 years', 'now'),
-            'minister_name' => $this->faker->name(),
+            'official_id' => null,
             'certificate_number' => $this->faker->unique()->numerify('SERT-####-##'),
         ];
     }

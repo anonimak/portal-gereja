@@ -15,6 +15,7 @@ class CashFlowChart extends ChartWidget
     protected function getData(): array
     {
         $year = Carbon::now()->year;
+        $churchId = auth()->user()?->church_id;
         $incomeByMonth = [];
         $expenseByMonth = [];
 
@@ -26,6 +27,7 @@ class CashFlowChart extends ChartWidget
 
         // Fetch all transactions for the current year
         $transactions = Transaction::whereYear('transaction_date', $year)
+            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->get(['transaction_date', 'type', 'amount']);
 
         // Group transactions by month and type
