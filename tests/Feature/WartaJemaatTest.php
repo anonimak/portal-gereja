@@ -173,8 +173,8 @@ class WartaJemaatTest extends TestCase
         $stats = $reflection->invoke($widget);
 
         $this->assertCount(3, $stats);
-        // value index 1 = pemasukan bulan ini, index 2 = pengeluaran bulan ini
-        $this->assertStringContainsString('Rp100.000', (string) $stats[1]->value);
-        $this->assertStringContainsString('Rp0', (string) $stats[2]->value);
+        // index 1 = pemasukan bulan ini, index 2 = pengeluaran bulan ini
+        $this->assertStringContainsString('Rp100.000', (string) $stats[1]->getValue());
+        $this->assertStringContainsString('Rp0', (string) $stats[2]->getValue());
     }
 }

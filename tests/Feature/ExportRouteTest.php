@@ -16,13 +16,15 @@ class ExportRouteTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_unauthenticated_dialihkan_ke_login(): void
+    public function test_unauthenticated_dialihkan_ke_halaman_login(): void
     {
         $this->post('/admin/laporan-rapat/export-excel', [
             'period_type' => 'monthly',
             'month' => now()->month,
             'year' => now()->year,
-        ])->assertStatus(302);
+        ])
+            ->assertStatus(302)
+            ->assertRedirect('/login');
     }
 
     public function test_church_admin_dapat_mengunduh_laporan_gereja_sendiri(): void
@@ -101,5 +103,25 @@ class ExportRouteTest extends TestCase
             'month' => now()->month,
             'year' => now()->year,
         ])->assertOk();
+    }
+
+    public function test_user_tanpa_role_panel_tidak_bisa_mengunduh(): void
+    {
+        $church = Church::factory()->create();
+        $guest = User::factory()->create([
+            'church_id' => $church->id,
+            'role' => 'church_admin',
+        ]);
+        // Role 'church_admin' TIDAK valid bagi observer → buat user dgn role sah
+        // lalu manipulasi role di DB untuk mensimulasikan user non-panel.
+        $guest->forceFill(['role' => 'reader'])->save();
+
+        $this->actingAs($guest->fresh());
+
+        $this->post('/admin/laporan-rapat/export-excel', [
+            'period_type' => 'monthly',
+            'month' => now()->month,
+            'year' => now()->year,
+        ])->assertForbidden();
     }
 }
