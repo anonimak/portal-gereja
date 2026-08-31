@@ -21,8 +21,16 @@ use Illuminate\Support\Facades\Schema;
  * Fix MySQL Error 1830 ("Column 'church_id' cannot be NOT NULL: needed in a
  * foreign key constraint"): MySQL melarang kolom yang dipakai FK diubah jadi
  * NOT NULL selama FK masih terpasang. Pola aman & portabel (SQLite/MySQL):
- *   drop FK → alter kolom NOT NULL → re-add FK dengan semantik yang sama
- *   (constrained('churches')->nullOnDelete()).
+ *   drop FK (jika ada) → alter kolom NOT NULL → re-add FK.
+ *
+ * Catatan deploy (Ray, MySQL 10.11 fresh):
+ * - Di MySQL, migrasi 2026_03_09_000001 TIDAK menghasilkan constraint FK
+ *   `{table}_church_id_foreign` pada member_sacraments (hanya index). Karena itu
+ *   dropForeign() polos gagal dengan Error 1091 ("Can't DROP FOREIGN KEY; check
+ *   that it exists"). Drop FK hanya dilakukan jika constraint benar-benar ada.
+ * - Re-add FK memakai RESTRICT (bukan nullOnDelete): kolom sudah NOT NULL, dan
+ *   FK SET NULL pada kolom NOT NULL kontradiktif (Error 1830 saat eksekusi).
+ *   Sesuai rekomendasi Vera: RESTRICT adalah semantik yang benar utk NOT NULL.
  */
 return new class extends Migration
 {
@@ -59,7 +67,7 @@ return new class extends Migration
             DB::table('event_rosters')->whereNull('church_id')->update(['church_id' => $firstChurchId]);
         }
 
-        // ---------- Jadikan NOT NULL: drop FK → change → re-add FK (MySQL Error 1830 fix) ----------
+        // ---------- Jadikan NOT NULL: drop FK (jika ada) → change → re-add FK ----------
         $this->makeNotNullWithForeignKey('member_sacraments');
         $this->makeNotNullWithForeignKey('event_rosters');
     }
@@ -67,30 +75,59 @@ return new class extends Migration
     /**
      * Ubah kolom church_id menjadi NOT NULL pada tabel child yang memiliki FK
      * ke churches. MySQL melarang alter NOT NULL selama FK aktif, jadi FK
-     * dilepas dulu lalu dipasang ulang dengan semantik yang sama.
+     * dilepas dulu (jika ada — lihat catatan deploy) lalu dipasang ulang
+     * dengan RESTRICT (semantik yang benar untuk kolom NOT NULL).
      */
     private function makeNotNullWithForeignKey(string $table): void
     {
-        Schema::table($table, function (Blueprint $blueprint): void {
-            $blueprint->dropForeign(['church_id']);
-        });
+        if ($this->foreignKeyExists($table, $table.'_church_id_foreign')) {
+            Schema::table($table, function (Blueprint $blueprint): void {
+                $blueprint->dropForeign(['church_id']);
+            });
+        }
 
         Schema::table($table, function (Blueprint $blueprint): void {
             $blueprint->unsignedBigInteger('church_id')->nullable(false)->change();
         });
 
         Schema::table($table, function (Blueprint $blueprint): void {
-            $blueprint->foreign('church_id')->references('id')->on('churches')->nullOnDelete();
+            $blueprint->foreign('church_id')->references('id')->on('churches')->restrictOnDelete();
         });
+    }
+
+    /**
+     * Cek apakah constraint FK dengan nama tertentu benar-benar ada pada driver saat ini.
+     * - MySQL : information_schema.TABLE_CONSTRAINTS
+     * - SQLite: pragma foreign_key_list (fallback: asumsikan ada, dropForeign polos)
+     */
+    private function foreignKeyExists(string $table, string $constraint): bool
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            return DB::table('information_schema.TABLE_CONSTRAINTS')
+                ->where('CONSTRAINT_SCHEMA', DB::connection()->getDatabaseName())
+                ->where('TABLE_NAME', $table)
+                ->where('CONSTRAINT_NAME', $constraint)
+                ->where('CONSTRAINT_TYPE', 'FOREIGN KEY')
+                ->exists();
+        }
+
+        // SQLite & lainnya: dropForeign polos (perilaku asli, sudah terbukti di CI).
+        return true;
     }
 
     public function down(): void
     {
         Schema::table('member_sacraments', function (Blueprint $table): void {
+            $table->dropForeign(['church_id']);
             $table->unsignedBigInteger('church_id')->nullable()->change();
+            $table->foreign('church_id')->references('id')->on('churches')->nullOnDelete();
         });
         Schema::table('event_rosters', function (Blueprint $table): void {
+            $table->dropForeign(['church_id']);
             $table->unsignedBigInteger('church_id')->nullable()->change();
+            $table->foreign('church_id')->references('id')->on('churches')->nullOnDelete();
         });
     }
 };
