@@ -169,6 +169,9 @@ class LaporanRapatPage extends Page implements HasForms
         $events = Event::query()
             ->whereBetween('start_datetime', [$startDate, $endDate])
             ->with([
+                // MED-2 Vera: eager-load attendances supaya $event->total_attendance
+                // memakai relasi (tanpa N+1 exists+count per event).
+                'attendances',
                 'category',
                 'rosters' => fn ($q) => $q->with([
                     'role',

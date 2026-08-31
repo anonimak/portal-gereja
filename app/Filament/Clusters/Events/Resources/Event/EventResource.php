@@ -194,9 +194,25 @@ class EventResource extends Resource
                     ->counts('rosters')
                     ->label('Petugas')
                     ->formatStateUsing(fn (int $state): string => "{$state} Petugas"),
-                TextColumn::make('total_attendance')
+                // MED-2 Vera: accessor total_attendance (exists+count per event) = N+1.
+                // Ganti dengan aggregate subquery withCount — tanpa query tambahan per baris:
+                // present_count = jumlah record status 'hadir'; attendances_count = jumlah
+                // record (untuk deteksi "ada record tapi semua tidak_hadir"). Fallback legacy
+                // L/P hanya dipakai saat TIDAK ada record sama sekali (AC-T2-10).
+                TextColumn::make('present_count')
                     ->label('Total Kehadiran')
-                    ->sortable(),
+                    ->counts([
+                        'attendances',
+                        'attendances as present_count' => fn (Builder $query) => $query->where('status', 'hadir'),
+                    ])
+                    ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy('present_count', $direction))
+                    ->formatStateUsing(function (Event $record): int {
+                        if ((int) $record->attendances_count > 0) {
+                            return (int) $record->present_count;
+                        }
+
+                        return (int) ($record->attendance_male ?? 0) + (int) ($record->attendance_female ?? 0);
+                    }),
                 TextColumn::make('location')
                     ->label('Lokasi')
                     ->limit(40)
