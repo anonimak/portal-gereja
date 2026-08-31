@@ -80,13 +80,15 @@ class AttendancesRelationManager extends RelationManager
                             ->searchable()
                             ->preload()
                             ->hiddenOn('edit')
-                            // Scope member ke gereja event (bukan gereja aktor) + sertakan
-                            // member yang di-soft-delete supaya record historis tetap bisa diedit.
+                            // MED-1 Vera (re-review PR #5): member yang di-soft-delete TIDAK boleh
+                            // dipilih untuk check-in — kalau dipilih, muncul row attendance
+                            // dengan nama kosong (ghost row). member_id hiddenOn('edit')
+                            // sehingga nilai lama tetap tersimpan tanpa perlu withTrashed.
+                            // Konsisten dengan check-in massal yang juga mengecualikan trashed.
                             ->relationship(
                                 'member',
                                 'full_name',
                                 fn (Builder $query): Builder => $query
-                                    ->withTrashed()
                                     ->where('church_id', $this->ownerChurchId()),
                             ),
                         Textarea::make('notes')
