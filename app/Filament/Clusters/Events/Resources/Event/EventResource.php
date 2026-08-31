@@ -7,7 +7,6 @@ namespace App\Filament\Clusters\Events\Resources\Event;
 use App\Filament\Clusters\Events\EventsCluster;
 use App\Models\Event;
 use App\Models\Official;
-use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -20,12 +19,10 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -84,20 +81,13 @@ class EventResource extends Resource
                         TextInput::make('location')
                             ->label('Lokasi')
                             ->maxLength(255),
-                        Fieldset::make('Kehadiran')
-                            ->schema([
-                                TextInput::make('attendance_male')
-                                    ->label('Kehadiran Laki-laki')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->minValue(0),
-                                TextInput::make('attendance_female')
-                                    ->label('Kehadiran Perempuan')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->minValue(0),
-                            ])
-                            ->columns(2),
+                        // AC-T2-11: kolom legacy attendance_male/attendance_female disembunyikan
+                        // dari form (tetap ada di DB sebagai fallback data historis).
+                        // Fieldset 'Kehadiran' dihapus; nilai lama dipertahankan via hidden input.
+                        TextInput::make('attendance_male')
+                            ->hidden(),
+                        TextInput::make('attendance_female')
+                            ->hidden(),
                     ]),
 
                 Section::make('Petugas Acara')
@@ -242,7 +232,7 @@ class EventResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\AttendancesRelationManager::class,
         ];
     }
 
