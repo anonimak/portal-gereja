@@ -36,14 +36,37 @@ php -r '
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   echo "[entrypoint] Menjalankan migrate --force..."
   php artisan migrate --force
+else
+  # Worker (queue/scheduler) TIDAK menjalankan migrasi, tapi harus menunggu
+  # sampai service app selesai migrate (tabel `migrations` ada), supaya tidak
+  # crash "table not found" saat start lebih dulu.
+  echo "[entrypoint] Menunggu migrasi service app selesai (tabel migrations)..."
+  php -r '
+    $host = getenv("DB_HOST") ?: "db";
+    $port = (int) (getenv("DB_PORT") ?: 3306);
+    $db   = getenv("DB_DATABASE") ?: "portal_gereja";
+    $user = getenv("DB_USERNAME") ?: "church_user";
+    $pass = getenv("DB_PASSWORD") ?: "";
+    $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
+    for ($i = 0; $i < 90; $i++) {
+      try {
+        $pdo = new PDO($dsn, $user, $pass);
+        $t   = $pdo->query("SHOW TABLES LIKE \"migrations\"")->fetch();
+        if ($t) { echo "[entrypoint] Migrasi selesai, lanjut.\n"; exit(0); }
+      } catch (Throwable $e) { /* db belum siap */ }
+      sleep(2);
+    }
+    fwrite(STDERR, "[entrypoint] Migrasi tidak selesai setelah 180 detik.\n");
+    exit(1);
+  '
 fi
 
 echo "[entrypoint] Membuat symlink storage (public/storage)..."
-php artisan storage:link
+php artisan storage:link || true
 
 if [ "${APP_ENV:-production}" = "production" ] && [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   echo "[entrypoint] Optimasi produksi (config/route/view cache)..."
-  php artisan optimize
+  php artisan optimize || true
 fi
 
 echo "[entrypoint] Siap. Menjalankan: $*"
