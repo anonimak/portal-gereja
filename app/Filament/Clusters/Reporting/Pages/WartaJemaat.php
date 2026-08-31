@@ -245,6 +245,7 @@ class WartaJemaat extends BaseReportPage
                 ['Total Pengeluaran', number_format($expense->sum('amount'), 0, ',', '.')],
                 ['Selisih', number_format($income->sum('amount') - $expense->sum('amount'), 0, ',', '.')],
             ],
+            'options' => ['totalRows' => 1, 'currencyColumns' => [2]],
         ];
 
         return $blocks;

@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 final class ReportExporter
 {
     /**
-     * @param  array<int, array{title: string, headers: array<int, string>, rows: array<int, array<int, mixed>>}>  $sheets
+     * @param  array<int, array{title: string, headers: array<int, string>, rows: array<int, array<int, mixed>>, options?: array{totalRows?: int, currencyColumns?: array<int, int>}}>  $sheets
      */
     public static function excel(string $fileName, array $sheets): BinaryFileResponse
     {

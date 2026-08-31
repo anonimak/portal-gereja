@@ -11,7 +11,6 @@ use App\Support\ChurchContext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Laporan Rapat — rombak total + isi substantif (Fase 3A §8).
@@ -185,13 +184,14 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
                 ['Total Pengeluaran', number_format($data['totalExpenses'], 0, ',', '.')],
                 ['Saldo Akhir', number_format($data['closingBalance'], 0, ',', '.')],
             ],
+            'options' => ['totalRows' => 1, 'currencyColumns' => [2]],
         ];
 
         $incomeRows = $data['income']->map(fn ($i) => [$i['category'], number_format($i['total'], 0, ',', '.')])->all();
-        $blocks[] = ['title' => 'Pemasukan per Kategori', 'headers' => ['Kategori', 'Total (Rp)'], 'rows' => $incomeRows];
+        $blocks[] = ['title' => 'Pemasukan per Kategori', 'headers' => ['Kategori', 'Total (Rp)'], 'rows' => $incomeRows, 'options' => ['currencyColumns' => [2]]];
 
         $expenseRows = $data['expenses']->map(fn ($i) => [$i['category'], number_format($i['total'], 0, ',', '.')])->all();
-        $blocks[] = ['title' => 'Pengeluaran per Kategori', 'headers' => ['Kategori', 'Total (Rp)'], 'rows' => $expenseRows];
+        $blocks[] = ['title' => 'Pengeluaran per Kategori', 'headers' => ['Kategori', 'Total (Rp)'], 'rows' => $expenseRows, 'options' => ['currencyColumns' => [2]]];
 
         foreach ($this->getMinutes() as $minute) {
             $agendaRows = collect($minute->agenda ?: [])->map(fn ($a) => [$a])->all();
@@ -205,7 +205,7 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
         return $blocks;
     }
 
-    public function downloadExcel(): StreamedResponse
+    public function downloadExcel(): BinaryFileResponse
     {
         return ReportExporter::excel($this->reportTitle().'.xlsx', $this->exportBlocks());
     }
