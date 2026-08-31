@@ -52,14 +52,15 @@ class WartaJemaat extends BaseReportPage
         // Scoping church_id dijamin global scope BelongsToChurch (T1) +
         // pemilih gereja super_admin (§9).
 
-        $events = Event::with(['category', 'rosters' => function ($query) {
+        $events = $this->scopeToActiveChurch(Event::with(['category', 'attendances', 'rosters' => function ($query) {
             $query->with(['member', 'official', 'role']);
-        }])
+        }]))
             ->whereBetween('start_datetime', [$startDate->startOfDay(), $endDate->endOfDay()])
             ->orderBy('start_datetime')
             ->get();
 
-        $birthdays = Member::where('status', 'aktif')
+        $birthdays = $this->scopeToActiveChurch(Member::query())
+            ->where('status', 'aktif')
             ->whereNotNull('birth_date')
             ->get()
             ->filter(function ($member) use ($startDate, $endDate) {
@@ -73,14 +74,15 @@ class WartaJemaat extends BaseReportPage
             })
             ->values();
 
-        $transactions = Transaction::whereBetween('transaction_date', [$startDate, $endDate])
+        $transactions = $this->scopeToActiveChurch(Transaction::query())
+            ->whereBetween('transaction_date', [$startDate, $endDate])
             ->orderBy('transaction_date')
             ->get()
             ->groupBy(function ($transaction) {
                 return $transaction->type === 'debit' ? 'Pemasukan' : 'Pengeluaran';
             });
 
-        $sacraments = MemberSacrament::with(['member', 'official'])
+        $sacraments = $this->scopeToActiveChurch(MemberSacrament::with(['member', 'official']))
             ->whereBetween('sacrament_date', [$startDate, $endDate])
             ->orderBy('sacrament_date')
             ->get();

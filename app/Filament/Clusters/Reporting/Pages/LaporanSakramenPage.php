@@ -43,7 +43,7 @@ class LaporanSakramenPage extends BaseReportPage
         $start = \Illuminate\Support\Carbon::parse($month.'-01')->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        $sacraments = MemberSacrament::query()
+        $sacraments = $this->scopeToActiveChurch(MemberSacrament::query())
             ->with(['member', 'official'])
             ->when($this->type, fn ($q) => $q->where('type', $this->type))
             ->whereBetween('sacrament_date', [$start, $end])

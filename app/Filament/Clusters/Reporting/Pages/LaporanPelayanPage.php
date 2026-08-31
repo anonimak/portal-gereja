@@ -44,13 +44,13 @@ class LaporanPelayanPage extends BaseReportPage
         $start = \Illuminate\Support\Carbon::parse($month.'-01')->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        $officials = Official::query()
+        $officials = $this->scopeToActiveChurch(Official::query())
             ->with('member')
             ->when($this->type, fn ($q) => $q->where('type', $this->type))
             ->orderBy('start_date')
             ->get();
 
-        $roster = Event::query()
+        $roster = $this->scopeToActiveChurch(Event::query())
             ->with(['rosters' => fn ($q) => $q->with(['member', 'official', 'role'])])
             ->whereBetween('start_datetime', [$start, $end])
             ->orderBy('start_datetime')

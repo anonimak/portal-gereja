@@ -58,15 +58,12 @@ trait BelongsToChurch
 
             $user = auth()->user();
 
-            // super_admin: hormati pemilih gereja aktif (Fase 3A §9).
-            // - active_church_id terisi → fokus ke gereja itu.
-            // - All (null) → tanpa scope (lihat semua gereja).
+            // super_admin: SELALU melihat semua gereja pada global scope.
+            // Pemilih gereja super_admin (§9) TIDAK mengubah global scope —
+            // hanya diterapkan eksplisit oleh halaman laporan via
+            // HasChurchScope::scopeToActiveChurch() (Vera: LOW — pastikan
+            // hanya untuk laporan, bukan semua resource/CRUD).
             if ($user->role === 'super_admin') {
-                $active = \App\Support\ChurchContext::activeChurchId($user);
-                if ($active !== null) {
-                    $builder->where('church_id', $active);
-                }
-
                 return;
             }
 
@@ -91,15 +88,7 @@ trait BelongsToChurch
                 }
             }
 
-            // 3. super_admin dengan gereja aktif: paksa ke gereja aktif.
-            if ($actor && $actor->role === 'super_admin' && empty($model->church_id)) {
-                $active = \App\Support\ChurchContext::activeChurchId($actor);
-                if ($active !== null) {
-                    $model->church_id = $active;
-                }
-            }
-
-            // 4. Fallback terakhir: gereja aktor.
+            // 3. Fallback terakhir: gereja aktor.
             if (empty($model->church_id) && $actor) {
                 $model->church_id = $actor->church_id;
             }

@@ -29,7 +29,12 @@
             <h2 class="text-lg font-bold mb-2">{{ $fund->name }}</h2>
             @php($income = $fund->transactions->where('type','debit'))
             @php($expense = $fund->transactions->where('type','credit'))
-            <div class="grid grid-cols-3 gap-3 mb-3">
+            @php($openingBalance = (int) ($data['openingBalances'][$fund->id] ?? 0))
+            <div class="grid grid-cols-4 gap-3 mb-3">
+                <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-900/30">
+                    <p class="text-sm text-slate-700 dark:text-slate-300">Saldo Awal</p>
+                    <p class="text-lg font-bold">Rp {{ number_format($openingBalance, 0, ',', '.') }}</p>
+                </div>
                 <div class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/30">
                     <p class="text-sm text-emerald-700">Pemasukan</p>
                     <p class="text-lg font-bold">Rp {{ number_format($income->sum('amount'), 0, ',', '.') }}</p>
@@ -40,7 +45,7 @@
                 </div>
                 <div class="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/30">
                     <p class="text-sm text-amber-700">Saldo Akhir</p>
-                    <p class="text-lg font-bold">Rp {{ number_format($income->sum('amount') - $expense->sum('amount'), 0, ',', '.') }}</p>
+                    <p class="text-lg font-bold">Rp {{ number_format($openingBalance + $income->sum('amount') - $expense->sum('amount'), 0, ',', '.') }}</p>
                 </div>
             </div>
             <table class="w-full text-sm">

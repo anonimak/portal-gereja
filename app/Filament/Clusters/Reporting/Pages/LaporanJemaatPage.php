@@ -41,7 +41,7 @@ class LaporanJemaatPage extends BaseReportPage
 
     public function getReportData(): array
     {
-        $query = Member::with('family')->whereNotNull('church_id');
+        $query = $this->scopeToActiveChurch(Member::with('family')->whereNotNull('church_id'));
 
         if ($this->status) {
             $query->where('status', $this->status);
@@ -83,7 +83,7 @@ class LaporanJemaatPage extends BaseReportPage
         $genderRows = $data['byGender']->map(fn ($count, $gender) => [$gender, $count])->values()->all();
 
         $detailRows = $data['members']->map(function ($m) use ($data) {
-            $familyName = optional($data['familyMap']->get($m->family_id)) ?? '-';
+            $familyName = $data['familyMap']->get($m->family_id, '-');
 
             return [
                 $m->id_card_number,

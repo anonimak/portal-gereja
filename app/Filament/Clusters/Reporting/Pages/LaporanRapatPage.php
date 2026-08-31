@@ -29,6 +29,13 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
 
     protected static ?int $navigationSort = 7;
 
+    // MED-2 Vera: parent (halaman lama) disembunyikan dari navigasi; versi
+    // cluster ini yang tampil di menu Laporan.
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
+    }
+
     public static function canAccess(): bool
     {
         // Matriks §1.1: super_admin, church_admin, finance_admin, report_viewer (view).
@@ -122,7 +129,7 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
     {
         [$start, $end] = $this->periodRange();
 
-        return MeetingMinutes::query()
+        return $this->scopeChurch(MeetingMinutes::query())
             ->with('event')
             ->whereBetween('meeting_date', [$start, $end])
             ->orderBy('meeting_date')

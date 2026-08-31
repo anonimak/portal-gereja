@@ -39,12 +39,15 @@ class LaporanKehadiranPage extends BaseReportPage
 
     public function getReportData(): array
     {
-        $month = $this->month ?: now()->format('Y-m');
+        if (! preg_match('/^\d{4}-\d{2}$/', $month = $this->month ?: now()->format('Y-m'))) {
+            $month = now()->format('Y-m');
+        }
+
         $start = \Illuminate\Support\Carbon::parse($month.'-01')->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        $events = Event::query()
-            ->with(['attendances' => fn ($q) => $q->with('member')->whereBetween('created_at', [$start, $end])])
+        $events = $this->scopeToActiveChurch(Event::query())
+            ->with(['attendances' => fn ($q) => $q->with('member')])
             ->when($this->eventId, fn ($q) => $q->whereKey($this->eventId))
             ->whereBetween('start_datetime', [$start, $end])
             ->orderBy('start_datetime')

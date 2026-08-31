@@ -44,6 +44,16 @@ class LaporanRapatPage extends Page implements HasForms
     protected static ?int $navigationSort = 1;
 
     /**
+     * MED-2 Vera: halaman lama digantikan versi cluster (Fase 3A) —
+     * jangan tampil dobel di menu. Tetap ter-register (route export masih
+     * memakai class ini), hanya disembunyikan dari navigasi.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    /**
      * @var array<string, mixed>
      */
     public array $data = [];
@@ -166,7 +176,7 @@ class LaporanRapatPage extends Page implements HasForms
         // mengunci super_admin ke satu gereja — inkonsisten dengan AC-T1-04/09.
 
         // Fetch events with eager loading
-        $events = Event::query()
+        $events = $this->scopeChurch(Event::query())
             ->whereBetween('start_datetime', [$startDate, $endDate])
             ->with([
                 // MED-2 Vera: eager-load attendances supaya $event->total_attendance
@@ -210,19 +220,25 @@ class LaporanRapatPage extends Page implements HasForms
      * - super_admin → 'Semua Gereja' (data lintas gereja).
      * - church_admin / finance_admin → nama gereja sendiri.
      */
-    private function getChurchName(): string
+    protected function getChurchName(): string
     {
-        $user = auth()->user();
+        // Pakai ChurchContext::churchName() agar pemilih gereja super_admin (§9)
+        // ikut: super_admin 'All' -> 'Semua Gereja', pilih gereja -> nama gereja itu.
+        return \App\Support\ChurchContext::churchName();
+    }
 
-        if (! $user) {
-            return 'Gereja';
+    /**
+     * Terapkan filter gereja aktif (pemilih super_admin §9) pada query laporan.
+     * Hanya untuk laporan — resource CRUD tidak terpengaruh (Vera LOW).
+     */
+    protected function scopeChurch(\Illuminate\Database\Eloquent\Builder $builder): \Illuminate\Database\Eloquent\Builder
+    {
+        $active = \App\Support\ChurchContext::activeChurchId();
+        if ($active !== null) {
+            $builder->where('church_id', $active);
         }
 
-        if ($user->role === 'super_admin') {
-            return 'Semua Gereja';
-        }
-
-        return $user->church?->name ?? 'Gereja';
+        return $builder;
     }
 
     /**
@@ -230,7 +246,7 @@ class LaporanRapatPage extends Page implements HasForms
      */
     private function getOpeningBalance(Carbon $startDate): int
     {
-        $debit = Transaction::query()
+        $debit = $this->scopeChurch(Transaction::query())
             ->where('type', 'debit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');
@@ -250,7 +266,7 @@ class LaporanRapatPage extends Page implements HasForms
      */
     private function getIncomeByCategory(Carbon $startDate, Carbon $endDate): Collection
     {
-        return Transaction::query()
+        return $this->scopeChurch(Transaction::query())
             ->where('type', 'debit')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
@@ -272,7 +288,7 @@ class LaporanRapatPage extends Page implements HasForms
      */
     private function getExpensesByCategory(Carbon $startDate, Carbon $endDate): Collection
     {
-        return Transaction::query()
+        return $this->scopeChurch(Transaction::query())
             ->where('type', 'credit')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
