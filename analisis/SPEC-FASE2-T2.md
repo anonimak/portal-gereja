@@ -2,7 +2,7 @@
 
 **Repo:** `portal-gereja` (Laravel 12 + Filament 5 + Livewire 4, multi-tenant `BelongsToChurch`)
 **Penulis:** Ada (Business Analyst)
-**Status:** DRAFT — siap review Nova → delegasi implementasi ke Byte (branch + PR)
+**Status:** DRAFT v1.1 — amend hasil review Vera (PR #4): strategi UNIQUE×SoftDeletes, klarifikasi AC-T2-10, server-side AC-T2-08. Siap review Nova → delegasi implementasi ke Byte (branch + PR)
 **Dasar:** `REVIEW-FASE1.md` (backlog B: kehadiran masih manual L/P), hasil analisis Fase 1 (top fitur #2 kehadiran per anggota)
 
 ---
@@ -37,13 +37,13 @@ Alasan:
 | `church_id` | FK `churches` (cascadeOnDelete) + index | NOT NULL (tabel baru) |
 | `event_id` | FK `events` (cascadeOnDelete) + index | |
 | `member_id` | FK `members` (cascadeOnDelete) + index | |
-| `status` | enum `hadir` / `tidak_hadir`, default `hadir` | |
-| `checked_in_at` | timestamp, nullable | saat check-in |
-| `checked_in_by` | FK `users` (nullOnDelete), nullable | **audit-only**, tidak masuk FK map |
+| `status` | enum `hadir` / `tidak_hadir`, default `hadir` | **di-set server-side** (lihat AC-T2-08) |
+| `checked_in_at` | timestamp, nullable | saat check-in; **di-set server-side** |
+| `checked_in_by` | FK `users` (nullOnDelete), nullable | **audit-only**, tidak masuk FK map; **di-set server-side** |
 | `notes` | text, nullable | keterangan opsional (sakit, izin, dll.) |
 | `deleted_at` | timestamp, nullable | SoftDeletes (konsisten Task 1) |
 | `created_at` / `updated_at` | timestamps | |
-| **UNIQUE** | `(event_id, member_id)` | anti check-in ganda |
+| **UNIQUE** | `(event_id, member_id)` | anti check-in ganda — **tanpa partial index** (lihat 1.4) |
 
 **Migrasi:** `database/migrations/xxxx_create_event_attendances_table.php` (ikuti urutan migrasi existing, tanggal `2026_03_10_xxxxxx`).
 
@@ -76,6 +76,28 @@ class EventAttendance extends Model
 }
 ```
 
+### 1.4 Strategi UNIQUE(event_id, member_id) × SoftDeletes — **restore-or-create** (BLOCKING dari review Vera)
+
+**Masalah:** `UNIQUE(event_id, member_id)` melarang dua record aktif untuk pasangan yang sama. Tapi karena `EventAttendance` memakai `SoftDeletes`, skenario ini muncul:
+1. Admin check-in member X pada event E → record `(E, X)` aktif.
+2. Admin menghapus check-in X (soft delete) → `deleted_at` terisi, **record tetap ada di DB**.
+3. Admin check-in ulang X pada event E yang sama → `INSERT (E, X)` baru **melanggar UNIQUE** karena record lama (soft-deleted) masih menempati constraint.
+
+**Opsi yang DITOLAK:** partial unique index `UNIQUE(event_id, member_id) WHERE deleted_at IS NULL` — tidak portabel ke MySQL (production), karena MySQL tidak mendukung partial/filtered index.
+
+**Strategi yang dipilih — restore-or-create (wajib):**
+- Saat check-in (satuan maupun massal) menerima `(event_id, member_id)`:
+  - Cari record **termasuk trashed** (`withTrashed()->where([...])->first()`).
+  - **Jika record soft-deleted ditemukan → RESTORE record lama** (bukan create baru):
+    - `deleted_at` di-set NULL;
+    - `status`, `checked_in_at = now()`, `checked_in_by = auth()->id()` diperbarui ke nilai check-in terbaru;
+    - `updated_at` terisi normal.
+    - Audit mencatat event **`restored`** (pola `RecordsAuditTrail` Task 1 sudah menangani event `restored` — strategi ini **tidak memecah audit trail**; justru mempertahankan jejak hidup record lama).
+  - **Jika record aktif ditemukan (deleted_at NULL) → duplikat, dilewati** tanpa error dan tanpa mengubah record (konsisten perilaku massal saat ini).
+  - **Jika tidak ada record → CREATE baru** (audit `created`).
+- `forceDelete` lama lalu create baru **TIDAK dipakai** sebagai jalur utama karena memutus jejak audit (record lama hilang permanen, tercatat `force_deleted` + `created` baru alih-alih `restored`).
+- Aturan ini berlaku di **service layer / helper check-in** (`EventAttendance::checkIn($event, $member, $actor)` atau sejenisnya), dipakai oleh form satuan dan aksi massal — bukan logika di masing-masing UI.
+
 ---
 
 ## 2. Relasi & Scope Tenant
@@ -85,6 +107,7 @@ class EventAttendance extends Model
 - **Scope default:** otomatis ter-scope `church_id` lewat global scope `BelongsToChurch` — non-`super_admin` hanya melihat gereja sendiri, `super_admin` melihat semua. **Tidak boleh** ada query manual `where('church_id', auth()->user()->church_id)` di kode baru (pakai global scope + helper select yang sudah ada).
 - **FK silang:** `churchForeignKeyMap()` memastikan member/event pada record kehadiran **satu gereja** dengan record-nya (`assertChurchForeignKeysConsistent` → 403 bila beda gereja).
 - Relasi `member()`/`event()` memakai relasi Eloquent standar; karena kedua induk juga SoftDeletes, gunakan `withTrashed()` hanya bila perlu menampilkan data historis (mis. rekap member yang sudah di-soft-delete) — di luar default.
+- **Catatan khusus strategi 1.4:** pencarian record untuk restore-or-create **wajib memakai `withTrashed()`** agar record soft-deleted ketemu; scope `BelongsToChurch` tetap berlaku (pencarian tetap dibatasi `church_id` — tidak boleh lintas gereja).
 
 ---
 
@@ -95,8 +118,8 @@ class EventAttendance extends Model
 ### 3.1 Input kehadiran per acara (admin)
 - Tambah **`AttendancesRelationManager`** di `EventResource::getRelations()` → tab **"Kehadiran"**.
 - Tabel: `member.full_name` (searchable), `status` (badge), `checked_in_at` (datetime), `checked_in_by.name`, `notes`.
-- Actions: `CreateAction` (Select member — searchable, ter-scope gereja utk non-super; `status` default `hadir`; `checked_in_at` = `now()`, `checked_in_by` = `auth()->id()` otomatis), `EditAction`, `DeleteAction`, `RestoreAction` (soft delete).
-- **Check-in massal:** header action "Check-in Massal" → multi-select daftar member → submit → buat record untuk member yang **belum** tercatat; duplikat dilewati (bukan error).
+- Actions: `CreateAction` (Select member — searchable, ter-scope gereja utk non-super; `status` default `hadir`; `checked_in_at` = `now()`, `checked_in_by` = `auth()->id()` **otomatis di server — field ini TIDAK ada di form**), `EditAction` (hanya `notes`/`status` — lihat AC-T2-08), `DeleteAction`, `RestoreAction` (soft delete).
+- **Check-in massal:** header action "Check-in Massal" → multi-select daftar member → submit → panggil helper check-in untuk setiap member: member dengan record **aktif** dilewati, member dengan record **soft-deleted** di-restore (1.4), member baru di-create. Duplikat tidak pernah error.
 
 ### 3.2 Rekap kehadiran per member (riwayat)
 - Relation manager **"Riwayat Kehadiran"** di `MemberResource` (atau satu `AttendancesRelationManager` yang dipakai di kedua resource dengan konfigurasi berbeda).
@@ -108,7 +131,7 @@ class EventAttendance extends Model
 
 ### 3.4 Integrasi dengan data lama & Warta
 - Kolom `attendance_male`/`attendance_female` **tidak dihapus** (data historis) — disembunyikan/deprecate di form `EventResource`.
-- Ubah accessor `Event::total_attendance` → jika ada record `attendances` status `hadir` → `count()`; jika kosong → fallback `attendance_male + attendance_female` (data lama). Dengan ini tabel event, CSV LaporanRapat, dan Warta **otomatis** memakai angka baru tanpa perubahan tampilan.
+- Ubah accessor `Event::total_attendance` → **jika event TIDAK punya record attendance sama sekali** → fallback `attendance_male + attendance_female` (data lama); **jika ada ≥1 record** (berapapun statusnya) → `count()` record `status='hadir'` (tanpa fallback). Dengan ini tabel event, CSV LaporanRapat, dan Warta **otomatis** memakai angka baru tanpa perubahan tampilan.
 - `WartaJemaat::getReportData()` cukup menambah eager load `attendances.member` pada query event (opsional, hanya jika mau pecahan L/P di Warta).
 
 ---
@@ -128,7 +151,7 @@ Ikuti pola `TenantPolicy` yang sudah ada:
 ## 5. Acceptance Criteria (GIVEN / WHEN / THEN)
 
 ### Skema & model
-- **AC-T2-01** GIVEN migrasi baru dijalankan, THEN tabel `event_attendances` ada dengan kolom: `church_id`, `event_id`, `member_id`, `status`, `checked_in_at`, `checked_in_by`, `notes`, `deleted_at`, timestamps, FK + index, dan **UNIQUE(event_id, member_id)**.
+- **AC-T2-01** GIVEN migrasi baru dijalankan, THEN tabel `event_attendances` ada dengan kolom: `church_id`, `event_id`, `member_id`, `status`, `checked_in_at`, `checked_in_by`, `notes`, `deleted_at`, timestamps, FK + index, dan **UNIQUE(event_id, member_id)** **tanpa partial index** (karena MySQL prod tidak mendukung partial index — lihat 1.4).
 - **AC-T2-02** GIVEN model `EventAttendance`, THEN ia memakai `BelongsToChurch`, `RecordsAuditTrail`, `SoftDeletes`, `churchForeignKeyMap()` berisi `event_id` & `member_id`, dan `deriveChurchIdFromParent()` membaca `church_id` dari event.
 - **AC-T2-03** GIVEN relasi model, THEN `Event::attendances()` dan `Member::attendances()` ada; `checked_in_by` TIDAK ada di `churchForeignKeyMap()`.
 
@@ -139,9 +162,9 @@ Ikuti pola `TenantPolicy` yang sudah ada:
 
 ### UI & perilaku
 - **AC-T2-07** GIVEN halaman detail event, THEN ada tab/relation manager "Kehadiran" dengan create/edit/delete/restore.
-- **AC-T2-08** GIVEN create attendance, THEN `checked_in_at` terisi otomatis `now()` dan `checked_in_by` = `auth()->id()` (tidak nullable kosong dari form).
-- **AC-T2-09** GIVEN check-in massal, THEN hanya member yang belum punya record pada event tsb yang dibuat; duplikat dilewati tanpa error.
-- **AC-T2-10** GIVEN event yang sudah punya record attendance hadir, THEN `total_attendance` = jumlah record `status='hadir'`; bila tidak ada record, fallback `attendance_male + attendance_female`.
+- **AC-T2-08** GIVEN create/edit attendance via form, THEN `status`, `checked_in_at`, dan `checked_in_by` **TIDAK bisa di-set dari input form** — semuanya di-set server-side: `status` default `hadir` (perubahan hanya via aksi/controller yang divalidasi), `checked_in_at` = `now()` pada saat check-in, `checked_in_by` = `auth()->id()`. Form hanya menerima `member_id` (create) dan `notes` (create/edit); field status/checked_in_at/checked_in_by **tidak ada sebagai input** sehingga user tidak bisa mengisi status seenaknya.
+- **AC-T2-09** GIVEN check-in massal, THEN hanya member yang belum punya record pada event tsb yang dibuat; **member dengan record soft-deleted di-restore (1.4)**; duplikat aktif dilewati tanpa error.
+- **AC-T2-10** GIVEN event yang **TIDAK punya record attendance sama sekali** (tabel `event_attendances` kosong untuk event tsb), THEN `total_attendance` = fallback `attendance_male + attendance_female`. GIVEN event yang **punya ≥1 record attendance** (berapapun statusnya — termasuk semua `tidak_hadir`), THEN `total_attendance` = jumlah record `status='hadir'` dan **fallback legacy TIDAK dipakai**.
 - **AC-T2-11** GIVEN field `attendance_male`/`attendance_female`, THEN tidak lagi tampil di form `EventResource` (hidden/deprecate) tapi kolom DB tetap ada.
 
 ### RBAC
@@ -149,11 +172,11 @@ Ikuti pola `TenantPolicy` yang sudah ada:
 - **AC-T2-13** GIVEN `church_admin`, THEN dapat membuat/mengedit attendance gereja sendiri; URL langsung record gereja lain → 403.
 
 ### Audit & soft delete
-- **AC-T2-14** GIVEN create/update/delete attendance, THEN baris `audit_logs` tercatat (action `created`/`updated`/`deleted`, `user_id`, `church_id`).
+- **AC-T2-14** GIVEN create/update/delete/restore attendance, THEN baris `audit_logs` tercatat (action `created`/`updated`/`deleted`/`restored`, `user_id`, `church_id`).
 - **AC-T2-15** GIVEN attendance di-soft-delete, THEN tidak muncul di list default tapi data tetap ada di DB (`withTrashed()`).
-
-### Laporan
-- **AC-T2-16** GIVEN laporan periode (Warta/LaporanRapat), THEN total kehadiran per event diambil dari `attendances` (status hadir) dengan fallback legacy, tanpa error.
+- **AC-T2-16** GIVEN laporan periode (Warta/LaporanRapat), THEN total kehadiran per event diambil dari `attendances` (status hadir) dengan fallback legacy (hanya saat tidak ada record sama sekali), tanpa error.
+- **AC-T2-17** *(baru — hasil review Vera, BLOCKING)* GIVEN member X punya record attendance **soft-deleted** untuk event E, WHEN check-in ulang X pada E (satuan atau massal), THEN **record lama di-restore** (`deleted_at` = NULL, `status`/`checked_in_at`/`checked_in_by` diperbarui), **tidak ada record baru dibuat**, UNIQUE tidak dilanggar, dan audit mencatat event `restored` (bukan `created` baru).
+- **AC-T2-18** *(baru)* GIVEN member X punya record attendance **aktif** untuk event E, WHEN check-in ulang X pada E (satuan atau massal), THEN duplikat dilewati tanpa error — tidak ada record baru dan record lama tidak diubah.
 
 ### Test yang harus ditulis (feature tests, pola `tests/Feature/*Test.php` + RefreshDatabase)
 1. `test_attendance_create_dan_relasi_terisi` (AC-08)
@@ -166,6 +189,9 @@ Ikuti pola `TenantPolicy` yang sudah ada:
 8. `test_attendance_audit_tercatat` (AC-14)
 9. `test_attendance_finance_admin_ditolak` (AC-12)
 10. `test_attendance_bulk_checkin_skip_duplicate` (AC-09)
+11. `test_attendance_recheckin_setelah_soft_delete_melakukan_restore` (AC-17) — **wajib**: delete → re-check-in → record lama ter-restore, UNIQUE aman, audit `restored` tercatat
+12. `test_attendance_recheckin_duplikat_aktif_dilewati` (AC-18)
+13. `test_attendance_form_tidak_menerima_status_checked_in_dari_input` (AC-08 — verifikasi field tidak ada / diabaikan dari request)
 
 ---
 
@@ -177,8 +203,10 @@ Ikuti pola `TenantPolicy` yang sudah ada:
 - **A4.** `attendance_male`/`attendance_female` tetap di DB sebagai fallback & data historis; tidak dihapus.
 - **A5.** Role tetap 3 (`super_admin`, `church_admin`, `finance_admin`); `finance_admin` **tidak** dapat akses kehadiran.
 - **A6.** `checked_in_by` bersifat audit-only dan tidak divalidasi silang gereja.
-- **A7.** Soft delete & audit trail pada `EventAttendance` mengikuti pola Task 1 (trait `SoftDeletes` + `RecordsAuditTrail`).
+- **A7.** Soft delete & audit trail pada `EventAttendance` mengikuti pola Task 1 (trait `SoftDeletes` + `RecordsAuditTrail`), termasuk pencatatan event `restored`.
 - **A8.** Tidak ada perubahan pada logic keuangan / LaporanRapat di luar penyesuaian accessor `total_attendance`.
+- **A9.** *(baru)* Restore-or-create (1.4) menjadi satu-satunya jalur check-in (satuan & massal) melalui helper/service bersama — bukan logika terpisah di tiap UI. `forceDelete`+create baru tidak dipakai sebagai jalur utama demi menjaga audit trail.
+- **A10.** *(baru)* Pencarian record untuk restore-or-create memakai `withTrashed()` **tetap dalam scope `church_id`** — tidak pernah mencari lintas gereja.
 
 ---
 
@@ -187,6 +215,7 @@ Ikuti pola `TenantPolicy` yang sudah ada:
 **Baru:**
 - `database/migrations/xxxx_create_event_attendances_table.php`
 - `app/Models/EventAttendance.php`
+- `app/Services/EventAttendanceService.php` *(atau helper static di model — tempat logika restore-or-create 1.4)*
 - `app/Policies/EventAttendancePolicy.php`
 - `app/Filament/Clusters/Events/Resources/Event/RelationManagers/AttendancesRelationManager.php`
 - (Opsional) halaman rekap kehadiran per periode + test `tests/Feature/EventAttendanceTest.php`
