@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\Finance\Resources\Transaction;
 
 use App\Filament\Clusters\Finance\FinanceCluster;
+use App\Models\Church;
 use App\Models\Transaction;
+use App\Support\ChurchScope;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -26,6 +28,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class TransactionResource extends Resource
 {
@@ -45,6 +48,15 @@ class TransactionResource extends Resource
     {
         return $schema
             ->schema([
+                // AC-T3-14: church_id hanya untuk super_admin (create lintas gereja).
+                Select::make('church_id')
+                    ->label('Gereja')
+                    ->options(fn (): array => Church::query()->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn (): bool => auth()->user()?->role === 'super_admin')
+                    ->rules([Rule::exists('churches', 'id')])
+                    ->nullable(),
                 Select::make('fund_id')
                     ->required()
                     ->searchable()
@@ -52,7 +64,7 @@ class TransactionResource extends Resource
                     ->relationship(
                         'fund',
                         'name',
-                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                        fn (Builder $query): Builder => ChurchScope::forActorSelect($query)
                     ),
                 Select::make('type')
                     ->required()
@@ -70,8 +82,7 @@ class TransactionResource extends Resource
                     ->relationship(
                         'category',
                         'name',
-                        fn (Builder $query, Get $get) => $query
-                            ->where('church_id', auth()->user()->church_id)
+                        fn (Builder $query, Get $get): Builder => ChurchScope::forActorSelect($query)
                             ->where('type', $get('type'))
                     ),
                 TextInput::make('amount')
@@ -132,7 +143,7 @@ class TransactionResource extends Resource
                     ->relationship(
                         'fund',
                         'name',
-                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                        fn (Builder $query): Builder => ChurchScope::forActorSelect($query)
                     ),
                 SelectFilter::make('type')
                     ->options([

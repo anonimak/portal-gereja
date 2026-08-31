@@ -107,6 +107,9 @@ class UserResource extends Resource
                                         'super_admin' => 'Super Admin',
                                         'church_admin' => 'Church Admin',
                                         'finance_admin' => 'Finance Admin',
+                                        'jemaat_admin' => 'Jemaat Admin',
+                                        'warta_editor' => 'Warta Editor',
+                                        'report_viewer' => 'Report Viewer',
                                     ]
                                     : [
                                         'church_admin' => 'Church Admin',
@@ -114,7 +117,7 @@ class UserResource extends Resource
                                     ]
                             )
                             ->rules([
-                                Rule::in(['super_admin', 'church_admin', 'finance_admin']),
+                                Rule::in(['super_admin', 'church_admin', 'finance_admin', 'jemaat_admin', 'warta_editor', 'report_viewer']),
                             ])
                             ->required()
                             ->default('church_admin'),
@@ -162,12 +165,18 @@ class UserResource extends Resource
                         'super_admin' => 'danger',
                         'church_admin' => 'success',
                         'finance_admin' => 'info',
+                        'jemaat_admin' => 'primary',
+                        'warta_editor' => 'warning',
+                        'report_viewer' => 'gray',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'super_admin' => 'Super Admin',
                         'church_admin' => 'Church Admin',
                         'finance_admin' => 'Finance Admin',
+                        'jemaat_admin' => 'Jemaat Admin',
+                        'warta_editor' => 'Warta Editor',
+                        'report_viewer' => 'Report Viewer',
                         default => $state,
                     }),
 
@@ -184,6 +193,9 @@ class UserResource extends Resource
                         'super_admin' => 'Super Admin',
                         'church_admin' => 'Church Admin',
                         'finance_admin' => 'Finance Admin',
+                        'jemaat_admin' => 'Jemaat Admin',
+                        'warta_editor' => 'Warta Editor',
+                        'report_viewer' => 'Report Viewer',
                     ]),
 
                 SelectFilter::make('church_id')

@@ -6,6 +6,7 @@ namespace App\Filament\Clusters\Demographics\Resources\Members\RelationManagers;
 
 use App\Models\MemberSacrament;
 use App\Models\Official;
+use App\Support\ChurchScope;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
@@ -74,7 +76,16 @@ class SacramentsRelationManager extends RelationManager
                             // membuat Filament memanggil pluck('display_name') → SQL error.
                             // Solusi: title attribute = kolom nyata 'id' + label dari accessor
                             // via getOptionLabelFromRecordUsing (tidak di-pluck).
-                            ->relationship('official', 'id')
+                            // AC-T3-13: opsi parent-derived (sakramen) mengikuti gereja
+                            // OWNER RECORD (member), bukan gereja aktor.
+                            ->relationship(
+                                'official',
+                                'id',
+                                fn (Builder $query): Builder => ChurchScope::forChurch(
+                                    (int) ($this->getOwnerRecord()?->church_id ?? auth()->user()?->church_id ?? 0),
+                                    $query
+                                )
+                            )
                             ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
                         TextInput::make('certificate_number')
                             ->label('Nomor Sertifikat')

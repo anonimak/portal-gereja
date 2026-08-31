@@ -29,7 +29,7 @@ class LaporanRapatPage extends Page implements HasForms
      */
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()?->role, ['super_admin', 'church_admin', 'finance_admin'], true);
+        return auth()->check() && auth()->user()->hasPermission('report.rapat.view');
     }
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\Events\Resources\Event;
 
 use App\Filament\Clusters\Events\EventsCluster;
+use App\Models\Church;
 use App\Models\Event;
 use App\Models\Official;
+use App\Support\ChurchScope;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -27,6 +29,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class EventResource extends Resource
 {
@@ -48,6 +51,16 @@ class EventResource extends Resource
             ->schema([
                 Section::make('Detail Acara')
                     ->schema([
+                        // AC-T3-14: church_id hanya untuk super_admin (create lintas gereja).
+                        // Non-super_admin church_id diisi otomatis oleh BelongsToChurch.
+                        Select::make('church_id')
+                            ->label('Gereja')
+                            ->options(fn (): array => Church::query()->pluck('name', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn (): bool => auth()->user()?->role === 'super_admin')
+                            ->rules([Rule::exists('churches', 'id')])
+                            ->nullable(),
                         TextInput::make('title')
                             ->label('Judul Acara')
                             ->required()
@@ -60,7 +73,7 @@ class EventResource extends Resource
                             ->relationship(
                                 'category',
                                 'name',
-                                fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                fn (Builder $query): Builder => ChurchScope::forActorSelect($query)
                             )
                             ->createOptionForm([
                                 TextInput::make('name')
@@ -83,7 +96,6 @@ class EventResource extends Resource
                             ->maxLength(255),
                         // AC-T2-11: kolom legacy attendance_male/attendance_female disembunyikan
                         // dari form (tetap ada di DB sebagai fallback data historis).
-                        // Fieldset 'Kehadiran' dihapus; nilai lama dipertahankan via hidden input.
                         TextInput::make('attendance_male')
                             ->hidden(),
                         TextInput::make('attendance_female')
@@ -138,9 +150,13 @@ class EventResource extends Resource
                                     ->relationship(
                                         'member',
                                         'full_name',
-                                        // M2 Vera: sertakan member yang di-soft-delete supaya roster
-                                        // dengan member terhapus tetap bisa diedit.
-                                        fn (Builder $query) => $query->withTrashed()->where('church_id', auth()->user()->church_id)
+                                        // AC-T3-13: opsi parent-derived (roster) mengikuti gereja
+                                        // OWNER RECORD (event), bukan gereja aktor. Sertakan member
+                                        // soft-deleted supaya roster historis tetap bisa diedit (M2).
+                                        fn (Builder $query, ?Event $record): Builder => ChurchScope::forChurch(
+                                            (int) ($record?->church_id ?? auth()->user()?->church_id ?? 0),
+                                            $query->withTrashed()
+                                        )
                                     ),
                                 Select::make('official_id')
                                     ->label('Pendeta / Majelis')
@@ -153,7 +169,10 @@ class EventResource extends Resource
                                     ->relationship(
                                         'official',
                                         'id',
-                                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                        fn (Builder $query, ?Event $record): Builder => ChurchScope::forChurch(
+                                            (int) ($record?->church_id ?? auth()->user()?->church_id ?? 0),
+                                            $query
+                                        )
                                     )
                                     ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
                                 Select::make('role_id')
@@ -164,7 +183,10 @@ class EventResource extends Resource
                                     ->relationship(
                                         'role',
                                         'name',
-                                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                        fn (Builder $query, ?Event $record): Builder => ChurchScope::forChurch(
+                                            (int) ($record?->church_id ?? auth()->user()?->church_id ?? 0),
+                                            $query
+                                        )
                                     ),
                             ])
                             ->columns(2)

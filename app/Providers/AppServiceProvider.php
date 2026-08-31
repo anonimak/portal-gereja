@@ -25,6 +25,7 @@ use App\Models\Official;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Observers\ChurchObserver;
+use App\Observers\MemberObserver;
 use App\Observers\UserObserver;
 use App\Policies\BirthRecordPolicy;
 use App\Policies\ChurchPolicy;
@@ -70,6 +71,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Register User observer — guard anti privilege-escalation di level model
         User::observe(UserObserver::class);
+
+        // Register Member observer — LOW-4: soft-delete member menonaktifkan jabatan official
+        Member::observe(MemberObserver::class);
 
         // ---- Register policies (RBAC) ----
         Gate::policy(User::class, UserPolicy::class);

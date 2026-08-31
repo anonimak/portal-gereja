@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Clusters\Demographics\Resources\Members\Schemas;
 
+use App\Models\Church;
+use App\Support\ChurchScope;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class MemberForm
 {
@@ -19,6 +23,16 @@ class MemberForm
                 Section::make('Informasi Jemaat')
                     ->description('Data pribadi dan status keanggotaan jemaat')
                     ->schema([
+                        // AC-T3-14: church_id hanya untuk super_admin (create lintas gereja).
+                        // Non-super_admin church_id diisi otomatis oleh BelongsToChurch.
+                        Select::make('church_id')
+                            ->label('Gereja')
+                            ->options(fn (): array => Church::query()->pluck('name', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn (): bool => auth()->user()?->role === 'super_admin')
+                            ->rules([Rule::exists('churches', 'id')])
+                            ->nullable(),
                         Select::make('family_id')
                             ->label('Keluarga')
                             ->required()
@@ -27,7 +41,7 @@ class MemberForm
                             ->relationship(
                                 'family',
                                 'name',
-                                fn(\Illuminate\Database\Eloquent\Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                fn (Builder $query): Builder => ChurchScope::forActorSelect($query)
                             ),
                         TextInput::make('full_name')
                             ->label('Nama Lengkap')
