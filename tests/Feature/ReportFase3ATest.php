@@ -250,14 +250,23 @@ class ReportFase3ATest extends TestCase
         Member::factory()->create(['family_id' => $familyA, 'church_id' => $this->churchA->id]);
         Member::factory()->create(['family_id' => $familyB, 'church_id' => $this->churchB->id]);
 
-        // All → kedua gereja
+        // Global scope super_admin SELALU melihat semua gereja — pemilih gereja
+        // §9 HANYA berlaku di halaman laporan (LOW Vera), bukan resource CRUD.
         ChurchContext::setActiveChurch(null, $this->superAdmin);
         $this->assertSame(2, Member::query()->count());
 
-        // Pilih gereja A → hanya gereja A
         ChurchContext::setActiveChurch($this->churchA->id, $this->superAdmin);
-        $this->assertSame(1, Member::query()->count());
-        $this->assertSame($this->churchA->id, Member::query()->first()->church_id);
+        $this->assertSame(2, Member::query()->count());
+
+        // Verifikasi selector gereja bekerja pada query laporan (scopeToActiveChurch).
+        $page = new WartaJemaat;
+        $reflection = new \ReflectionMethod($page, 'scopeToActiveChurch');
+        $scopedA = $reflection->invoke($page, Member::query())->pluck('church_id');
+        $this->assertSame([$this->churchA->id], $scopedA->all());
+
+        ChurchContext::setActiveChurch(null, $this->superAdmin);
+        $scopedAll = $reflection->invoke($page, Member::query())->pluck('church_id');
+        $this->assertCount(2, $scopedAll);
     }
 
     public function test_export_pdf_dan_excel_mengembalikan_response(): void
