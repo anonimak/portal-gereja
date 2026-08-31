@@ -110,6 +110,8 @@
 
 ### 2.5 `guidance_templates` — Template Topik Bimbingan
 
+> **Makna:** SATU template = SATU KUMPULAN topik untuk pertemuan 1..N (mis. 12 pertemuan, topik 1..12 tetap). **BUKAN template per pertemuan** — `guidance_template_sessions` hanyalah daftar topik berurutan milik template tsb.
+
 | kolom | tipe | ket |
 |---|---|---|
 | `id` | bigint PK | |
@@ -126,7 +128,9 @@
 - Relasi: `guidanceTemplate.sessions()` (hasMany, ordered `session_number`), `guidanceTemplate.programs()` (hasMany GuidanceProgram).
 - **Seeder default (per gereja):** saat gereja dibuat via `ChurchObserver`, buat 2 template — `pra_sidi` 12 sesi & `pra_nikah` 12 sesi (pola seed kategori keuangan existing).
 
-### 2.6 `guidance_template_sessions` — Topik per sesi template (urut)
+### 2.6 `guidance_template_sessions` — Daftar topik template (urut per pertemuan 1..N)
+
+> Baris-baris tabel ini = **topik pertemuan ke-1 sampai ke-N** dari satu template. Bukan template per pertemuan; `session_number` = nomor urut pertemuan, `topic` = topik tetap pertemuan tsb.
 
 | kolom | tipe | ket |
 |---|---|---|
