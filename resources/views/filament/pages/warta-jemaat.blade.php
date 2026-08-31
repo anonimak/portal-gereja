@@ -1,4 +1,5 @@
 <x-filament-panels::page>
+    @include('filament.pages._church-selector')
 
     @php
         $reportData = $this->getReportData();

@@ -659,4 +659,78 @@
 
     </div>{{-- end .laporan-wrap --}}
 
+
+    {{-- Pemilih gereja super_admin (Fase 3A §9) --}}
+    @include('filament.pages._church-selector')
+
+    <div class="mb-4 flex gap-2">
+        <x-filament::button wire:click="downloadPdf" color="danger">Download PDF</x-filament::button>
+        <x-filament::button wire:click="downloadExcel" color="success">Download Excel</x-filament::button>
+    </div>
+
+    {{-- Notulen Rapat (Fase 3A §8) --}}
+    <div class="laporan-wrap">
+        <div class="card" style="margin-top:20px;">
+            <div class="section-header">
+                <div class="section-header-icon" style="background:#fef3c7;color:#b45309;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h2>Notulen Rapat</h2>
+                    <p>Agenda, peserta, notulen, keputusan</p>
+                </div>
+            </div>
+
+            @if($this->canCreateMinutes())
+                <div style="padding:20px 28px;border-bottom:1px solid #e9ecef;">
+                    <h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#111827;">Tambah Notulen</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <input wire:model="minuteTitle" type="text" placeholder="Judul rapat"
+                               style="padding:8px 12px;border:1px solid #e9ecef;border-radius:10px;font-size:13px;">
+                        <input wire:model="minuteDate" type="date"
+                               style="padding:8px 12px;border:1px solid #e9ecef;border-radius:10px;font-size:13px;">
+                        <textarea wire:model="minuteAgenda" placeholder="Agenda (satu per baris)" rows="3"
+                                  style="padding:8px 12px;border:1px solid #e9ecef;border-radius:10px;font-size:13px;grid-column:span 2;"></textarea>
+                        <textarea wire:model="minuteNotes" placeholder="Notulen / jalannya rapat" rows="3"
+                                  style="padding:8px 12px;border:1px solid #e9ecef;border-radius:10px;font-size:13px;grid-column:span 2;"></textarea>
+                        <textarea wire:model="minuteDecisions" placeholder="Keputusan (satu per baris)" rows="3"
+                                  style="padding:8px 12px;border:1px solid #e9ecef;border-radius:10px;font-size:13px;grid-column:span 2;"></textarea>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <x-filament::button wire:click="saveMinute" color="primary">Simpan Notulen</x-filament::button>
+                    </div>
+                </div>
+            @endif
+
+            <div style="padding:20px 28px;">
+                @forelse($this->getMinutes() as $minute)
+                    <div style="border:1px solid #e9ecef;border-radius:12px;padding:16px;margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <h4 style="font-size:14px;font-weight:700;color:#111827;margin:0;">{{ $minute->title }}</h4>
+                            <span style="font-size:12px;color:#9ca3af;">{{ $minute->meeting_date?->format('d M Y') }}</span>
+                        </div>
+                        @if($minute->agenda)
+                            <p style="font-size:12px;font-weight:600;color:#6b7280;margin:8px 0 4px;">Agenda</p>
+                            <ul style="margin:0 0 8px;padding-left:18px;font-size:13px;color:#374151;">
+                                @foreach($minute->agenda as $item)<li>{{ $item }}</li>@endforeach
+                            </ul>
+                        @endif
+                        @if($minute->notes)
+                            <p style="font-size:12px;font-weight:600;color:#6b7280;margin:8px 0 4px;">Notulen</p>
+                            <p style="font-size:13px;color:#374151;white-space:pre-wrap;margin:0;">{{ $minute->notes }}</p>
+                        @endif
+                        @if($minute->decisions)
+                            <p style="font-size:12px;font-weight:600;color:#6b7280;margin:8px 0 4px;">Keputusan</p>
+                            <ul style="margin:0;padding-left:18px;font-size:13px;color:#374151;">
+                                @foreach($minute->decisions as $d)<li>{{ $d }}</li>@endforeach
+                            </ul>
+                        @endif
+                    </div>
+                @empty
+                    <p style="font-size:13px;color:#9ca3af;">Belum ada notulen pada periode ini.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
 </x-filament-panels::page>

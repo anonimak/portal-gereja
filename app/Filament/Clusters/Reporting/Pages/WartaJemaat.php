@@ -4,34 +4,30 @@ declare(strict_types=1);
 
 namespace App\Filament\Clusters\Reporting\Pages;
 
-use App\Filament\Clusters\Reporting\ReportingCluster;
 use App\Models\Event;
 use App\Models\Member;
 use App\Models\MemberSacrament;
 use App\Models\Transaction;
 use BackedEnum;
-use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
-class WartaJemaat extends Page
+class WartaJemaat extends BaseReportPage
 {
     protected string $view = 'filament.pages.warta-jemaat';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-newspaper';
 
-    protected static ?string $cluster = ReportingCluster::class;
+    protected static ?string $navigationLabel = 'Warta Jemaat';
+
+    protected static ?string $title = 'Warta Jemaat';
 
     protected static ?int $navigationSort = 1;
 
-    /**
-     * Batasan role halaman (AC-T2-06 — BLOCK-3 Vera).
-     * Warta berisi data jemaat/event/sakramen + ringkasan keuangan → super_admin & church_admin.
-     * finance_admin TIDAK dibuka ke Warta (bukan murni laporan keuangan).
-     */
-    public static function canAccess(): bool
+    protected static function allowedRoles(): array
     {
-        return in_array(auth()->user()?->role, ['super_admin', 'church_admin'], true);
+        // Matriks §1.1: super_admin, church_admin, warta_editor.
+        return ['super_admin', 'church_admin', 'warta_editor'];
     }
 
     public ?Carbon $startDate = null;
@@ -40,6 +36,8 @@ class WartaJemaat extends Page
 
     public function mount(): void
     {
+        parent::mount();
+
         // Default: minggu berjalan (Senin–Minggu). startOfWeek(SUNDAY) dipakai agar
         // konsisten dengan test WartaJemaatTest (weekStart = startOfWeek(Carbon::SUNDAY)).
         $now = Carbon::now();
@@ -101,6 +99,11 @@ class WartaJemaat extends Page
         return Route::has('warta-jemaat.export-excel');
     }
 
+    protected function reportTitle(): string
+    {
+        return 'Warta-Jemaat-'.$this->startDate?->format('d-m-Y').'_'.$this->endDate?->format('d-m-Y');
+    }
+
     /**
      * Data tunggal untuk tampilan & export (AC-3A-02: single source).
      *
@@ -111,25 +114,25 @@ class WartaJemaat extends Page
         $startDate = $this->startDate ?? Carbon::now()->startOfWeek(Carbon::SUNDAY);
         $endDate = $this->endDate ?? Carbon::now()->endOfWeek(Carbon::SATURDAY);
 
-        // Scoping church_id TIDAK ditulis eksplisit DI SINI — dijamin oleh global scope
-        // BelongsToChurch (T1): non-super_admin otomatis di-scope ke gereja sendiri,
-        // super_admin melihat SEMUA gereja (AC-T1-04/09 — HIGH-1 Vera).
+        // Scoping church_id dijamin global scope BelongsToChurch (T1) +
+        // pemilih gereja super_admin (§9) via scopeToActiveChurch().
 
         // Agenda / jadwal ibadah + pelayanan. Eager-load attendances supaya
         // $event->total_attendance memakai relasi (MED-2 Vera, tanpa N+1).
-        $events = Event::with([
+        $events = $this->scopeToActiveChurch(Event::with([
             'category',
             'attendances',
             'rosters' => function ($query) {
                 $query->with(['member', 'official', 'role']);
             },
-        ])
+        ]))
             ->whereBetween('start_datetime', [$startDate->startOfDay(), $endDate->endOfDay()])
             ->orderBy('start_datetime')
             ->get();
 
         // Ulang tahun dalam rentang periode (status aktif, null-safe).
-        $birthdays = Member::where('status', 'aktif')
+        $birthdays = $this->scopeToActiveChurch(Member::query())
+            ->where('status', 'aktif')
             ->whereNotNull('birth_date')
             ->get()
             ->filter(function ($member) use ($startDate, $endDate) {
@@ -150,7 +153,7 @@ class WartaJemaat extends Page
             ->values();
 
         // Transaksi periode (grouped pemasukan/pengeluaran).
-        $transactions = Transaction::with(['fund', 'category'])
+        $transactions = $this->scopeToActiveChurch(Transaction::with(['fund', 'category']))
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->orderBy('transaction_date')
             ->get()
@@ -159,7 +162,7 @@ class WartaJemaat extends Page
             });
 
         // Sakramen / berita jemaat periode.
-        $sacraments = MemberSacrament::with(['member', 'official'])
+        $sacraments = $this->scopeToActiveChurch(MemberSacrament::with(['member', 'official']))
             ->whereBetween('sacrament_date', [$startDate, $endDate])
             ->orderBy('sacrament_date')
             ->get();
@@ -176,7 +179,7 @@ class WartaJemaat extends Page
             'sacraments' => $sacraments,
             'startDate' => $startDate,
             'endDate' => $endDate,
-            'churchName' => $this->getChurchName(),
+            'churchName' => $this->activeChurchName(),
             'churchAddress' => $this->getChurchAddress(),
             'openingBalance' => $openingBalance,
             'totalIncome' => $totalIncome,
@@ -187,24 +190,64 @@ class WartaJemaat extends Page
         ];
     }
 
-    /**
-     * Nama gereja pada kop warta.
-     * - super_admin → 'Semua Gereja' (data lintas gereja).
-     * - church_admin → nama gereja sendiri.
-     */
-    private function getChurchName(): string
+    protected function exportBlocks(): array
     {
-        $user = auth()->user();
+        $data = $this->getReportData();
 
-        if (! $user) {
-            return 'Gereja';
-        }
+        $blocks = [];
 
-        if ($user->role === 'super_admin') {
-            return 'Semua Gereja';
-        }
+        // Jadwal Ibadah & Pelayanan
+        $rows = $data['events']->map(fn (Event $event) => [
+            $event->start_datetime?->format('d/m/Y H:i'),
+            $event->name,
+            $event->location,
+            $event->rosters->map(fn ($r) => $r->member?->full_name ?? $r->official?->display_name)->filter()->implode(', '),
+            (string) $event->total_attendance,
+        ])->all();
 
-        return $user->church?->name ?? 'Gereja';
+        $blocks[] = [
+            'title' => 'Jadwal Ibadah & Pelayanan',
+            'headers' => ['Waktu', 'Acara', 'Lokasi', 'Petugas', 'Kehadiran'],
+            'rows' => $rows,
+        ];
+
+        // Ulang Tahun
+        $blocks[] = [
+            'title' => 'Ulang Tahun Jemaat',
+            'headers' => ['Nama', 'Tanggal'],
+            'rows' => $data['birthdays']->map(fn ($m) => [
+                $m->full_name,
+                Carbon::parse($m->birth_date)->format('d/m/Y'),
+            ])->all(),
+        ];
+
+        // Sakramen
+        $blocks[] = [
+            'title' => 'Perayaan Sakramen',
+            'headers' => ['Tanggal', 'Jenis', 'Nama', 'Pelayan', 'No. Sertifikat'],
+            'rows' => $data['sacraments']->map(fn ($s) => [
+                $s->sacrament_date?->format('d/m/Y'),
+                $s->type,
+                $s->member?->full_name,
+                $s->official?->display_name,
+                $s->certificate_number,
+            ])->all(),
+        ];
+
+        // Keuangan Ringkas
+        $income = $data['transactions']->get('Pemasukan', collect());
+        $expense = $data['transactions']->get('Pengeluaran', collect());
+        $blocks[] = [
+            'title' => 'Laporan Keuangan Ringkas',
+            'headers' => ['Keterangan', 'Jumlah (Rp)'],
+            'rows' => [
+                ['Total Pemasukan', number_format($income->sum('amount'), 0, ',', '.')],
+                ['Total Pengeluaran', number_format($expense->sum('amount'), 0, ',', '.')],
+                ['Selisih', number_format($income->sum('amount') - $expense->sum('amount'), 0, ',', '.')],
+            ],
+        ];
+
+        return $blocks;
     }
 
     /**

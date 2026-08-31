@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Pages\LaporanRapatPage;
+use App\Http\Controllers\WartaJemaatExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,3 +24,9 @@ Route::post('/admin/laporan-rapat/export-excel', function () {
 
     return $page->exportToExcel();
 })->middleware(['auth', 'verified'])->name('laporan-rapat.export-excel');
+
+// Fase 3A — export Warta Jemaat (kontrak Pixel #14: POST + start_date/end_date).
+Route::middleware(['auth', 'verified'])->prefix('admin/warta-jemaat')->group(function () {
+    Route::post('/export-pdf', [WartaJemaatExportController::class, 'pdf'])->name('warta-jemaat.export-pdf');
+    Route::post('/export-excel', [WartaJemaatExportController::class, 'excel'])->name('warta-jemaat.export-excel');
+});

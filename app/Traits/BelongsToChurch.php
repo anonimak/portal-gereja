@@ -52,9 +52,22 @@ trait BelongsToChurch
     public static function bootBelongsToChurch(): void
     {
         static::addGlobalScope('church', function (Builder $builder) {
-            if (auth()->check() && auth()->user()->role !== 'super_admin') {
-                $builder->where('church_id', auth()->user()->church_id);
+            if (! auth()->check()) {
+                return;
             }
+
+            $user = auth()->user();
+
+            // super_admin: SELALU melihat semua gereja pada global scope.
+            // Pemilih gereja super_admin (§9) TIDAK mengubah global scope —
+            // hanya diterapkan eksplisit oleh halaman laporan via
+            // HasChurchScope::scopeToActiveChurch() (Vera: LOW — pastikan
+            // hanya untuk laporan, bukan semua resource/CRUD).
+            if ($user->role === 'super_admin') {
+                return;
+            }
+
+            $builder->where('church_id', $user->church_id);
         });
 
         static::creating(function ($model) {
