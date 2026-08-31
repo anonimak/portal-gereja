@@ -24,7 +24,8 @@ class CashFlowChart extends ChartWidget
             $expenseByMonth[$month] = 0;
         }
 
-        // Fetch all transactions for the current year
+        // Scoping church_id dijamin global scope BelongsToChurch (T1/HIGH-1 Vera):
+        // church_admin/finance_admin → gereja sendiri; super_admin → SEMUA gereja.
         $transactions = Transaction::whereYear('transaction_date', $year)
             ->get(['transaction_date', 'type', 'amount']);
 

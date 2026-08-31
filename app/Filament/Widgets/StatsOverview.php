@@ -17,6 +17,12 @@ class StatsOverview extends StatsOverviewWidget
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
 
+        // Scoping church_id dijamin global scope BelongsToChurch (T1/HIGH-1 Vera):
+        // - church_admin/finance_admin → hanya data gereja sendiri.
+        // - super_admin → SEMUA gereja (tanpa filter gereja seed-nya).
+        // Tidak menulis ->where('church_id', auth()->user()->church_id) agar
+        // super_admin tidak ter-scope ke gereja sendiri.
+
         $activeMembersCount = Member::where('status', 'aktif')->count();
 
         $incomeThisMonth = Transaction::where('type', 'debit')
@@ -42,6 +48,6 @@ class StatsOverview extends StatsOverviewWidget
 
     private function formatCurrency(int $amount): string
     {
-        return 'Rp' . number_format($amount, 0, ',', '.');
+        return 'Rp'.number_format($amount, 0, ',', '.');
     }
 }

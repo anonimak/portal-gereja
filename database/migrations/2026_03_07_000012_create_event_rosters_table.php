@@ -11,9 +11,12 @@ return new class extends Migration {
     {
         Schema::create('event_rosters', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('event_id')->constrained('events')->cascadeOnDelete()->index();
-            $table->foreignId('member_id')->constrained('members')->cascadeOnDelete()->index();
-            $table->foreignId('role_id')->constrained('ministry_roles')->cascadeOnDelete()->index();
+            $table->foreignId('event_id')->constrained('events')->cascadeOnDelete();
+            $table->index('event_id');
+            $table->foreignId('member_id')->constrained('members')->cascadeOnDelete();
+            $table->index('member_id');
+            $table->foreignId('role_id')->constrained('ministry_roles')->cascadeOnDelete();
+            $table->index('role_id');
             $table->timestamps();
         });
     }

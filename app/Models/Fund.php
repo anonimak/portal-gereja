@@ -16,6 +16,7 @@ class Fund extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'church_id',
         'name',
     ];
 }

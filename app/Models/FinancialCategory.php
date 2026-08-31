@@ -16,6 +16,7 @@ class FinancialCategory extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'church_id',
         'name',
         'type',
     ];

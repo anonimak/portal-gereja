@@ -17,6 +17,7 @@ class Family extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'church_id',
         'family_number',
         'name',
         'address',

@@ -23,21 +23,21 @@ class FinancialCategoryFactory extends Factory
         return [
             'church_id' => Church::factory(),
             'name' => $this->faker->word(),
-            'type' => $this->faker->randomElement(['in', 'out']),
+            'type' => $this->faker->randomElement(['debit', 'credit']),
         ];
     }
 
     public function income(): static
     {
         return $this->state(fn(array $attributes) => [
-            'type' => 'in',
+            'type' => 'debit',
         ]);
     }
 
     public function expense(): static
     {
         return $this->state(fn(array $attributes) => [
-            'type' => 'out',
+            'type' => 'credit',
         ]);
     }
 }

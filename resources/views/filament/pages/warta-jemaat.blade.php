@@ -118,9 +118,9 @@
                                                         <span
                                                             class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                                                         <span
-                                                            class="font-medium text-gray-900 dark:text-white">{{ $roster->member->full_name }}</span>
+                                                            class="font-medium text-gray-900 dark:text-white">{{ $roster->member?->full_name ?? $roster->official?->display_name ?? 'Petugas' }}</span>
                                                         <span
-                                                            class="text-gray-500 dark:text-gray-400 text-xs">({{ $roster->role->name }})</span>
+                                                            class="text-gray-500 dark:text-gray-400 text-xs">({{ $roster->role->name ?? 'Petugas' }})</span>
                                                     </li>
                                                 @endforeach
                                             </ul>
@@ -167,9 +167,11 @@
                                         <h3 class="font-semibold text-gray-900 dark:text-white text-sm truncate">
                                             {{ $member->full_name }}
                                         </h3>
-                                        <p class="text-sm text-pink-600 dark:text-pink-400 font-medium mt-1">
-                                            {{ \Illuminate\Support\Carbon::parse($member->birth_date)->format('d F') }}
-                                        </p>
+                                        @if ($member->birth_date)
+                                            <p class="text-sm text-pink-600 dark:text-pink-400 font-medium mt-1">
+                                                {{ \Illuminate\Support\Carbon::parse($member->birth_date)->format('d F') }}
+                                            </p>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -226,12 +228,12 @@
                                             </span>
                                         </div>
                                         <h3 class="font-semibold text-lg text-gray-900 dark:text-white">
-                                            {{ $sacrament->member->full_name }}
+                                            {{ $sacrament->member?->full_name ?? 'Jemaat' }}
                                         </h3>
                                         <div class="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                            @if ($sacrament->minister_name)
+                                            @if ($sacrament->official?->display_name)
                                                 <p><span class="font-medium">Pendeta:</span>
-                                                    {{ $sacrament->minister_name }}</p>
+                                                    {{ $sacrament->official->display_name }}</p>
                                             @endif
                                             @if ($sacrament->certificate_number)
                                                 <p><span class="font-medium">Sertifikat:</span>

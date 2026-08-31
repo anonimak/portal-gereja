@@ -21,7 +21,6 @@ use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -100,16 +99,18 @@ class TransactionResource extends Resource
                 TextColumn::make('category.name')
                     ->searchable()
                     ->sortable(),
-                BadgeColumn::make('type')
+                TextColumn::make('type')
+                    ->badge()
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'debit' => 'Pemasukan',
                         'credit' => 'Pengeluaran',
                         default => $state,
                     })
-                    ->colors([
-                        'success' => 'debit',
-                        'danger' => 'credit',
-                    ]),
+                    ->color(fn(string $state): string => match ($state) {
+                        'debit' => 'success',
+                        'credit' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('amount')
                     ->money('idr', locale: 'id')
                     ->sortable(),

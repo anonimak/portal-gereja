@@ -11,7 +11,8 @@ return new class extends Migration {
     {
         Schema::table('event_rosters', function (Blueprint $table): void {
             $table->foreignId('member_id')->nullable()->change();
-            $table->foreignId('official_id')->nullable()->after('role_id')->constrained('officials')->cascadeOnDelete()->index();
+            $table->foreignId('official_id')->nullable()->after('role_id')->constrained('officials')->cascadeOnDelete();
+            $table->index('official_id');
         });
     }
 

@@ -18,7 +18,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -44,8 +43,8 @@ class FinancialCategoryResource extends Resource
                 Select::make('type')
                     ->required()
                     ->options([
-                        'in' => 'Pemasukan',
-                        'out' => 'Pengeluaran',
+                        'debit' => 'Pemasukan (Debit)',
+                        'credit' => 'Pengeluaran (Kredit)',
                     ])
                     ->live(),
                 TextInput::make('name')
@@ -62,16 +61,17 @@ class FinancialCategoryResource extends Resource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('type')
+                    ->badge()
                     ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'in' => 'Pemasukan',
-                        'out' => 'Pengeluaran',
+                        'debit' => 'Pemasukan',
+                        'credit' => 'Pengeluaran',
                         default => $state,
                     })
-                    ->colors([
-                        'success' => 'in',
-                        'danger' => 'out',
-                    ])
-                    ->badge(fn(FinancialCategory $record): bool => $record->type === 'in')
+                    ->color(fn(string $state): string => match ($state) {
+                        'debit' => 'success',
+                        'credit' => 'danger',
+                        default => 'gray',
+                    })
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()

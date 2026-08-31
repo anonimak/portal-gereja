@@ -11,7 +11,8 @@ return new class extends Migration {
     {
         Schema::create('member_sacraments', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('member_id')->constrained('members')->cascadeOnDelete()->index();
+            $table->foreignId('member_id')->constrained('members')->cascadeOnDelete();
+            $table->index('member_id');
             $table->enum('type', ['penyerahan', 'baptis_anak', 'sidi', 'baptis_dewasa', 'nikah']);
             $table->date('sacrament_date');
             $table->string('minister_name')->nullable();

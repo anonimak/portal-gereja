@@ -15,4 +15,12 @@ class SystemCluster extends Cluster
     protected static ?string $navigationLabel = 'System';
 
     protected static ?string $clusterBreadcrumb = 'System';
+
+    /**
+     * Cluster System (Church, User, Official) HANYA untuk Super Admin.
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->role === 'super_admin';
+    }
 }

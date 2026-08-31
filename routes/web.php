@@ -7,9 +7,19 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Export routes
+// Nama route 'login' untuk middleware auth — redirect ke halaman login Filament.
+Route::redirect('/login', '/admin/login')->name('login');
+
+// Export routes — hanya user terautentikasi dengan role panel yang sah.
 Route::post('/admin/laporan-rapat/export-excel', function () {
+    $user = auth()->user();
+
+    // Guard: hanya role panel yang diizinkan mengekspor laporan.
+    abort_unless(in_array($user->role, ['super_admin', 'church_admin', 'finance_admin'], true), 403, 'Tidak diizinkan mengekspor laporan.');
+
+    // Isi data periode langsung (tanpa lifecycle Livewire) — baca dari request.
     $page = app(LaporanRapatPage::class);
-    $page->form->fill(request()->only(['period_type', 'month', 'quarter', 'year']));
+    $page->data = request()->only(['period_type', 'month', 'quarter', 'year']);
+
     return $page->exportToExcel();
 })->middleware(['auth', 'verified'])->name('laporan-rapat.export-excel');

@@ -11,7 +11,8 @@ return new class extends Migration {
     {
         Schema::create('families', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id');
             $table->string('family_number');
             $table->string('name');
             $table->text('address');

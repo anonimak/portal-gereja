@@ -21,12 +21,12 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserResource extends Resource
 {
@@ -41,6 +41,34 @@ class UserResource extends Resource
     protected static ?string $cluster = SystemCluster::class;
 
     protected static ?int $navigationSort = 20;
+
+    /**
+     * Hanya Super Admin yang dapat mengelola user.
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->role === 'super_admin';
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canEdit($record): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canDelete($record): bool
+    {
+        return static::canViewAny() && $record?->id !== auth()->id();
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return static::canViewAny();
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -66,6 +94,7 @@ class UserResource extends Resource
                             ->label('Password')
                             ->password()
                             ->dehydrateStateUsing(fn(null|string $state): null|string => filled($state) ? Hash::make($state) : null)
+                            ->dehydrated(fn(null|string $state): bool => filled($state))
                             ->required(fn(string $operation): bool => $operation === 'create')
                             ->hidden(fn(string $operation): bool => $operation === 'edit')
                             ->maxLength(255),
@@ -84,6 +113,9 @@ class UserResource extends Resource
                                         'finance_admin' => 'Finance Admin',
                                     ]
                             )
+                            ->rules([
+                                Rule::in(['super_admin', 'church_admin', 'finance_admin']),
+                            ])
                             ->required()
                             ->default('church_admin'),
 
@@ -93,6 +125,9 @@ class UserResource extends Resource
                             ->options(fn(): array => Church::query()->pluck('name', 'id')->toArray())
                             ->searchable()
                             ->visible(fn(): bool => $isSuperAdmin)
+                            ->rules([
+                                Rule::exists('churches', 'id'),
+                            ])
                             ->nullable(),
                     ]),
             ]);
@@ -119,14 +154,16 @@ class UserResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                BadgeColumn::make('role')
+                TextColumn::make('role')
                     ->label('Role')
+                    ->badge()
                     ->sortable()
-                    ->colors([
-                        'danger' => 'super_admin',
-                        'success' => 'church_admin',
-                        'info' => 'finance_admin',
-                    ])
+                    ->color(fn(string $state): string => match ($state) {
+                        'super_admin' => 'danger',
+                        'church_admin' => 'success',
+                        'finance_admin' => 'info',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
                         'super_admin' => 'Super Admin',
                         'church_admin' => 'Church Admin',
@@ -163,6 +200,13 @@ class UserResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
     }
 
     public static function getPages(): array

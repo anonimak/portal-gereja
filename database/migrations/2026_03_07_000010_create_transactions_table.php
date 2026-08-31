@@ -11,9 +11,12 @@ return new class extends Migration {
     {
         Schema::create('transactions', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
-            $table->foreignId('fund_id')->constrained('funds')->cascadeOnDelete()->index();
-            $table->foreignId('category_id')->constrained('financial_categories')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id');
+            $table->foreignId('fund_id')->constrained('funds')->cascadeOnDelete();
+            $table->index('fund_id');
+            $table->foreignId('category_id')->constrained('financial_categories')->cascadeOnDelete();
+            $table->index('category_id');
             $table->enum('type', ['debit', 'credit']);
             $table->bigInteger('amount');
             $table->date('transaction_date')->index();

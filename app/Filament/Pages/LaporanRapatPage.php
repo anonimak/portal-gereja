@@ -12,15 +12,24 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
 use UnitEnum;
 
 class LaporanRapatPage extends Page implements HasForms
 {
     use InteractsWithForms;
+
+    /**
+     * Batasan role halaman (AC-T2-06 — BLOCK-3 Vera).
+     * Laporan Rapat & Keuangan boleh diakses finance_admin (laporan keuangan).
+     */
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()?->role, ['super_admin', 'church_admin', 'finance_admin'], true);
+    }
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
@@ -59,7 +68,7 @@ class LaporanRapatPage extends Page implements HasForms
         ]);
     }
 
-    public function form(Schema  $form): Schema
+    public function form(Schema $form): Schema
     {
         $currentYear = (int) now()->year;
 
@@ -70,7 +79,7 @@ class LaporanRapatPage extends Page implements HasForms
                         Select::make('period_type')
                             ->label('Tipe Periode')
                             ->options([
-                                'monthly'   => 'Bulanan',
+                                'monthly' => 'Bulanan',
                                 'quarterly' => 'Pleno Triwulan',
                             ])
                             ->live()
@@ -94,8 +103,8 @@ class LaporanRapatPage extends Page implements HasForms
                                 12 => 'Desember',
                             ])
                             ->live()
-                            ->visible(fn(Get $get) => $get('period_type') === 'monthly')
-                            ->required(fn(Get $get) => $get('period_type') === 'monthly')
+                            ->visible(fn (Get $get) => $get('period_type') === 'monthly')
+                            ->required(fn (Get $get) => $get('period_type') === 'monthly')
                             ->default((int) now()->month),
 
                         Select::make('quarter')
@@ -107,8 +116,8 @@ class LaporanRapatPage extends Page implements HasForms
                                 4 => 'Q4 (Okt–Des)',
                             ])
                             ->live()
-                            ->visible(fn(Get $get) => $get('period_type') === 'quarterly')
-                            ->required(fn(Get $get) => $get('period_type') === 'quarterly')
+                            ->visible(fn (Get $get) => $get('period_type') === 'quarterly')
+                            ->required(fn (Get $get) => $get('period_type') === 'quarterly')
                             ->default((int) ceil(now()->month / 3)),
 
                         Select::make('year')
@@ -133,31 +142,35 @@ class LaporanRapatPage extends Page implements HasForms
      */
     public function getReportData(): array
     {
-        $data = $this->form->getRawState();
-        // Fallback jika form belum ter-fill
-        $periodType = $data['period_type'] ?? 'monthly';
-        $year       = (int) ($data['year']    ?? now()->year);
-        $month      = (int) ($data['month']   ?? now()->month);
-        $quarter    = (int) ($data['quarter'] ?? ceil(now()->month / 3));
-
-        $churchId = auth()->user()->church_id;
+        // Baca dari properti $data (ter-sync dengan form via statePath('data') di Livewire,
+        // dan bisa diisi langsung dari route export tanpa lifecycle Livewire).
+        $periodType = $this->data['period_type'] ?? 'monthly';
+        $year = (int) ($this->data['year'] ?? now()->year);
+        $month = (int) ($this->data['month'] ?? now()->month);
+        $quarter = (int) ($this->data['quarter'] ?? ceil(now()->month / 3));
 
         if ($periodType === 'monthly') {
             $startDate = Carbon::create($year, $month, 1)->startOfDay();
-            $endDate   = $startDate->clone()->endOfMonth()->endOfDay();
+            $endDate = $startDate->clone()->endOfMonth()->endOfDay();
         } else {
             $startMonth = ($quarter - 1) * 3 + 1;
-            $startDate  = Carbon::create($year, $startMonth, 1)->startOfDay();
-            $endDate    = $startDate->clone()->addMonths(2)->endOfMonth()->endOfDay();
+            $startDate = Carbon::create($year, $startMonth, 1)->startOfDay();
+            $endDate = $startDate->clone()->addMonths(2)->endOfMonth()->endOfDay();
         }
+
+        // Scoping church_id TIDAK ditulis eksplisit DI SINI — dijamin global scope
+        // BelongsToChurch (HIGH-1 Vera, konsisten dengan WartaJemaat/Stats/CashFlow):
+        // - church_admin / finance_admin → hanya data gereja sendiri.
+        // - super_admin → SEMUA gereja (tanpa ter-scope ke gereja seed-nya).
+        // Menambahkan ->where('church_id', auth()->user()->church_id) justru akan
+        // mengunci super_admin ke satu gereja — inkonsisten dengan AC-T1-04/09.
 
         // Fetch events with eager loading
         $events = Event::query()
-            ->where('church_id', $churchId)
             ->whereBetween('start_datetime', [$startDate, $endDate])
             ->with([
                 'category',
-                'rosters' => fn($q) => $q->with([
+                'rosters' => fn ($q) => $q->with([
                     'role',
                     'member',
                     'official.member',
@@ -167,42 +180,59 @@ class LaporanRapatPage extends Page implements HasForms
             ->get();
 
         // Fetch financial data
-        $openingBalance = $this->getOpeningBalance($churchId, $startDate);
-        $income = $this->getIncomeByCategory($churchId, $startDate, $endDate);
-        $expenses = $this->getExpensesByCategory($churchId, $startDate, $endDate);
+        $openingBalance = $this->getOpeningBalance($startDate);
+        $income = $this->getIncomeByCategory($startDate, $endDate);
+        $expenses = $this->getExpensesByCategory($startDate, $endDate);
         $totalIncome = $income->sum('total');
         $totalExpenses = $expenses->sum('total');
         $closingBalance = $openingBalance + $totalIncome - $totalExpenses;
 
         return [
-            // gunakan variabel lokal, bukan $data langsung
-            'startDate'      => $startDate,
-            'endDate'        => $endDate,
-            'events'         => $events,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'events' => $events,
             'openingBalance' => $openingBalance,
-            'income'         => $income,
-            'expenses'       => $expenses,
-            'totalIncome'    => $totalIncome,
-            'totalExpenses'  => $totalExpenses,
+            'income' => $income,
+            'expenses' => $expenses,
+            'totalIncome' => $totalIncome,
+            'totalExpenses' => $totalExpenses,
             'closingBalance' => $closingBalance,
-            'churchName'     => auth()->user()->church->name ?? 'Gereja',
-            'periodLabel'    => $this->getPeriodLabel($periodType, $month, $quarter, $year),
+            'churchName' => $this->getChurchName(),
+            'periodLabel' => $this->getPeriodLabel($periodType, $month, $quarter, $year),
         ];
+    }
+
+    /**
+     * Nama gereja pada kop laporan.
+     * - super_admin → 'Semua Gereja' (data lintas gereja).
+     * - church_admin / finance_admin → nama gereja sendiri.
+     */
+    private function getChurchName(): string
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return 'Gereja';
+        }
+
+        if ($user->role === 'super_admin') {
+            return 'Semua Gereja';
+        }
+
+        return $user->church?->name ?? 'Gereja';
     }
 
     /**
      * Calculate opening balance (before start date).
      */
-    private function getOpeningBalance(int $churchId, Carbon $startDate): int
+    private function getOpeningBalance(Carbon $startDate): int
     {
         $debit = Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'debit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');
 
         $credit = Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'credit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');
@@ -215,16 +245,15 @@ class LaporanRapatPage extends Page implements HasForms
      *
      * @return Collection<int, array{category: string, total: int}>
      */
-    private function getIncomeByCategory(int $churchId, Carbon $startDate, Carbon $endDate): Collection
+    private function getIncomeByCategory(Carbon $startDate, Carbon $endDate): Collection
     {
         return Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'debit')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
             ->get()
             ->groupBy('category.name')
-            ->map(fn($transactions) => [
+            ->map(fn ($transactions) => [
                 'category' => $transactions[0]->category->name,
                 'total' => $transactions->sum('amount'),
             ])
@@ -236,16 +265,15 @@ class LaporanRapatPage extends Page implements HasForms
      *
      * @return Collection<int, array{category: string, total: int}>
      */
-    private function getExpensesByCategory(int $churchId, Carbon $startDate, Carbon $endDate): Collection
+    private function getExpensesByCategory(Carbon $startDate, Carbon $endDate): Collection
     {
         return Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'credit')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
             ->get()
             ->groupBy('category.name')
-            ->map(fn($transactions) => [
+            ->map(fn ($transactions) => [
                 'category' => $transactions[0]->category->name,
                 'total' => $transactions->sum('amount'),
             ])
@@ -254,8 +282,6 @@ class LaporanRapatPage extends Page implements HasForms
 
     /**
      * Get human-readable period label.
-     *
-     * @param  array<string, mixed>  $data
      */
     private function getPeriodLabel(string $periodType, int $month, int $quarter, int $year): string
     {
@@ -275,7 +301,7 @@ class LaporanRapatPage extends Page implements HasForms
                 12 => 'Desember',
             ];
 
-            return ($months[$month] ?? '') . " {$year}";
+            return ($months[$month] ?? '')." {$year}";
         }
 
         $quarters = [
@@ -285,7 +311,7 @@ class LaporanRapatPage extends Page implements HasForms
             4 => 'Q4 (Okt–Des)',
         ];
 
-        return ($quarters[$quarter] ?? '') . " {$year}";
+        return ($quarters[$quarter] ?? '')." {$year}";
     }
 
     /**
@@ -300,13 +326,13 @@ class LaporanRapatPage extends Page implements HasForms
             $output = fopen('php://output', 'w');
 
             // Set header encoding
-            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
             // Header info
             fputcsv($output, [''], ';');
             fputcsv($output, [$reportData['churchName']], ';');
             fputcsv($output, ['Laporan Rapat & Keuangan'], ';');
-            fputcsv($output, ['Periode: ' . $reportData['periodLabel']], ';');
+            fputcsv($output, ['Periode: '.$reportData['periodLabel']], ';');
             fputcsv($output, [''], ';');
 
             // Events section
@@ -326,7 +352,7 @@ class LaporanRapatPage extends Page implements HasForms
                         $event->start_datetime->locale('id')->format('d M Y'),
                         $event->title,
                         $event->category->name ?? '-',
-                        ($roster->role->name ?? '-') . ': ' . $pelayan,
+                        ($roster->role->name ?? '-').': '.$pelayan,
                         $event->attendance_male ?? 0,
                         $event->attendance_female ?? 0,
                         $event->total_attendance,

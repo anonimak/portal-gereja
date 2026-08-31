@@ -33,7 +33,9 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'church_id' => Church::factory(),
-            'role' => 'admin',
+            // Role default harus masuk whitelist UserObserver
+            // (['super_admin','church_admin','finance_admin']) — 'admin' TIDAK valid.
+            'role' => 'church_admin',
         ];
     }
 
@@ -54,6 +56,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn(array $attributes) => [
             'role' => 'super_admin',
+        ]);
+    }
+
+    /**
+     * Set user as finance admin.
+     */
+    public function financeAdmin(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'finance_admin',
         ]);
     }
 }

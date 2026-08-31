@@ -15,9 +15,20 @@ class Event extends Model
     use BelongsToChurch, HasFactory;
 
     /**
+     * Kolom FK yang harus satu gereja dengan event ini (HIGH-2 Vera).
+     *
+     * @return array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     */
+    protected function churchForeignKeyMap(): array
+    {
+        return ['category_id' => EventCategory::class];
+    }
+
+    /**
      * @var array<int, string>
      */
     protected $fillable = [
+        'church_id',
         'category_id',
         'title',
         'start_datetime',
