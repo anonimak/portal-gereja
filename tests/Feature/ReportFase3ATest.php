@@ -333,4 +333,63 @@ class ReportFase3ATest extends TestCase
 
         return $method->invoke($page);
     }
+
+    public function test_export_blocks_laporan_rapat_memuat_options_styling(): void
+    {
+        $this->actingAs($this->churchAdmin);
+
+        $page = new LaporanRapatPage;
+        $blocks = $this->invokeExportBlocks($page);
+
+        $ringkasan = collect($blocks)->first(fn ($b) => $b['title'] === 'Ringkasan Keuangan');
+        $this->assertNotNull($ringkasan);
+        $this->assertSame(1, $ringkasan['options']['totalRows'] ?? null);
+        $this->assertSame([2], $ringkasan['options']['currencyColumns'] ?? null);
+
+        $pemasukan = collect($blocks)->first(fn ($b) => $b['title'] === 'Pemasukan per Kategori');
+        $this->assertSame([2], $pemasukan['options']['currencyColumns'] ?? null);
+    }
+
+    public function test_export_excel_laporan_rapat_menghasilkan_xlsx_valid_dengan_styling(): void
+    {
+        $this->actingAs($this->churchAdmin);
+
+        $page = new LaporanRapatPage;
+        $response = $page->downloadExcel();
+
+        $this->assertSame(200, $response->getStatusCode());
+
+        // BinaryFileResponse::getContent() mengembalikan string kosong;
+        // ambil isi file dari getFile()->getContents().
+        $tmp = tempnam(sys_get_temp_dir(), 'rapat-').'.xlsx';
+        file_put_contents($tmp, file_get_contents($response->getFile()->getPathname()));
+
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmp);
+            $sheet = null;
+            foreach ($spreadsheet->getAllSheets() as $candidate) {
+                if (str_contains($candidate->getTitle(), 'Ringkasan Keuangan')) {
+                    $sheet = $candidate;
+                    break;
+                }
+            }
+            $this->assertNotNull($sheet, 'Sheet Ringkasan Keuangan harus ada (ada: '.implode(', ', $spreadsheet->getSheetNames()).')');
+
+            // Header row: bold + fill biru gelap.
+            $headerStyle = $sheet->getStyle('A1');
+            $this->assertTrue((bool) $headerStyle->getFont()->getBold());
+            $this->assertSame('FF1F4E78', $headerStyle->getFill()->getStartColor()->getARGB());
+
+            // Kolom currency (kolom 2) jadi numerik + format #,##0.
+            $cell = $sheet->getCell('B2');
+            $this->assertTrue(is_numeric($cell->getValue()), 'Kolom jumlah harus numerik');
+            $this->assertSame('#,##0', $cell->getStyle()->getNumberFormat()->getFormatCode());
+
+            // Total row (baris terakhir = Saldo Akhir) bold.
+            $lastRow = $sheet->getHighestDataRow();
+            $this->assertTrue((bool) $sheet->getStyle("A{$lastRow}")->getFont()->getBold());
+        } finally {
+            @unlink($tmp);
+        }
+    }
 }

@@ -87,6 +87,7 @@ class LaporanKeuanganPage extends BaseReportPage
                     ['Total Pengeluaran', number_format($expense->sum('amount'), 0, ',', '.')],
                     ['Saldo Akhir', number_format($openingBalance + $income->sum('amount') - $expense->sum('amount'), 0, ',', '.')],
                 ],
+                'options' => ['totalRows' => 1, 'currencyColumns' => [2]],
             ];
 
             $detail = $fund->transactions->map(fn (Transaction $t) => [
@@ -101,6 +102,7 @@ class LaporanKeuanganPage extends BaseReportPage
                 'title' => $fund->name.' — Rincian Transaksi',
                 'headers' => ['Tanggal', 'Kategori', 'Deskripsi', 'Tipe', 'Jumlah (Rp)'],
                 'rows' => $detail,
+                'options' => ['currencyColumns' => [5]],
             ];
         }
 
