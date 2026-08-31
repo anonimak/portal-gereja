@@ -1,377 +1,454 @@
 <x-filament-panels::page>
-    <div class="space-y-6">
-        <!-- Filter Section -->
-        <div
-            class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl shadow-sm border border-amber-200 dark:border-amber-800 p-6">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pilih Periode Laporan</h3>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="relative">
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        📅 Dari Tanggal
-                    </label>
-                    <input type="date" wire:model.live="startDate"
-                        class="w-full px-4 py-2.5 rounded-lg border-2 border-amber-200 dark:border-amber-700 dark:bg-gray-700 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-800 transition-all duration-200">
+    @php
+        $reportData = $this->getReportData();
+        $startDate = $reportData['startDate'];
+        $endDate = $reportData['endDate'];
+        $churchName = $reportData['churchName'];
+        $churchAddress = $reportData['churchAddress'];
+        $periodLabel = $reportData['periodLabel'];
+        $editionLabel = $reportData['editionLabel'];
+    @endphp
+
+    {{-- ══════════════════ TOOLBAR FILTER (hidden saat print) ══════════════════ --}}
+    <div class="print:hidden">
+        <div class="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-5">
+            <div class="flex flex-col gap-4">
+                {{-- Preset periode --}}
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Periode:</span>
+                    <button type="button" wire:click="setPeriod('thisWeek')"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Minggu Ini
+                    </button>
+                    <button type="button" wire:click="setPeriod('lastWeek')"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Minggu Lalu
+                    </button>
+                    <button type="button" wire:click="setPeriod('thisMonth')"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        Bulan Ini
+                    </button>
                 </div>
-                <div class="relative">
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        📅 Sampai Tanggal
-                    </label>
-                    <input type="date" wire:model.live="endDate"
-                        class="w-full px-4 py-2.5 rounded-lg border-2 border-amber-200 dark:border-amber-700 dark:bg-gray-700 dark:text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-800 transition-all duration-200">
+
+                <div class="flex flex-wrap items-end gap-4">
+                    {{-- Rentang tanggal --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1" for="warta-start">
+                            Dari Tanggal
+                        </label>
+                        <input id="warta-start" type="date" wire:model.live="startDate"
+                            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1" for="warta-end">
+                            Sampai Tanggal
+                        </label>
+                        <input id="warta-end" type="date" wire:model.live="endDate"
+                            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                    </div>
+
+                    {{-- Navigasi minggu --}}
+                    <div class="flex items-center gap-2">
+                        <button type="button" wire:click="shiftWeek(-1)" aria-label="Minggu sebelumnya"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <button type="button" wire:click="shiftWeek(1)" aria-label="Minggu berikutnya"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Aksi: print + export --}}
+                    <div class="ms-auto flex flex-wrap items-center gap-2">
+                        <button type="button" onclick="window.print()"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            Cetak / PDF
+                        </button>
+
+                        @if (\Illuminate\Support\Facades\Route::has('warta-jemaat.export-pdf'))
+                            <form method="POST" action="{{ route('warta-jemaat.export-pdf') }}" class="inline">
+                                @csrf
+                                <input type="hidden" name="start_date" value="{{ $startDate->format('Y-m-d') }}">
+                                <input type="hidden" name="end_date" value="{{ $endDate->format('Y-m-d') }}">
+                                <button type="submit"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-3 py-2 text-sm font-semibold transition-colors shadow-sm">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Unduh PDF
+                                </button>
+                            </form>
+                        @else
+                            <span title="Endpoint export PDF disiapkan backend (Byte)"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm font-semibold cursor-not-allowed">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                Unduh PDF
+                            </span>
+                        @endif
+
+                        @if (\Illuminate\Support\Facades\Route::has('warta-jemaat.export-excel'))
+                            <form method="POST" action="{{ route('warta-jemaat.export-excel') }}" class="inline">
+                                @csrf
+                                <input type="hidden" name="start_date" value="{{ $startDate->format('Y-m-d') }}">
+                                <input type="hidden" name="end_date" value="{{ $endDate->format('Y-m-d') }}">
+                                <button type="submit"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-sm font-semibold transition-colors shadow-sm">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Unduh Excel
+                                </button>
+                            </form>
+                        @else
+                            <span title="Endpoint export Excel disiapkan backend (Byte)"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm font-semibold cursor-not-allowed">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                Unduh Excel
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="flex gap-3">
-                <button onclick="window.print()"
-                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                        </path>
-                    </svg>
-                    Cetak / PDF
-                </button>
+    {{-- ══════════════════ DOKUMEN WARTA ══════════════════ --}}
+    <div class="fi-warta-wrap mx-auto max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden print:shadow-none print:ring-0 print:rounded-none">
+
+        {{-- 1. Header / Kop --}}
+        <div class="px-8 py-10 text-center border-b-2 border-amber-500/30 bg-gradient-to-b from-amber-50/60 to-white dark:from-amber-900/10 dark:to-gray-800 print:bg-white print:border-b-2">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-3xl shadow-md">
+                <span>⛪</span>
+            </div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase sm:text-3xl print:text-2xl">
+                {{ $churchName }}
+            </h1>
+            @if ($churchAddress)
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $churchAddress }}</p>
+            @endif
+            <div class="mt-6">
+                <h2 class="text-3xl font-black text-amber-700 dark:text-amber-400 tracking-wide">Warta Jemaat</h2>
+                <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                    {{ $editionLabel }}
+                </p>
+            </div>
+            <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-100/80 dark:bg-amber-900/30 px-4 py-1.5 text-sm font-semibold text-amber-900 dark:text-amber-200 ring-1 ring-amber-300/60 dark:ring-amber-700/50">
+                📅 {{ $periodLabel }}
             </div>
         </div>
 
-        <!-- Main Report Content -->
-        <div
-            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 print:rounded-none print:shadow-none print:border-none p-8 print:p-0">
-            @php
-                $reportData = $this->getReportData();
-                $startDate = $reportData['startDate'];
-                $endDate = $reportData['endDate'];
-            @endphp
+        {{-- 2. Salam / Renungan --}}
+        <div class="px-8 pt-8 print:pt-6">
+            <div class="rounded-xl bg-gray-50 dark:bg-gray-700/40 p-6 ring-1 ring-gray-100 dark:ring-gray-600/50">
+                <p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                    <span class="font-bold text-amber-700 dark:text-amber-400">Salam Damai Sejahtera,</span><br>
+                    Selamat datang dalam Warta Jemaat minggu ini. Kiranya damai sejahtera Kristus senantiasa menyertai
+                    kita sekalian. Selamat beribadah dan Tuhan Yesus memberkati.
+                </p>
+            </div>
+        </div>
 
-            <!-- Header Section -->
-            <div
-                class="text-center py-8 border-b-2 border-gray-200 dark:border-gray-700 print:border-gray-300 mb-10 print:page-break-after-avoid">
-                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">Warta Jemaat</h1>
-                <p class="text-gray-500 dark:text-gray-400">📰 Berita dan Laporan Mingguan Jemaah</p>
-                <div
-                    class="mt-4 inline-block bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                        {{ $startDate->format('d F Y') }} - {{ $endDate->format('d F Y') }}
+        {{-- 3. Agenda / Jadwal Ibadah & Pelayanan --}}
+        <div class="px-8 pt-10 print:pt-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Agenda &amp; Jadwal Ibadah</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Kegiatan beserta petugas pelayanan</p>
+                </div>
+            </div>
+
+            @if ($reportData['events']->count() > 0)
+                <div class="space-y-4">
+                    @foreach ($reportData['events'] as $event)
+                        <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 print:border-gray-400">
+                            <div class="flex items-center gap-4 border-l-4 border-blue-500 bg-blue-50/70 dark:bg-blue-900/20 px-5 py-4 print:bg-white print:border-l-2">
+                                <div class="text-center shrink-0">
+                                    <div class="text-lg font-black leading-none text-blue-700 dark:text-blue-300">
+                                        {{ $event->start_datetime->format('d') }}
+                                    </div>
+                                    <div class="text-xs font-semibold uppercase text-blue-600/80 dark:text-blue-400/80">
+                                        {{ $event->start_datetime->locale('id')->translatedFormat('M') }}
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h3 class="font-bold text-gray-900 dark:text-white">{{ $event->title }}</h3>
+                                        <span class="rounded-full bg-blue-100 dark:bg-blue-900/40 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:text-blue-300">
+                                            {{ $event->category->name ?? 'Ibadah' }}
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                        <span class="inline-flex items-center gap-1">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            {{ $event->start_datetime->format('H:i') }}–{{ $event->end_datetime->format('H:i') }}
+                                        </span>
+                                        <span class="mx-2 text-gray-300 dark:text-gray-600">•</span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            {{ $event->location ?? 'Gereja' }}
+                                        </span>
+                                        @if ($event->total_attendance > 0)
+                                            <span class="mx-2 text-gray-300 dark:text-gray-600">•</span>
+                                            <span class="inline-flex items-center gap-1">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                </svg>
+                                                {{ $event->total_attendance }} jemaat
+                                            </span>
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+
+                            @if ($event->rosters->count() > 0)
+                                <div class="bg-white dark:bg-gray-800 px-5 py-3">
+                                    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                        Petugas Pelayanan
+                                    </p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($event->rosters as $roster)
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                                                {{ $roster->member?->full_name ?? $roster->official?->display_name ?? 'Petugas' }}
+                                                <span class="text-gray-400 dark:text-gray-500">({{ $roster->role->name ?? 'Pelayan' }})</span>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Belum ada kegiatan pada periode ini.
+                </div>
+            @endif
+        </div>
+
+        {{-- 4. Ulang Tahun Jemaat --}}
+        <div class="px-8 pt-10 print:pt-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18m-9-9a3 3 0 00-3 3h6a3 3 0 00-3-3zm6 9v6a3 3 0 01-3 3H9a3 3 0 01-3-3v-6m12 0a6 6 0 00-12 0"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Ulang Tahun Jemaat</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Mari doakan saudara/i kita yang berulang tahun</p>
+                </div>
+            </div>
+
+            @if ($reportData['birthdays']->count() > 0)
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 print:grid-cols-3">
+                    @foreach ($reportData['birthdays'] as $member)
+                        <div class="flex items-center gap-3 rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50/50 dark:bg-pink-900/10 p-4 print:border-gray-400 print:bg-white">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-200 dark:bg-pink-900/50 text-lg">🎂</div>
+                            <div class="min-w-0">
+                                <h3 class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ $member->full_name }}</h3>
+                                @if ($member->birth_date)
+                                    <p class="text-xs font-medium text-pink-600 dark:text-pink-400">
+                                        {{ \Illuminate\Support\Carbon::parse($member->birth_date)->locale('id')->translatedFormat('d F') }}
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Tidak ada ulang tahun pada periode ini.
+                </div>
+            @endif
+        </div>
+
+        {{-- 5. Perayaan Sakramen / Berita Jemaat --}}
+        <div class="px-8 pt-10 print:pt-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Berita Jemaat &amp; Perayaan Sakramen</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Peristiwa syukur dalam kehidupan jemaat</p>
+                </div>
+            </div>
+
+            @if ($reportData['sacraments']->count() > 0)
+                <div class="space-y-3">
+                    @foreach ($reportData['sacraments'] as $sacrament)
+                        @php
+                            $badge = match ($sacrament->type) {
+                                'penyerahan' => ['bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300', 'Penyerahan Anak'],
+                                'baptis_anak' => ['bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300', 'Baptis Anak'],
+                                'sidi' => ['bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300', 'Sidi'],
+                                'baptis_dewasa' => ['bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300', 'Baptis Dewasa'],
+                                'nikah' => ['bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300', 'Pemberkatan Nikah'],
+                                default => ['bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', $sacrament->type],
+                            };
+                        @endphp
+                        <div class="flex flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:flex-row sm:items-center sm:justify-between print:border-gray-400">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $badge[0] }} text-lg">✦</div>
+                                <div>
+                                    <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold {{ $badge[0] }}">
+                                        {{ $badge[1] }}
+                                    </span>
+                                    <h3 class="mt-1 font-semibold text-gray-900 dark:text-white">
+                                        {{ $sacrament->member?->full_name ?? 'Jemaat' }}
+                                    </h3>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400 sm:shrink-0">
+                                <span class="inline-flex items-center gap-1">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    {{ $sacrament->sacrament_date->locale('id')->translatedFormat('d F Y') }}
+                                </span>
+                                @if ($sacrament->official?->display_name)
+                                    <span class="inline-flex items-center gap-1">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        {{ $sacrament->official->display_name }}
+                                    </span>
+                                @endif
+                                @if ($sacrament->certificate_number)
+                                    <span class="inline-flex items-center gap-1">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                                        </svg>
+                                        No. {{ $sacrament->certificate_number }}
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Tidak ada perayaan sakramen pada periode ini.
+                </div>
+            @endif
+        </div>
+
+        {{-- 6. Laporan Keuangan Ringkas --}}
+        <div class="px-8 pt-10 print:pt-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h2m5 0h2m-9 4h10a2 2 0 002-2V8a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2zm0-13V3m2 1h6"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Laporan Keuangan Ringkas</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Ringkasan kas gereja periode ini</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 print:grid-cols-3">
+                <div class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/10 p-4 text-center print:bg-white print:border-gray-400">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Pemasukan</p>
+                    <p class="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-300">
+                        Rp{{ number_format($reportData['totalIncome'], 0, ',', '.') }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/10 p-4 text-center print:bg-white print:border-gray-400">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">Pengeluaran</p>
+                    <p class="mt-1 text-xl font-black text-red-700 dark:text-red-300">
+                        Rp{{ number_format($reportData['totalExpenses'], 0, ',', '.') }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-4 text-center print:bg-white print:border-gray-400">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Saldo Akhir</p>
+                    <p class="mt-1 text-xl font-black text-gray-900 dark:text-white">
+                        Rp{{ number_format($reportData['closingBalance'], 0, ',', '.') }}
                     </p>
                 </div>
             </div>
 
-            <!-- Section 1: Jadwal Pelayanan -->
-            <div class="mb-12 print:page-break-inside-avoid">
-                <div class="flex items-center gap-3 mb-6 print:page-break-after-avoid">
-                    <div class="w-1 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">📅 Jadwal Pelayanan</h2>
+            @if ($reportData['transactions']->count() > 0)
+                <div class="mt-4 overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                <th scope="col" class="px-3 py-2 font-semibold">Tanggal</th>
+                                <th scope="col" class="px-3 py-2 font-semibold">Kategori</th>
+                                <th scope="col" class="px-3 py-2 font-semibold">Keterangan</th>
+                                <th scope="col" class="px-3 py-2 text-right font-semibold">Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60">
+                            @foreach ($reportData['transactions'] as $type => $transactionList)
+                                @foreach ($transactionList as $transaction)
+                                    <tr class="text-gray-700 dark:text-gray-300">
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $transaction->transaction_date->locale('id')->translatedFormat('d M') }}</td>
+                                        <td class="px-3 py-2">
+                                            <span class="inline-block rounded px-2 py-0.5 text-xs font-semibold {{ $type === 'Pemasukan' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
+                                                {{ $transaction->category->name ?? ($type === 'Pemasukan' ? 'Pemasukan' : 'Pengeluaran') }}
+                                            </span>
+                                        </td>
+                                        <td class="px-3 py-2 max-w-xs truncate">{{ $transaction->description ?? '-' }}</td>
+                                        <td class="px-3 py-2 text-right font-bold {{ $type === 'Pemasukan' ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300' }}">
+                                            {{ $type === 'Pemasukan' ? '+' : '−' }}Rp{{ number_format($transaction->amount, 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-
-                @if ($reportData['events']->count() > 0)
-                    <div class="space-y-4">
-                        @foreach ($reportData['events'] as $event)
-                            <div
-                                class="border-l-4 border-blue-500 rounded-r-lg bg-blue-50 dark:bg-blue-900/10 p-5 hover:shadow-md transition-shadow duration-200 print:bg-white print:border-l-2 print:border-gray-400">
-                                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                    <!-- Event Info -->
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
-                                                {{ $event->start_datetime->format('d M Y') }}
-                                            </span>
-                                            <span
-                                                class="text-sm font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded">
-                                                {{ $event->start_datetime->format('H:i') }} -
-                                                {{ $event->end_datetime->format('H:i') }}
-                                            </span>
-                                        </div>
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                            {{ $event->title }}</h3>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                            <span
-                                                class="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">
-                                                {{ $event->category->name ?? 'Kategori' }}
-                                            </span>
-                                        </p>
-                                        <p class="text-sm text-gray-700 dark:text-gray-300">
-                                            <span class="font-semibold">📍 Lokasi:</span>
-                                            {{ $event->location ?? 'TBD' }}
-                                        </p>
-                                    </div>
-
-                                    <!-- Personnel -->
-                                    <div class="md:w-80">
-                                        <p
-                                            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">
-                                            Petugas Pelayanan</p>
-                                        @if ($event->rosters->count() > 0)
-                                            <ul class="space-y-2">
-                                                @foreach ($event->rosters as $roster)
-                                                    <li class="flex items-center gap-2 text-sm">
-                                                        <span
-                                                            class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
-                                                        <span
-                                                            class="font-medium text-gray-900 dark:text-white">{{ $roster->member?->full_name ?? $roster->official?->display_name ?? 'Petugas' }}</span>
-                                                        <span
-                                                            class="text-gray-500 dark:text-gray-400 text-xs">({{ $roster->role->name ?? 'Petugas' }})</span>
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        @else
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 italic">Belum ada petugas
-                                            </p>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-8 text-center">
-                        <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                        <p class="text-gray-600 dark:text-gray-400 font-medium">Tidak ada acara dalam periode ini</p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Section 2: Ulang Tahun -->
-            <div class="mb-12 print:page-break-inside-avoid">
-                <div class="flex items-center gap-3 mb-6 print:page-break-after-avoid">
-                    <div class="w-1 h-8 bg-gradient-to-b from-pink-500 to-pink-600 rounded-full"></div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🎂 Jemaat Ulang Tahun</h2>
+            @else
+                <div class="mt-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Tidak ada transaksi pada periode ini.
                 </div>
+            @endif
+        </div>
 
-                @if ($reportData['birthdays']->count() > 0)
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2">
-                        @foreach ($reportData['birthdays'] as $member)
-                            <div
-                                class="rounded-lg border-2 border-pink-200 dark:border-pink-800 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 p-5 hover:shadow-md transition-shadow duration-200 print:bg-white print:border-gray-300">
-                                <div class="flex items-start gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-full bg-pink-200 dark:bg-pink-900/50 flex items-center justify-center flex-shrink-0">
-                                        <span class="text-lg">🎂</span>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                            {{ $member->full_name }}
-                                        </h3>
-                                        @if ($member->birth_date)
-                                            <p class="text-sm text-pink-600 dark:text-pink-400 font-medium mt-1">
-                                                {{ \Illuminate\Support\Carbon::parse($member->birth_date)->format('d F') }}
-                                            </p>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+        {{-- 7. Footer --}}
+        <div class="mt-10 border-t border-gray-200 dark:border-gray-700 px-8 py-8 text-center print:border-gray-300">
+            <div class="mx-auto grid max-w-xl grid-cols-2 gap-8">
+                <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">Pendeta</p>
+                    <div class="mt-16 border-t border-dotted border-gray-300 dark:border-gray-600 pt-2">
+                        <p class="text-xs text-gray-400 dark:text-gray-500">( .................................... )</p>
                     </div>
-                @else
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-8 text-center">
-                        <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <p class="text-gray-600 dark:text-gray-400 font-medium">Tidak ada ulang tahun dalam periode ini
-                        </p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Section 2.5: Sakramen Jemaat -->
-            <div class="mb-12 print:page-break-inside-avoid">
-                <div class="flex items-center gap-3 mb-6 print:page-break-after-avoid">
-                    <div class="w-1 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full"></div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">⛪ Perayaan Sakramen Jemaat</h2>
                 </div>
-
-                @if ($reportData['sacraments']->count() > 0)
-                    <div class="space-y-3">
-                        @foreach ($reportData['sacraments'] as $sacrament)
-                            <div
-                                class="border-l-4 border-purple-500 rounded-r-lg bg-purple-50 dark:bg-purple-900/10 p-4 hover:shadow-md transition-shadow duration-200 print:bg-white print:border-l-2 print:border-gray-400">
-                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <span
-                                                class="inline-block px-3 py-1 rounded-full text-xs font-semibold text-white {{ match ($sacrament->type) {
-                                                    'penyerahan' => 'bg-blue-500',
-                                                    'baptis_anak' => 'bg-cyan-500',
-                                                    'sidi' => 'bg-purple-500',
-                                                    'baptis_dewasa' => 'bg-green-500',
-                                                    'nikah' => 'bg-pink-500',
-                                                    default => 'bg-gray-500',
-                                                } }}">
-                                                {{ match ($sacrament->type) {
-                                                    'penyerahan' => 'Penyerahan',
-                                                    'baptis_anak' => 'Baptis Anak',
-                                                    'sidi' => 'Sidi',
-                                                    'baptis_dewasa' => 'Baptis Dewasa',
-                                                    'nikah' => 'Nikah',
-                                                    default => $sacrament->type,
-                                                } }}
-                                            </span>
-                                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                                                {{ $sacrament->sacrament_date->format('d M Y') }}
-                                            </span>
-                                        </div>
-                                        <h3 class="font-semibold text-lg text-gray-900 dark:text-white">
-                                            {{ $sacrament->member?->full_name ?? 'Jemaat' }}
-                                        </h3>
-                                        <div class="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                            @if ($sacrament->official?->display_name)
-                                                <p><span class="font-medium">Pendeta:</span>
-                                                    {{ $sacrament->official->display_name }}</p>
-                                            @endif
-                                            @if ($sacrament->certificate_number)
-                                                <p><span class="font-medium">Sertifikat:</span>
-                                                    {{ $sacrament->certificate_number }}</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+                <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">Sekretaris</p>
+                    <div class="mt-16 border-t border-dotted border-gray-300 dark:border-gray-600 pt-2">
+                        <p class="text-xs text-gray-400 dark:text-gray-500">( .................................... )</p>
                     </div>
-                @else
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-8 text-center">
-                        <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <p class="text-gray-600 dark:text-gray-400 font-medium">Tidak ada sakramen dalam periode ini
-                        </p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Section 3: Laporan Keuangan -->
-            <div class="print:page-break-inside-avoid">
-                <div class="flex items-center gap-3 mb-6 print:page-break-after-avoid">
-                    <div class="w-1 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">💰 Laporan Keuangan</h2>
                 </div>
-
-                @if ($reportData['transactions']->count() > 0)
-                    <div class="space-y-8">
-                        @foreach ($reportData['transactions'] as $type => $transactionList)
-                            <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                                <!-- Header -->
-                                <div
-                                    class="bg-gradient-to-r {{ $type === 'Pemasukan' ? 'from-green-500 to-emerald-500' : 'from-red-500 to-rose-500' }} px-6 py-4">
-                                    <h3 class="font-bold text-white text-lg flex items-center gap-2">
-                                        <span class="inline-block w-3 h-3 bg-white rounded-full"></span>
-                                        {{ $type }}
-                                    </h3>
-                                </div>
-
-                                <!-- Table -->
-                                <div class="overflow-x-auto">
-                                    <table class="w-full">
-                                        <thead>
-                                            <tr
-                                                class="bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 print:bg-gray-200">
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                                                    Tanggal
-                                                </th>
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                                                    Dana
-                                                </th>
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                                                    Kategori
-                                                </th>
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                                                    Keterangan
-                                                </th>
-                                                <th
-                                                    class="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                                                    Jumlah
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                            @foreach ($transactionList as $transaction)
-                                                <tr
-                                                    class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 print:hover:bg-transparent">
-                                                    <td
-                                                        class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                                        {{ $transaction->transaction_date->format('d M Y') }}
-                                                    </td>
-                                                    <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                                        {{ $transaction->fund->name ?? '-' }}
-                                                    </td>
-                                                    <td class="px-4 py-3 text-sm">
-                                                        <span
-                                                            class="inline-block px-2.5 py-1 rounded text-xs font-medium {{ $type === 'Pemasukan' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' }}">
-                                                            {{ $transaction->category->name ?? '-' }}
-                                                        </span>
-                                                    </td>
-                                                    <td
-                                                        class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
-                                                        {{ $transaction->description ?? '-' }}
-                                                    </td>
-                                                    <td
-                                                        class="px-4 py-3 text-sm font-bold text-right {{ $type === 'Pemasukan' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                                        Rp{{ number_format($transaction->amount, 0, ',', '.') }}
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                        <tfoot>
-                                            <tr
-                                                class="bg-gray-100 dark:bg-gray-700 font-bold border-t-2 border-gray-300 dark:border-gray-600 print:bg-gray-200">
-                                                <td colspan="4"
-                                                    class="px-4 py-4 text-right text-gray-900 dark:text-white">
-                                                    Total {{ $type }}:
-                                                </td>
-                                                <td
-                                                    class="px-4 py-4 text-right {{ $type === 'Pemasukan' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                                    Rp{{ number_format($transactionList->sum('amount'), 0, ',', '.') }}
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-8 text-center">
-                        <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        <p class="text-gray-600 dark:text-gray-400 font-medium">Tidak ada transaksi dalam periode ini
-                        </p>
-                    </div>
-                @endif
             </div>
-
-            <!-- Footer -->
-            <div
-                class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 print:border-gray-300 text-center text-sm text-gray-500 dark:text-gray-400">
-                <p>Laporan ini dicetak dari Sistem Manajemen Jemaat</p>
-                <p class="text-xs mt-2">{{ now()->format('d F Y H:i') }}</p>
-            </div>
+            <p class="mt-6 text-xs text-gray-400 dark:text-gray-500">Diterbitkan oleh Portal Gereja • {{ now()->locale('id')->translatedFormat('d F Y H:i') }}</p>
         </div>
     </div>
 
@@ -383,43 +460,36 @@
             }
 
             body {
-                margin: 0;
-                padding: 0;
-                background: white;
+                background: #fff !important;
             }
 
-            x-filament-panels--page {
-                background: white;
-            }
-
-            /* Hide navigation elements */
-            aside,
-            nav,
-            .fi-navbar,
             .fi-sidebar,
-            [role="banner"] {
+            .fi-topbar,
+            [role="banner"],
+            aside,
+            nav {
                 display: none !important;
             }
 
-            /* Adjust main content */
+            .fi-warta-wrap {
+                max-width: 100% !important;
+                box-shadow: none !important;
+            }
+
             main {
-                width: 100%;
-                margin: 0;
-                padding: 0;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
-            /* Page breaks */
-            .print\:page-break-after-avoid {
-                page-break-after: avoid;
+            .fi-warta-wrap .px-8 {
+                padding-left: 1.25rem;
+                padding-right: 1.25rem;
             }
 
-            .print\:page-break-inside-avoid {
-                page-break-inside: avoid;
-            }
-
-            /* Spacing adjustments for print */
-            .space-y-12>div {
-                margin-bottom: 1.5rem;
+            @page {
+                size: A4;
+                margin: 12mm;
             }
         }
     </style>
