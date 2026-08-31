@@ -67,6 +67,11 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
         return auth()->user()?->role === 'super_admin';
     }
 
+    public function isAllChurches(): bool
+    {
+        return \App\Support\ChurchContext::isAll();
+    }
+
     public function churchOptions(): array
     {
         return \App\Models\Church::query()

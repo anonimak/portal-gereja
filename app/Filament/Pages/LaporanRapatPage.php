@@ -6,6 +6,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Event;
 use App\Models\Transaction;
+use App\Support\ChurchContext;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Forms\Components\Select;
@@ -57,6 +58,8 @@ class LaporanRapatPage extends Page implements HasForms
      * @var array<string, mixed>
      */
     public array $data = [];
+
+    public ?int $churchSelect = null;
 
     #[\Livewire\Attributes\Computed]
     public function reportData(): array
@@ -414,5 +417,117 @@ class LaporanRapatPage extends Page implements HasForms
 
             fclose($output);
         }, $fileName, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function canSelectChurch(): bool
+    {
+        return auth()->user()?->role === 'super_admin';
+    }
+
+    public function isAllChurches(): bool
+    {
+        return ChurchContext::isAll();
+    }
+
+    public function churchOptions(): array
+    {
+        return \App\Models\Church::query()
+            ->withoutGlobalScopes()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    public function updatedChurchSelect(int|string|null $value): void
+    {
+        if (auth()->user()?->role !== 'super_admin') {
+            return;
+        }
+
+        ChurchContext::setActiveChurch($value ? (int) $value : null);
+        $this->dispatch('church-changed');
+    }
+
+    // ----- Notulen (Fase 3A §8) — diperlukan karena blade laporan-rapat.blade.php
+    // memanggil canCreateMinutes()/getMinutes() (halaman lama & cluster berbagi view).
+
+    public string $minuteTitle = '';
+
+    public ?string $minuteDate = null;
+
+    public string $minuteAgenda = '';
+
+    public string $minuteNotes = '';
+
+    public string $minuteDecisions = '';
+
+    public function canCreateMinutes(): bool
+    {
+        return in_array(auth()->user()?->role, ['super_admin', 'church_admin'], true);
+    }
+
+    public function saveMinute(): void
+    {
+        abort_unless($this->canCreateMinutes(), 403, 'Tidak diizinkan membuat notulen.');
+
+        $data = $this->validate([
+            'minuteTitle' => ['required', 'string', 'max:255'],
+            'minuteDate' => ['required', 'date'],
+            'minuteAgenda' => ['nullable', 'string'],
+            'minuteNotes' => ['nullable', 'string'],
+            'minuteDecisions' => ['nullable', 'string'],
+        ]);
+
+        $agenda = array_values(array_filter(array_map('trim', explode("\n", $data['minuteAgenda']))));
+        $decisions = array_values(array_filter(array_map('trim', explode("\n", $data['minuteDecisions']))));
+
+        \App\Models\MeetingMinutes::create([
+            'title' => $data['minuteTitle'],
+            'meeting_date' => \Illuminate\Support\Carbon::parse($data['minuteDate'])->toDateString(),
+            'agenda' => $agenda,
+            'participants' => [],
+            'notes' => $data['minuteNotes'],
+            'decisions' => $decisions,
+            'attachments' => [],
+        ]);
+
+        $this->reset('minuteTitle', 'minuteDate', 'minuteAgenda', 'minuteNotes', 'minuteDecisions');
+        $this->dispatch('minutes-saved');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\MeetingMinutes>
+     */
+    public function getMinutes(): Collection
+    {
+        [$start, $end] = $this->periodRange();
+
+        return $this->scopeChurch(\App\Models\MeetingMinutes::query())
+            ->with('event')
+            ->whereBetween('meeting_date', [$start, $end])
+            ->orderBy('meeting_date')
+            ->get();
+    }
+
+    /**
+     * @return array{0: \Illuminate\Support\Carbon, 1: \Illuminate\Support\Carbon}
+     */
+    protected function periodRange(): array
+    {
+        $periodType = $this->data['period_type'] ?? 'monthly';
+        $year = (int) ($this->data['year'] ?? now()->year);
+        $month = (int) ($this->data['month'] ?? now()->month);
+        $quarter = (int) ($this->data['quarter'] ?? ceil(now()->month / 3));
+
+        if ($periodType === 'monthly') {
+            $start = Carbon::create($year, $month, 1)->startOfDay();
+            $end = $start->copy()->endOfMonth()->endOfDay();
+        } else {
+            $startMonth = ($quarter - 1) * 3 + 1;
+            $start = Carbon::create($year, $startMonth, 1)->startOfDay();
+            $end = $start->copy()->addMonths(2)->endOfMonth()->endOfDay();
+        }
+
+        return [$start, $end];
     }
 }
