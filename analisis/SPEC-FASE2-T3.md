@@ -125,6 +125,10 @@ protected static string $module = 'member';          // subclass set per resourc
 ```
 
 - `canAccessChurch()` (scope gereja) **tetap** — tidak berubah.
+- **Pengecualian attendance:** aksi tulis modul `attendance` (check-in, ubah status, koreksi/hapus
+  kehadiran) memetakan ke **`attendance.manage`**, BUKAN `attendance.create/update/delete` (key tsb
+  tidak ada di `Permission`). `EventAttendancePolicy` memakai `attendance.manage` untuk semua aksi
+  tulis — sehingga `church_admin`/`super_admin` tetap bisa check-in (AC-T3-07 tidak regresi).
 - Subclass resource: `EventPolicy::$module='event'`, `MemberPolicy::$module='member'`,
   `FamilyPolicy::$module='member'`, `MemberSacramentPolicy::$module='member'`,
   `TransactionPolicy::$module='finance'`, `FundPolicy`/`FinancialCategoryPolicy::$module='master.finance'`,
@@ -215,7 +219,8 @@ final class ChurchScope
 **Tidak diubah (sudah benar / bukan select opsi):**
 - `AttendancesRelationManager` member select — sudah memakai `ownerChurchId()` (gereja event). Pertahankan.
 - `WartaJemaat`/`LaporanRapatPage`/`StatsOverview`/`CashFlowChart` — komentar saja, bukan filter; jangan ditambah.
-- `UserResource.php:144` — query tabel user super_admin (bukan form select opsi data tenant).
+- `UserResource.php:144` — query tabel user super_admin (bukan form select opsi data tenant);
+  **pengecualian sah AC-T3-10** (grep-kosong tetap PASS walau baris ini ada).
 
 ### 5.3 Aturan aman lintas gereja (batas — TIDAK boleh memindahkan data antar gereja)
 
@@ -264,6 +269,7 @@ Catatan asumsi: restore Member **tidak otomatis** mengembalikan `end_date` offic
   dan `grep -rn "'role' =>" app/Filament/Clusters/System/Resources/User` menampilkan 6 opsi.
 - **AC-T3-02** GIVEN `TenantPolicy`, WHEN di-cek, THEN method view memakai `{$module}.view` dan method
   tulis (create/update/delete/restore/forceDelete/deleteAny) memakai `{$module}.create|update|delete`;
+  **kecuali modul `attendance` yang memakai `attendance.manage`** untuk semua aksi tulis (lihat §3.5);
   `$allowedRoles` tidak lagi menjadi satu-satunya gerbang.
 - **AC-T3-03 (finance_admin)** WHEN `Gate::forUser(finance_admin)`, THEN `denies('viewAny', Member/Event/
   EventCategory/MinistryRole/MemberSacrament/EventAttendance)` dan `allows('viewAny', Transaction/Fund/
@@ -278,7 +284,9 @@ Catatan asumsi: restore Member **tidak otomatis** mengembalikan `end_date` offic
   `LaporanRapatPage::canAccess()=true`, `denies('create', Transaction)` & `denies('update', Fund)`,
   `denies('viewAny', EventAttendance)`.
 - **AC-T3-07 (regresi)** THEN `church_admin` & `super_admin` & `finance_admin` matriks akses persis
-  seperti Fase 2 saat ini (suite existing `RbacPageAccessTest` tetap hijau).
+  seperti Fase 2 saat ini (suite existing `RbacPageAccessTest` tetap hijau). Catatan: aksi tulis
+  attendance (check-in/ubah status) memetakan ke `attendance.manage`, bukan
+  `attendance.create/update/delete` — sehingga check-in `church_admin`/`super_admin` tidak ditolak.
 - **AC-T3-08** GIVEN cluster Demographics/Events/Finance/MasterData/Reporting, WHEN di-cek, THEN
   masing-masing punya `canAccess()` berbasis permission (bukan `allowedRoles` string).
 - **AC-T3-09 (server-side)** GIVEN user role yang ditolak, WHEN membuka URL langsung resource/page
@@ -286,7 +294,10 @@ Catatan asumsi: restore Member **tidak otomatis** mengembalikan `end_date` offic
 
 ### B. Select lintas gereja
 - **AC-T3-10** GIVEN `app/Support/ChurchScope.php`, THEN ada `forActorSelect()` & `forChurch()`;
-  `grep -rn "where('church_id', auth()->user()->church_id)" app/Filament` = **kosong**.
+  `grep -rn "where('church_id', auth()->user()->church_id)" app/Filament` = **kosong**,
+  **kecuali satu-satunya pengecualian sah: `UserResource.php:144`** (query tabel user super_admin,
+  bukan form select opsi data tenant — lihat §5.2 "Tidak diubah"). Baris tsb TIDAK dihitung sebagai
+  pelanggaran grep-kosong dan TIDAK boleh diubah; jika tetap ada, AC-T3-10 tetap PASS.
 - **AC-T3-11 (super_admin)** WHEN membuka form Event/Transaction/Official/Member, THEN opsi select
   (category/fund/member/family/dst) berasal dari **semua gereja**.
 - **AC-T3-12 (non-super)** WHEN `church_admin`/`finance_admin` membuka form yang sama, THEN opsi tetap
