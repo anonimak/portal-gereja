@@ -25,10 +25,14 @@ RUN apk add --no-cache \
     unzip \
     zip \
     nodejs \
-    npm
+    npm\
+    libpng-dev\
+    libjpeg-turbo-dev\
+    freetype-dev
 
 # Ekstensi PHP yang dibutuhkan Laravel & Filament (dikompilasi di builder)
-RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl intl bcmath opcache
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" gd pdo_mysql mbstring zip exif pcntl intl bcmath opcache
 
 # Composer: pin major 2 (hindari :latest yang non-reproducible)
 COPY --from=docker.io/library/composer:2 /usr/bin/composer /usr/bin/composer
@@ -64,6 +68,9 @@ RUN apk add --no-cache \
     libzip \
     icu-libs \
     oniguruma \
+    libpng \
+    libjpeg-turbo \
+    freetype \
     mariadb-client \
     curl
 
