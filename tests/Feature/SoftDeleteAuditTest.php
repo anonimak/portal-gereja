@@ -105,7 +105,7 @@ class SoftDeleteAuditTest extends TestCase
 
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $this->admin->id,
-            'action' => 'create',
+            'action' => 'created',
             'auditable_type' => Member::class,
             'auditable_id' => $member->id,
         ]);
@@ -119,7 +119,7 @@ class SoftDeleteAuditTest extends TestCase
         $member->update(['full_name' => 'Nama Baru Test']);
 
         $log = AuditLog::query()
-            ->where('action', 'update')
+            ->where('action', 'updated')
             ->where('auditable_type', Member::class)
             ->where('auditable_id', $member->id)
             ->latest('id')
@@ -139,7 +139,7 @@ class SoftDeleteAuditTest extends TestCase
         $member->delete();
 
         $this->assertDatabaseHas('audit_logs', [
-            'action' => 'delete',
+            'action' => 'deleted',
             'auditable_type' => Member::class,
             'auditable_id' => $member->id,
         ]);
@@ -147,7 +147,7 @@ class SoftDeleteAuditTest extends TestCase
         $member->restore();
 
         $this->assertDatabaseHas('audit_logs', [
-            'action' => 'restore',
+            'action' => 'restored',
             'auditable_type' => Member::class,
             'auditable_id' => $member->id,
         ]);
@@ -161,7 +161,7 @@ class SoftDeleteAuditTest extends TestCase
         $transaction->forceDelete();
 
         $this->assertDatabaseHas('audit_logs', [
-            'action' => 'forceDelete',
+            'action' => 'force_deleted',
             'auditable_type' => Transaction::class,
             'auditable_id' => $transaction->id,
         ]);
@@ -174,7 +174,7 @@ class SoftDeleteAuditTest extends TestCase
 
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => null,
-            'action' => 'create',
+            'action' => 'created',
             'auditable_type' => Member::class,
             'auditable_id' => $member->id,
         ]);
@@ -194,7 +194,7 @@ class SoftDeleteAuditTest extends TestCase
         $this->assertDatabaseHas('events', ['id' => $event->id]);
         // Audit create untuk event tercatat.
         $this->assertDatabaseHas('audit_logs', [
-            'action' => 'create',
+            'action' => 'created',
             'auditable_type' => Event::class,
             'auditable_id' => $event->id,
         ]);

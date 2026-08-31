@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Traits\AuditsActivity;
+use App\Traits\RecordsAuditTrail;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -16,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use AuditsActivity, HasFactory, Notifiable;
+    use HasFactory, Notifiable, RecordsAuditTrail;
 
     /**
      * The attributes that are mass assignable.

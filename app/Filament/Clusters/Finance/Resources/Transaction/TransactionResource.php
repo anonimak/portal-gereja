@@ -5,24 +5,25 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\Finance\Resources\Transaction;
 
 use App\Filament\Clusters\Finance\FinanceCluster;
-use BackedEnum;
-use App\Filament\Clusters\Finance\Resources\Transaction\Pages;
 use App\Models\Transaction;
+use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -51,7 +52,7 @@ class TransactionResource extends Resource
                     ->relationship(
                         'fund',
                         'name',
-                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
                     ),
                 Select::make('type')
                     ->required()
@@ -64,12 +65,12 @@ class TransactionResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->disabled(fn(Get $get) => empty($get('type')))
-                    ->placeholder(fn(Get $get) => empty($get('type')) ? 'Pilih Tipe Transaksi terlebih dahulu' : 'Pilih Kategori')
+                    ->disabled(fn (Get $get) => empty($get('type')))
+                    ->placeholder(fn (Get $get) => empty($get('type')) ? 'Pilih Tipe Transaksi terlebih dahulu' : 'Pilih Kategori')
                     ->relationship(
                         'category',
                         'name',
-                        fn(Builder $query, Get $get) => $query
+                        fn (Builder $query, Get $get) => $query
                             ->where('church_id', auth()->user()->church_id)
                             ->where('type', $get('type'))
                     ),
@@ -101,12 +102,12 @@ class TransactionResource extends Resource
                     ->sortable(),
                 TextColumn::make('type')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'debit' => 'Pemasukan',
                         'credit' => 'Pengeluaran',
                         default => $state,
                     })
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'debit' => 'success',
                         'credit' => 'danger',
                         default => 'gray',
@@ -131,21 +132,25 @@ class TransactionResource extends Resource
                     ->relationship(
                         'fund',
                         'name',
-                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
                     ),
                 SelectFilter::make('type')
                     ->options([
                         'debit' => 'Pemasukan',
                         'credit' => 'Pengeluaran',
                     ]),
+                // H3 Vera / AC-UI-01: filter untuk menampilkan record yang di-soft-delete.
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

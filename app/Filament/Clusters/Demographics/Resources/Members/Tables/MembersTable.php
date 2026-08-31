@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\Demographics\Resources\Members\Tables;
 
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -36,8 +37,8 @@ class MembersTable
                 TextColumn::make('gender')
                     ->label('Kelamin')
                     ->badge()
-                    ->color(fn(string $state): string => $state === 'm' ? 'blue' : 'pink')
-                    ->formatStateUsing(fn(string $state): string => $state === 'm' ? 'Laki-laki' : 'Perempuan'),
+                    ->color(fn (string $state): string => $state === 'm' ? 'blue' : 'pink')
+                    ->formatStateUsing(fn (string $state): string => $state === 'm' ? 'Laki-laki' : 'Perempuan'),
                 TextColumn::make('birth_date')
                     ->label('Lahir')
                     ->date('d M Y')
@@ -45,14 +46,14 @@ class MembersTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'aktif' => 'success',
                         'titipan' => 'warning',
                         'pindah' => 'info',
                         'meninggal' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'aktif' => 'Aktif',
                         'titipan' => 'Titipan',
                         'pindah' => 'Pindah',
@@ -75,14 +76,18 @@ class MembersTable
                         'm' => 'Laki-laki',
                         'f' => 'Perempuan',
                     ]),
+                // H3 Vera / AC-UI-01: filter untuk menampilkan record yang di-soft-delete.
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

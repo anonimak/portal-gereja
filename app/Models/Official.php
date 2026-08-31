@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Traits\AuditsActivity;
 use App\Traits\BelongsToChurch;
+use App\Traits\RecordsAuditTrail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Official extends Model
 {
-    use AuditsActivity, BelongsToChurch, HasFactory, SoftDeletes;
+    use BelongsToChurch, HasFactory, RecordsAuditTrail;
 
     /**
      * Kolom FK yang harus satu gereja dengan official ini (HIGH-2 Vera).

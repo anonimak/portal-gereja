@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Traits\AuditsActivity;
 use App\Traits\BelongsToChurch;
+use App\Traits\RecordsAuditTrail;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Member extends Model
 {
-    use AuditsActivity, BelongsToChurch, HasFactory, SoftDeletes;
+    use BelongsToChurch, HasFactory, RecordsAuditTrail, SoftDeletes;
 
     /**
      * Kolom FK yang harus satu gereja dengan member ini (HIGH-2 Vera).
@@ -25,6 +25,25 @@ class Member extends Model
     protected function churchForeignKeyMap(): array
     {
         return ['family_id' => Family::class];
+    }
+
+    /**
+     * C2 Vera: soft delete/restore member ikut menimpa sakramen anak (member_sacraments)
+     * supaya tidak ada orphan aktif saat member dihapus, dan kembali saat di-restore.
+     */
+    public static function booted(): void
+    {
+        static::deleted(function (Member $member): void {
+            if ($member->isForceDeleting()) {
+                return; // hard delete — cascade DB menangani anak.
+            }
+
+            $member->sacraments()->withTrashed()->delete();
+        });
+
+        static::restored(function (Member $member): void {
+            $member->sacraments()->withTrashed()->restore();
+        });
     }
 
     /**

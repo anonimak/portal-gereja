@@ -13,6 +13,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -25,6 +27,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -145,7 +148,9 @@ class EventResource extends Resource
                                     ->relationship(
                                         'member',
                                         'full_name',
-                                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                        // M2 Vera: sertakan member yang di-soft-delete supaya roster
+                                        // dengan member terhapus tetap bisa diedit.
+                                        fn (Builder $query) => $query->withTrashed()->where('church_id', auth()->user()->church_id)
                                     ),
                                 Select::make('official_id')
                                     ->label('Pendeta / Majelis')
@@ -218,15 +223,18 @@ class EventResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                // H3 Vera / AC-UI-01: filter untuk menampilkan record yang di-soft-delete.
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }
