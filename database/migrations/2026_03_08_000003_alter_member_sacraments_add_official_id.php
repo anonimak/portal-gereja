@@ -11,7 +11,8 @@ return new class extends Migration {
     {
         Schema::table('member_sacraments', function (Blueprint $table): void {
             $table->dropColumn('minister_name');
-            $table->foreignId('official_id')->nullable()->after('type')->constrained('officials')->cascadeOnDelete()->index();
+            $table->foreignId('official_id')->nullable()->after('type')->constrained('officials')->cascadeOnDelete();
+            $table->index('official_id');
         });
     }
 

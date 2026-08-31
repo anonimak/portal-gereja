@@ -14,7 +14,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('church_id')->nullable()->constrained('churches')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->nullable()->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id');
             $table->string('role')->default('church_admin');
         });
     }

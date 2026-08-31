@@ -11,8 +11,10 @@ return new class extends Migration {
     {
         Schema::create('members', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
-            $table->foreignId('family_id')->constrained('families')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id');
+            $table->foreignId('family_id')->constrained('families')->cascadeOnDelete();
+            $table->index('family_id');
             $table->string('id_card_number')->nullable();
             $table->string('full_name');
             $table->enum('gender', ['m', 'f'])->nullable();

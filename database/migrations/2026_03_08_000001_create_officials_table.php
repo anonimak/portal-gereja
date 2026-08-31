@@ -11,9 +11,11 @@ return new class extends Migration {
     {
         Schema::create('officials', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id');
             $table->enum('type', ['majelis_lokal', 'pendeta_internal', 'pelayan_tamu']);
-            $table->foreignId('member_id')->nullable()->constrained('members')->cascadeOnDelete()->index();
+            $table->foreignId('member_id')->nullable()->constrained('members')->cascadeOnDelete();
+            $table->index('member_id');
             $table->string('external_name')->nullable();
             $table->string('origin_church')->nullable();
             $table->date('start_date');
