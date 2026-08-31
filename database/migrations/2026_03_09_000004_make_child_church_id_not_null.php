@@ -16,8 +16,13 @@ use Illuminate\Support\Facades\Schema;
  *    data antar gereja — sama seperti fix events.church_id di 2026_03_09_000003).
  * 2. Ubah kolom menjadi NOT NULL.
  *
- * Portabilitas: backfill baris-per-baris di PHP (berjalan di MySQL & SQLite),
- * NOT NULL via change() (didukung Laravel 12 di SQLite/MySQL).
+ * Portabilitas: backfill baris-per-baris di PHP (berjalan di MySQL & SQLite).
+ *
+ * Fix MySQL Error 1830 ("Column 'church_id' cannot be NOT NULL: needed in a
+ * foreign key constraint"): MySQL melarang kolom yang dipakai FK diubah jadi
+ * NOT NULL selama FK masih terpasang. Pola aman & portabel (SQLite/MySQL):
+ *   drop FK → alter kolom NOT NULL → re-add FK dengan semantik yang sama
+ *   (constrained('churches')->nullOnDelete()).
  */
 return new class extends Migration
 {
@@ -54,12 +59,28 @@ return new class extends Migration
             DB::table('event_rosters')->whereNull('church_id')->update(['church_id' => $firstChurchId]);
         }
 
-        // ---------- Jadikan NOT NULL ----------
-        Schema::table('member_sacraments', function (Blueprint $table): void {
-            $table->unsignedBigInteger('church_id')->nullable(false)->change();
+        // ---------- Jadikan NOT NULL: drop FK → change → re-add FK (MySQL Error 1830 fix) ----------
+        $this->makeNotNullWithForeignKey('member_sacraments');
+        $this->makeNotNullWithForeignKey('event_rosters');
+    }
+
+    /**
+     * Ubah kolom church_id menjadi NOT NULL pada tabel child yang memiliki FK
+     * ke churches. MySQL melarang alter NOT NULL selama FK aktif, jadi FK
+     * dilepas dulu lalu dipasang ulang dengan semantik yang sama.
+     */
+    private function makeNotNullWithForeignKey(string $table): void
+    {
+        Schema::table($table, function (Blueprint $blueprint): void {
+            $blueprint->dropForeign(['church_id']);
         });
-        Schema::table('event_rosters', function (Blueprint $table): void {
-            $table->unsignedBigInteger('church_id')->nullable(false)->change();
+
+        Schema::table($table, function (Blueprint $blueprint): void {
+            $blueprint->unsignedBigInteger('church_id')->nullable(false)->change();
+        });
+
+        Schema::table($table, function (Blueprint $blueprint): void {
+            $blueprint->foreign('church_id')->references('id')->on('churches')->nullOnDelete();
         });
     }
 
