@@ -65,6 +65,7 @@
 | `title` | string | mis. "Katakisasi Angkatan 2026-1" |
 | `start_date` / `end_date` | date, nullable | rentang program |
 | `status` | enum `draft \| berjalan \| selesai \| batal`, default `draft` | `selesai` = syarat terbit dokumen |
+| `template_id` | FK `guidance_templates`, nullable + index | template topik yang dipakai (informasional, dari Template Topik Bimbingan) |
 | `notes` | text, nullable | |
 | `deleted_at` | timestamp nullable | |
 | timestamps | | |
@@ -107,7 +108,43 @@
 - **Check-in/penambahan ulang setelah soft-delete → restore-or-create** (pola T2 §1.4): cari `withTrashed()->where([session_id, member_id])` → restore kalau ada record soft-deleted, lewati kalau aktif, create kalau belum ada. Pencarian tetap dalam scope `church_id`.
 - Untuk **pra_nikah**: peserta = **2 member** (pasangan) — cukup tambah 2 baris pivot per sesi; tidak perlu kolom `role`.
 
-### 2.5 `marriages` — Pernikahan (Akta Nikah)
+### 2.5 `guidance_templates` — Template Topik Bimbingan
+
+| kolom | tipe | ket |
+|---|---|---|
+| `id` | bigint PK | |
+| `church_id` | FK + index | NOT NULL |
+| `type` | enum `pra_sidi \| pra_nikah` | jenis bimbingan |
+| `name` | string | mis. "Template Pra-Sidi Standar (12 sesi)" |
+| `session_count` | int | jumlah sesi (default 12) |
+| `is_default` | bool, default false | template bawaan seeder |
+| `notes` | text, nullable | |
+| `deleted_at` | timestamp nullable | |
+| timestamps | | |
+
+- `BelongsToChurch` (tanpa FK silang → `churchForeignKeyMap` kosong; `church_id` dari aktor / form / ChurchObserver).
+- Relasi: `guidanceTemplate.sessions()` (hasMany, ordered `session_number`), `guidanceTemplate.programs()` (hasMany GuidanceProgram).
+- **Seeder default (per gereja):** saat gereja dibuat via `ChurchObserver`, buat 2 template — `pra_sidi` 12 sesi & `pra_nikah` 12 sesi (pola seed kategori keuangan existing).
+
+### 2.6 `guidance_template_sessions` — Topik per sesi template (urut)
+
+| kolom | tipe | ket |
+|---|---|---|
+| `id` | bigint PK | |
+| `church_id` | FK + index | NOT NULL |
+| `template_id` | FK `guidance_templates` + index | |
+| `session_number` | int | urutan 1..N |
+| `topic` | string | topik tetap (mis. "Allah Tritunggal") |
+| `notes` | text, nullable | |
+| `deleted_at` | timestamp nullable | |
+| timestamps | | |
+| **UNIQUE** | `(template_id, session_number)` | |
+
+- `BelongsToChurch`; `churchForeignKeyMap: ['template_id' => GuidanceTemplate::class]`; `deriveChurchIdFromParent` dari `template`.
+- **Topik default Pra-Sidi (12 sesi):** 1) Pengenalan Iman Kristen & Alkitab, 2) Allah Tritunggal, 3) Manusia & Dosa, 4) Yesus Kristus & Keselamatan, 5) Roh Kudus & Kehidupan Baru, 6) Gereja & Persekutuan, 7) Ibadah & Doa, 8) Sakramen (Baptisan & Perjamuan Kudus), 9) Kehidupan Kristen Sehari-hari, 10) Kesaksian & Pelayanan, 11) Etika & Moral Kristen, 12) Ikrar Sidi / Pengakuan Iman.
+- **Topik default Pra-Nikah (12 sesi):** 1) Makna Pernikahan Kristen, 2) Dasar Alkitabiah Pernikahan, 3) Peran Suami & Istri, 4) Komunikasi dalam Keluarga, 5) Pengelolaan Keuangan Keluarga, 6) Konflik & Pengampunan, 7) Seksualitas & Keintiman, 8) Ibadah Keluarga & Iman, 9) Relasi dengan Mertua & Keluarga Besar, 10) Pola Asuh Anak, 11) Pelayanan & Komunitas, 12) Persiapan Pemberkatan Nikah.
+
+### 2.7 `marriages` — Pernikahan (Akta Nikah)
 
 | kolom | tipe | ket |
 |---|---|---|
@@ -129,7 +166,7 @@
 - `BelongsToChurch`; `churchForeignKeyMap: ['husband_member_id' => Member::class, 'wife_member_id' => Member::class, 'official_id' => Official::class, 'program_id' => GuidanceProgram::class]`; `deriveChurchIdFromParent` dari `husband_member_id`.
 - **Sinkron sakramen:** saat `marriages` dibuat, otomatis buat **2 baris `member_sacraments`** (type `nikah`, satu per pasangan) → otomatis muncul di Warta & riwayat sakramen masing-masing. Tambah kolom `member_sacraments.marriage_id` (nullable) sebagai penanda. Hapus marriage → soft-delete 2 baris sakramen itu.
 
-### 2.6 `member_deaths` — Kematian
+### 2.8 `member_deaths` — Kematian
 
 | kolom | tipe | ket |
 |---|---|---|
@@ -148,7 +185,7 @@
 - `BelongsToChurch`; `churchForeignKeyMap: ['member_id' => Member::class, 'official_id' => Official::class, 'event_id' => Event::class]`; `deriveChurchIdFromParent` dari `member`.
 - **Side effect:** saat `member_deaths` dibuat → `member.status = 'meninggal'`. Restore/hapus death **tidak** otomatis mengembalikan status (asumsi A8).
 
-### 2.7 Modifikasi tabel existing
+### 2.9 Modifikasi tabel existing
 
 - `member_sacraments`: tambah `marriage_id` (FK `marriages`, nullable, index), `program_id` (FK `guidance_programs`, nullable, index), `issued_at` (date, nullable), `document_path` (string, nullable — cadangan untuk file PDF tersimpan). Type enum **tidak diubah** (`penyerahan | baptis_anak | sidi | baptis_dewasa | nikah` — sudah mencakup semua kebutuhan).
 - `members`: **tidak** mengubah enum status. (Opsional helper `Member::markDeceased()`.)
@@ -171,8 +208,8 @@
 4. Record otomatis muncul di Warta minggu tsb (tanpa ubah Warta).
 
 ### 3.3 Bimbingan Pra-Sidi (katakisasi)
-1. Buat **GuidanceProgram** `type=pra_sidi` → status `draft`.
-2. Jadwalkan **GuidanceSession** (`session_at`, `official_id` = Pendeta/Majelis pembimbing) — beberapa sesi per program.
+1. Buat **GuidanceProgram** `type=pra_sidi` → status `draft`; pilih **Template Topik Bimbingan** (default: Template Pra-Sidi 12 sesi) ATAU tanpa template (sesi manual).
+2. Bila dibuat **dari template**: sistem otomatis membuat **12 GuidanceSession** (`title` = topik template urut; `session_at` & `official_id` kosong). Lalu sesuaikan: jadwal (`session_at`), pembimbing (`official_id`), tambah/kurang sesi, ubah topik — sesuai kebutuhan angkatan.
 3. Tambah **peserta** (member) per sesi via pivot `guidance_session_members`; tandai `attended` tiap pertemuan.
 4. Setelah semua sesi & peserta tuntas → status program = `selesai`.
 5. **Terbitkan sakramen:** buat `member_sacraments` **`type=sidi`** (untuk yang sudah baptis anak) atau **`type=baptis_dewasa`** (yang belum pernah dibaptis) — pilihan di UI saat penerbitan; isi `program_id` = program pra-sidi.
@@ -182,8 +219,8 @@
 - Sama dengan 3.3 langkah 5–6; dokumen bernama "Dokumen Baptis" (untuk `baptis_dewasa`) / "Dokumen Sidi" (untuk `sidi`).
 
 ### 3.5 Bimbingan Pra-Nikah
-1. Buat **GuidanceProgram** `type=pra_nikah`.
-2. Jadwalkan **GuidanceSession** (sama seperti pra-sidi).
+1. Buat **GuidanceProgram** `type=pra_nikah`; pilih **Template Topik Bimbingan** (default: Template Pra-Nikah 12 sesi) ATAU tanpa template.
+2. Bila dari template: sistem membuat **12 GuidanceSession** (topik default urut, jadwal/pembimbing kosong) — sesuaikan jadwal, pembimbing, topik, jumlah sesi.
 3. Tambah **2 peserta** (pasangan) per sesi; tandai kehadiran keduanya.
 4. Status program = `selesai`.
 5. Lanjut ke **Marriage** (3.6) dengan `program_id` diisi.
@@ -219,6 +256,7 @@
 ## 5. Penjadwalan Bimbingan
 
 - Satu `GuidanceProgram` = satu angkatan/kelompok; banyak `GuidanceSession` (pertemuan) dengan `session_at` (datetime) → tampil sebagai daftar/agenda.
+- **Template Topik Bimbingan** (`guidance_templates` + `guidance_template_sessions`): daftar topik tetap per jenis bimbingan (Pra-Sidi & Pra-Nikah). Saat program dibuat, admin memilih template → sistem membuat sesi otomatis (topik default urut), lalu bebas disesuaikan (tambah/kurang sesi, ubah topik, set `session_at`, set `official_id`). `program.template_id` mencatat template sumber (informasional).
 - Peserta per sesi = `guidance_session_members` (pivot + `attended`).
 - Rekap: jumlah pertemuan dihadiri per member; program `selesai` otomatis tersedia di dropdown penerbitan sakramen/marriage (`program_id`).
 - Tidak ada recurring otomatis (asumsi A3 — jadwal berulang task terpisah); admin membuat sesi manual.
@@ -251,6 +289,7 @@
 | `report_viewer` | view (read-only) | view |
 
 - Policy baru: `BirthRecordPolicy`, `GuidanceProgramPolicy`, `GuidanceSessionPolicy`, `GuidanceSessionMemberPolicy`, `MarriagePolicy`, `DeathPolicy` — semua `extends TenantPolicy`, `$module = 'lifecycle'`.
+- **Template Topik Bimbingan** termasuk modul `lifecycle`: `church_admin`/`super_admin` dapat kelola template (edit topik default per gereja); `warta_editor`/`report_viewer` read-only; `finance_admin`/`jemaat_admin` ditolak.
 - Semua keputusan akses di-server (Policy), URL langsung → 403; UI hanya menyembunyikan menu (lapisan kedua).
 
 ---
@@ -259,7 +298,7 @@
 
 - **Cluster `Lifecycle`** (nav: Lifecycle) dengan 4 resource:
   - `BirthRecordResource` (+ akses cepat dari MemberResource).
-  - `GuidanceProgramResource` → tab **Sessions** (RelationManager: create/edit sesi, jadwal) → per sesi tab **Participants** (RelationManager: tambah member, toggle `attended`).
+  - `GuidanceProgramResource` → form punya **Select "Template Topik"** (opsional, list template per jenis) + tombol **"Instantiate dari Template"** → membuat sesi otomatis; tab **Sessions** (RelationManager: create/edit sesi, jadwal, topik, pembimbing) → per sesi tab **Participants** (RelationManager: tambah member, toggle `attended`).
   - `MarriageResource` (+ otomasi 2 sakramen nikah).
   - `DeathResource` (+ action "Catat Kematian" di MemberResource; opsi buat dari Event pemakaman).
 - Resource **Lifecycle** memakai pola existing: `TrashedFilter`, `RestoreAction`, `DeleteAction` (soft), `RestoreBulkAction`, badge `status`/`type`, `church_id` tersembunyi utk non-super_admin (global scope menjamin).
@@ -270,7 +309,7 @@
 ## 9. Acceptance Criteria (GIVEN / WHEN / THEN)
 
 ### Skema & model
-- **AC-LC-01** GIVEN migrasi baru dijalankan, THEN tabel `birth_records`, `guidance_programs`, `guidance_sessions`, `guidance_session_members`, `marriages`, `member_deaths` ada lengkap dgn `church_id` NOT NULL + index, FK, `deleted_at`, timestamps; `member_sacraments` punya kolom baru `marriage_id`, `program_id`, `issued_at`, `document_path`.
+- **AC-LC-01** GIVEN migrasi baru dijalankan, THEN tabel `birth_records`, `guidance_programs`, `guidance_sessions`, `guidance_session_members`, `guidance_templates`, `guidance_template_sessions`, `marriages`, `member_deaths` ada lengkap dgn `church_id` NOT NULL + index, FK, `deleted_at`, timestamps; `member_sacraments` punya kolom baru `marriage_id`, `program_id`, `issued_at`, `document_path`; `guidance_programs` punya kolom `template_id`.
 - **AC-LC-02** GIVEN setiap model baru, THEN memakai `BelongsToChurch` + `SoftDeletes` + `RecordsAuditTrail`; `churchForeignKeyMap` & `deriveChurchIdFromParent` sesuai §2; **tidak ada** query manual `where('church_id', auth()...)` di kode baru.
 - **AC-LC-03** GIVEN `UNIQUE(session_id, member_id)` × SoftDeletes, THEN penambahan peserta memakai **restore-or-create** (record soft-deleted di-restore, duplikat aktif dilewati, tidak ada partial index) — konsisten AC-T2-17/18.
 
@@ -297,6 +336,12 @@
 - **AC-LC-15** GIVEN create/update/delete/restore pada salah satu model baru, THEN `audit_logs` tercatat (action, user_id, church_id, old/new).
 - **AC-LC-16** GIVEN record lifecycle di-soft-delete, THEN tidak muncul di list default tapi masih ada di DB (`withTrashed()`); restore mengembalikan tampilan.
 
+### Template Topik Bimbingan
+- **AC-LC-17** GIVEN seeder default dijalankan (per gereja via ChurchObserver), THEN tersedia 2 template: Template Pra-Sidi (12 sesi) & Template Pra-Nikah (12 sesi), masing-masing berisi `guidance_template_sessions` dengan `session_number` 1..12 & `topic` terisi urut.
+- **AC-LC-18** GIVEN admin membuat GuidanceProgram `type=pra_sidi`/`pra_nikah` dan memilih template, THEN sistem otomatis membuat **12 GuidanceSession** dengan `title` = topik template urut, `session_at`/`official_id` null; `program.template_id` terisi; template sumber tidak berubah.
+- **AC-LC-19** GIVEN program sudah di-instantiate dari template, THEN sesi tetap bisa disesuaikan: tambah/kurang sesi, ubah `title` (topik), set `session_at` (jadwal), set `official_id` (pembimbing), tanpa memengaruhi template sumber.
+- **AC-LC-20** GIVEN admin membuat program **tanpa** template, THEN perilaku lama dipertahankan (sesi dibuat manual satu per satu); tidak wajib memakai template.
+
 ### Test wajib (feature tests, pola `tests/Feature/*Test.php` + RefreshDatabase)
 1. `test_birth_record_create_dan_akta_render` (AC-01, 07, 08)
 2. `test_marriage_create_membuat_2_sakramen_nikah` (AC-04)
@@ -310,6 +355,9 @@
 10. `test_lifecycle_soft_delete_dan_restore` (AC-16)
 11. `test_lifecycle_audit_tercatat` (AC-15)
 12. `test_dokumen_render_dengan_data_null_aman` (AC-08)
+13. `test_guidance_seeder_template_default_12_sesi` (AC-17)
+14. `test_guidance_program_dari_template_membuat_12_sesi` (AC-18)
+15. `test_guidance_sesi_dari_template_bisa_disesuaikan` (AC-19)
 
 ---
 
@@ -327,16 +375,19 @@
 - **A10.** Penerbitan dokumen tidak otomatis; user menekan "Cetak". Nomor dokumen (`certificate_number`) diisi manual (default editable).
 - **A11.** Implementasi modul `lifecycle` bergantung pada RBAC T3 (`UserRole`/`Permission`/`RoleRegistry`/`User::hasPermission`); jika T3 belum diimplementasi saat Byte mulai, gunakan fallback `TenantPolicy::$allowedRoles` existing dengan catatan TODO sinkron ke T3.
 - **A12.** `witness_names` (json) pada marriage cukup 2 kolom bebas teks — tidak perlu entitas saksi terpisah.
+- **A13.** **Template Topik Bimbingan** dibuat otomatis per gereja lewat ChurchObserver (pola seed keuangan existing): tiap gereja baru mendapat 2 template default (Pra-Sidi & Pra-Nikah, masing-masing 12 sesi). Template adalah data gereja (`church_id`), bukan global.
+- **A14.** Topik default pada template hanyalah **nilai awal yang bisa diedit** admin per gereja; template bukan dokumen mati. `template_id` di program hanya catatan sumber (topik **disalin** ke sesi saat instantiate, bukan relasi langsung yang hidup).
 
 ---
 
 ## Lampiran — File yang Dibuat/Diubah
 
 **Baru:**
-- Migrasi: `create_birth_records_table`, `create_guidance_programs_table`, `create_guidance_sessions_table`, `create_guidance_session_members_table`, `create_marriages_table`, `create_member_deaths_table`, `alter_member_sacraments_add_lifecycle_columns` (urutan tanggal `2026_03_1x_xxxxxx`)
-- Model: `BirthRecord`, `GuidanceProgram`, `GuidanceSession`, `GuidanceSessionMember`, `Marriage`, `Death` (6)
-- Factory: 6 factory (mengikuti pola existing)
-- Policy: 6 policy `extends TenantPolicy` ($module = `lifecycle`)
+- Migrasi: `create_birth_records_table`, `create_guidance_programs_table`, `create_guidance_sessions_table`, `create_guidance_session_members_table`, `create_guidance_templates_table`, `create_guidance_template_sessions_table`, `alter_guidance_programs_add_template_id`, `create_marriages_table`, `create_member_deaths_table`, `alter_member_sacraments_add_lifecycle_columns` (urutan tanggal `2026_03_1x_xxxxxx`)
+- Model: `BirthRecord`, `GuidanceProgram`, `GuidanceSession`, `GuidanceSessionMember`, `GuidanceTemplate`, `GuidanceTemplateSession`, `Marriage`, `Death` (8)
+- Factory: 8 factory (mengikuti pola existing)
+- Policy: 8 policy `extends TenantPolicy` ($module = `lifecycle`) — termasuk `GuidanceTemplatePolicy`, `GuidanceTemplateSessionPolicy`
+- Seeder: `GuidanceTemplateSeeder` (2 template default × 12 sesi), dipanggil via `ChurchObserver` saat gereja dibuat
 - Filament: `Clusters/Lifecycle/LifecycleCluster.php`, `BirthRecordResource`, `GuidanceProgramResource` (+ RelationManagers Sessions/Participants), `MarriageResource`, `DeathResource`, halaman cetak dokumen + blade view
 - Test: `tests/Feature/LifecycleTest.php`
 
