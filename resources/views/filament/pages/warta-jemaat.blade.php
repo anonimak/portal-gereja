@@ -74,7 +74,7 @@
                             Cetak / PDF
                         </button>
 
-                        @if (\Illuminate\Support\Facades\Route::has('warta-jemaat.export-pdf'))
+                        @if ($this->canExportPdf())
                             <form method="POST" action="{{ route('warta-jemaat.export-pdf') }}" class="inline">
                                 @csrf
                                 <input type="hidden" name="start_date" value="{{ $startDate->format('Y-m-d') }}">
@@ -88,16 +88,18 @@
                                 </button>
                             </form>
                         @else
-                            <span title="Endpoint export PDF disiapkan backend (Byte)"
-                                class="inline-flex items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm font-semibold cursor-not-allowed">
+                            <button type="button" disabled
+                                title="Endpoint export PDF disiapkan backend (Byte)"
+                                aria-disabled="true"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm font-semibold cursor-not-allowed opacity-70">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
                                 Unduh PDF
-                            </span>
+                            </button>
                         @endif
 
-                        @if (\Illuminate\Support\Facades\Route::has('warta-jemaat.export-excel'))
+                        @if ($this->canExportExcel())
                             <form method="POST" action="{{ route('warta-jemaat.export-excel') }}" class="inline">
                                 @csrf
                                 <input type="hidden" name="start_date" value="{{ $startDate->format('Y-m-d') }}">
@@ -111,13 +113,15 @@
                                 </button>
                             </form>
                         @else
-                            <span title="Endpoint export Excel disiapkan backend (Byte)"
-                                class="inline-flex items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm font-semibold cursor-not-allowed">
+                            <button type="button" disabled
+                                title="Endpoint export Excel disiapkan backend (Byte)"
+                                aria-disabled="true"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-2 text-sm font-semibold cursor-not-allowed opacity-70">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
                                 Unduh Excel
-                            </span>
+                            </button>
                         @endif
                     </div>
                 </div>

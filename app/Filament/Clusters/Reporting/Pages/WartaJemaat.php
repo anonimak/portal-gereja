@@ -12,6 +12,7 @@ use App\Models\Transaction;
 use BackedEnum;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 
 class WartaJemaat extends Page
 {
@@ -80,6 +81,24 @@ class WartaJemaat extends Page
     {
         $this->startDate = $anchor->copy()->startOfMonth();
         $this->endDate = $anchor->copy()->endOfMonth();
+    }
+
+    /**
+     * Ketersediaan endpoint export PDF (disediakan backend, T1 Byte).
+     * Guard Route::has() — kalau route belum terdaftar, tombol dirender DISABLED
+     * dan route() tidak pernah dipanggil (Vera HIGH + MED).
+     */
+    public function canExportPdf(): bool
+    {
+        return Route::has('warta-jemaat.export-pdf');
+    }
+
+    /**
+     * Ketersediaan endpoint export Excel (disediakan backend, T1 Byte).
+     */
+    public function canExportExcel(): bool
+    {
+        return Route::has('warta-jemaat.export-excel');
     }
 
     /**
