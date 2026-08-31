@@ -12,19 +12,31 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Section;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class SacramentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'sacraments';
 
     protected static ?string $recordTitleAttribute = 'type';
+
+    /**
+     * Pastikan sakramen baru selalu mengikuti gereja member induk (owner record).
+     *
+     * HIGH-1 Vera: super_admin tidak ter-scope ke gereja sendiri — saat membuka
+     * member gereja lain dan membuat sakramen, church_id harus mengikuti member,
+     * bukan gereja aktor.
+     */
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['church_id'] = $this->getOwnerRecord()->church_id;
+
+        return $data;
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -51,11 +63,10 @@ class SacramentsRelationManager extends RelationManager
                             ->nullable()
                             ->searchable()
                             ->preload()
-                            ->relationship(
-                                'official',
-                                'display_name',
-                                fn(Builder $query): Builder => $query->where('church_id', auth()->user()->church_id)
-                            ),
+                            // Scoping official dijamin global scope BelongsToChurch:
+                            // church_admin hanya melihat official gereja sendiri,
+                            // super_admin melihat semua gereja.
+                            ->relationship('official', 'display_name'),
                         TextInput::make('certificate_number')
                             ->label('Nomor Sertifikat')
                             ->nullable(),
@@ -65,20 +76,15 @@ class SacramentsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        $churchId = auth()->user()?->church_id;
-
         return $table
             ->recordTitleAttribute('type')
-            ->modifyQueryUsing(
-                fn(Builder $query): Builder => $churchId
-                    ? $query->where('church_id', $churchId)
-                    : $query
-            )
+            // Scoping church_id dijamin global scope BelongsToChurch (T1):
+            // query relasi sacramens dari member induk yang sudah ter-scope.
             ->columns([
                 TextColumn::make('type')
                     ->label('Jenis Sakramen')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'penyerahan' => 'blue',
                         'baptis_anak' => 'cyan',
                         'sidi' => 'purple',
@@ -86,7 +92,7 @@ class SacramentsRelationManager extends RelationManager
                         'nikah' => 'pink',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'penyerahan' => 'Penyerahan',
                         'baptis_anak' => 'Baptis Anak',
                         'sidi' => 'Sidi',

@@ -16,6 +16,16 @@ class Member extends Model
     use BelongsToChurch, HasFactory;
 
     /**
+     * Kolom FK yang harus satu gereja dengan member ini (HIGH-2 Vera).
+     *
+     * @return array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     */
+    protected function churchForeignKeyMap(): array
+    {
+        return ['family_id' => Family::class];
+    }
+
+    /**
      * @var array<int, string>
      */
     protected $fillable = [

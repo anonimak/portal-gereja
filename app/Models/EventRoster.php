@@ -14,6 +14,21 @@ class EventRoster extends Model
     use BelongsToChurch, HasFactory;
 
     /**
+     * Kolom FK yang harus satu gereja dengan roster ini (HIGH-2 Vera).
+     *
+     * @return array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     */
+    protected function churchForeignKeyMap(): array
+    {
+        return [
+            'event_id' => Event::class,
+            'member_id' => Member::class,
+            'role_id' => MinistryRole::class,
+            'official_id' => Official::class,
+        ];
+    }
+
+    /**
      * @var array<int, string>
      */
     protected $fillable = [

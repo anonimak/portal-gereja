@@ -14,6 +14,19 @@ class Transaction extends Model
     use BelongsToChurch, HasFactory;
 
     /**
+     * Kolom FK yang harus satu gereja dengan transaksi ini (HIGH-2 Vera).
+     *
+     * @return array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     */
+    protected function churchForeignKeyMap(): array
+    {
+        return [
+            'fund_id' => Fund::class,
+            'category_id' => FinancialCategory::class,
+        ];
+    }
+
+    /**
      * @var array<int, string>
      */
     protected $fillable = [

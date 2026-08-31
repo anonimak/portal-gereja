@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
@@ -57,5 +59,17 @@ class User extends Authenticatable
     public function church(): BelongsTo
     {
         return $this->belongsTo(Church::class);
+    }
+
+    /**
+     * Gerbang akses panel Filament (AC-T2-04 — BLOCK-2 Vera).
+     *
+     * Hanya role panel yang sah yang boleh masuk ke /admin:
+     * super_admin, church_admin, finance_admin.
+     * User tanpa role / role tak dikenal ('reader', '', dll.) DITOLAK.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return in_array($this->role, ['super_admin', 'church_admin', 'finance_admin'], true);
     }
 }

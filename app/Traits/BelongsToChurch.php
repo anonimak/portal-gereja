@@ -6,6 +6,7 @@ namespace App\Traits;
 
 use App\Models\Church;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait BelongsToChurch
@@ -19,7 +20,20 @@ trait BelongsToChurch
     }
 
     /**
-     * Boot the trait: add global scope and creating event.
+     * Daftar kolom foreign key yang WAJIB satu gereja dengan record ini.
+     *
+     * Format: ['family_id' => Family::class, 'member_id' => Member::class, ...]
+     * Default kosong — model yang punya FK silang harus meng-override method ini.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    protected function churchForeignKeyMap(): array
+    {
+        return [];
+    }
+
+    /**
+     * Boot the trait: add global scope, creating event, and FK consistency guard.
      */
     public static function bootBelongsToChurch(): void
     {
@@ -43,5 +57,57 @@ trait BelongsToChurch
                 $model->church_id = $actor->church_id;
             }
         });
+
+        // HIGH-2 Vera: tolak data dengan FK milik gereja lain (cross-church).
+        static::saving(function ($model) {
+            $model->assertChurchForeignKeysConsistent();
+        });
+    }
+
+    /**
+     * Validasi server-side bahwa semua FK bertanda gereja (church-scoped FK)
+     * menunjuk ke record pada gereja yang sama dengan record ini.
+     *
+     * Aturan:
+     * - Tanpa aktor terautentikasi (console/seeder/factory): dilewati.
+     * - Non-super_admin: target gereja = gereja aktor (karena creating memaksa
+     *   church_id ke gereja aktor). Member dengan family_id gereja lain => 403.
+     * - Super_admin: target = church_id record bila terisi; bila null dilewati
+     *   (flow relation-manager/form mengisi church_id secara implisit).
+     */
+    protected function assertChurchForeignKeysConsistent(): void
+    {
+        $actor = auth()->user();
+        if (! $actor) {
+            return;
+        }
+
+        $map = $this->churchForeignKeyMap();
+        if ($map === []) {
+            return;
+        }
+
+        $targetChurchId = $actor->role === 'super_admin'
+            ? $this->church_id
+            : $actor->church_id;
+
+        if ($targetChurchId === null) {
+            return;
+        }
+
+        foreach ($map as $column => $relatedModel) {
+            $value = $this->{$column};
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $related = $relatedModel::query()
+                ->withoutGlobalScopes()
+                ->find($value);
+
+            if ($related && (int) $related->church_id !== (int) $targetChurchId) {
+                abort(403, "Data referensi '{$column}' milik gereja lain tidak diizinkan.");
+            }
+        }
     }
 }

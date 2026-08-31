@@ -135,4 +135,26 @@ class TenantIsolationTest extends TestCase
         $this->assertSame(2, Event::count());
         $this->assertSame(2, Transaction::count());
     }
+
+    public function test_stat_widget_super_admin_melihat_semua_gereja(): void
+    {
+        $this->actingAs($this->superAdmin);
+
+        $widget = new \App\Filament\Widgets\StatsOverview;
+        $reflection = new \ReflectionMethod($widget, 'getStats');
+        $stats = $reflection->invoke($widget);
+
+        $this->assertCount(3, $stats);
+        // churchA 500.000 + churchB 500.000 (type debit) -> Rp1.000.000
+        $this->assertStringContainsString('Rp1.000.000', (string) $stats[1]->getValue());
+    }
+
+    public function test_events_church_id_tidak_null_setelah_migrasi(): void
+    {
+        $columns = \Illuminate\Support\Facades\DB::select('PRAGMA table_info(events)');
+        $churchCol = collect($columns)->firstWhere('name', 'church_id');
+
+        $this->assertNotNull($churchCol);
+        $this->assertSame(1, (int) $churchCol->notnull);
+    }
 }

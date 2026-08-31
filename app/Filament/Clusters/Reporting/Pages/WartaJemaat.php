@@ -22,6 +22,15 @@ class WartaJemaat extends Page
 
     protected static ?string $cluster = ReportingCluster::class;
 
+    /**
+     * Batasan role halaman (AC-T2-06 — BLOCK-3 Vera).
+     * Warta berisi data jemaat/event/sakramen + ringkasan keuangan → super_admin & church_admin.
+     * finance_admin TIDAK dibuka ke Warta (bukan murni laporan keuangan).
+     */
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()?->role, ['super_admin', 'church_admin'], true);
+    }
 
     public ?Carbon $startDate = null;
 
@@ -39,20 +48,23 @@ class WartaJemaat extends Page
     {
         $startDate = $this->startDate ?? Carbon::now()->startOfWeek(Carbon::SUNDAY);
         $endDate = $this->endDate ?? Carbon::now()->endOfWeek(Carbon::SATURDAY);
-        $churchId = auth()->user()?->church_id;
 
-        // Fetch events with rosters (scoped to church)
+        // Scoping church_id TIDAK ditulis eksplisit DI SINI — dijamin oleh global scope
+        // BelongsToChurch (T1): non-super_admin otomatis di-scope ke gereja sendiri,
+        // super_admin melihat SEMUA gereja (AC-T1-04/09 — HIGH-1 Vera).
+        // Menambahkan ->where('church_id', auth()->user()->church_id) justru akan
+        // men-scope super_admin ke gereja seed-nya (Candimas) — inkonsisten.
+
+        // Fetch events with rosters (scoped to church via global scope)
         $events = Event::with(['category', 'rosters' => function ($query) {
             $query->with(['member', 'official', 'role']);
         }])
-            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->whereBetween('start_datetime', [$startDate->startOfDay(), $endDate->endOfDay()])
             ->orderBy('start_datetime')
             ->get();
 
         // Fetch birthdays in date range (scoped to church, null-safe)
         $birthdays = Member::where('status', 'aktif')
-            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->whereNotNull('birth_date')
             ->get()
             ->filter(function ($member) use ($startDate, $endDate) {
@@ -66,18 +78,16 @@ class WartaJemaat extends Page
             })
             ->values();
 
-        // Fetch transactions grouped by type (scoped to church)
+        // Fetch transactions grouped by type (scoped to church via global scope)
         $transactions = Transaction::whereBetween('transaction_date', [$startDate, $endDate])
-            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->orderBy('transaction_date')
             ->get()
             ->groupBy(function ($transaction) {
                 return $transaction->type === 'debit' ? 'Pemasukan' : 'Pengeluaran';
             });
 
-        // Fetch member sacraments (scoped to church)
+        // Fetch member sacraments (scoped to church via global scope)
         $sacraments = MemberSacrament::with(['member', 'official'])
-            ->when($churchId, fn ($query) => $query->where('church_id', $churchId))
             ->whereBetween('sacrament_date', [$startDate, $endDate])
             ->orderBy('sacrament_date')
             ->get();

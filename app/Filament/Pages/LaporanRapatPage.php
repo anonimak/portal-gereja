@@ -12,15 +12,24 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
 use UnitEnum;
 
 class LaporanRapatPage extends Page implements HasForms
 {
     use InteractsWithForms;
+
+    /**
+     * Batasan role halaman (AC-T2-06 — BLOCK-3 Vera).
+     * Laporan Rapat & Keuangan boleh diakses finance_admin (laporan keuangan).
+     */
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()?->role, ['super_admin', 'church_admin', 'finance_admin'], true);
+    }
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
@@ -59,7 +68,7 @@ class LaporanRapatPage extends Page implements HasForms
         ]);
     }
 
-    public function form(Schema  $form): Schema
+    public function form(Schema $form): Schema
     {
         $currentYear = (int) now()->year;
 
@@ -70,7 +79,7 @@ class LaporanRapatPage extends Page implements HasForms
                         Select::make('period_type')
                             ->label('Tipe Periode')
                             ->options([
-                                'monthly'   => 'Bulanan',
+                                'monthly' => 'Bulanan',
                                 'quarterly' => 'Pleno Triwulan',
                             ])
                             ->live()
@@ -94,8 +103,8 @@ class LaporanRapatPage extends Page implements HasForms
                                 12 => 'Desember',
                             ])
                             ->live()
-                            ->visible(fn(Get $get) => $get('period_type') === 'monthly')
-                            ->required(fn(Get $get) => $get('period_type') === 'monthly')
+                            ->visible(fn (Get $get) => $get('period_type') === 'monthly')
+                            ->required(fn (Get $get) => $get('period_type') === 'monthly')
                             ->default((int) now()->month),
 
                         Select::make('quarter')
@@ -107,8 +116,8 @@ class LaporanRapatPage extends Page implements HasForms
                                 4 => 'Q4 (Okt–Des)',
                             ])
                             ->live()
-                            ->visible(fn(Get $get) => $get('period_type') === 'quarterly')
-                            ->required(fn(Get $get) => $get('period_type') === 'quarterly')
+                            ->visible(fn (Get $get) => $get('period_type') === 'quarterly')
+                            ->required(fn (Get $get) => $get('period_type') === 'quarterly')
                             ->default((int) ceil(now()->month / 3)),
 
                         Select::make('year')
@@ -136,19 +145,19 @@ class LaporanRapatPage extends Page implements HasForms
         // Baca dari properti $data (ter-sync dengan form via statePath('data') di Livewire,
         // dan bisa diisi langsung dari route export tanpa lifecycle Livewire).
         $periodType = $this->data['period_type'] ?? 'monthly';
-        $year       = (int) ($this->data['year']    ?? now()->year);
-        $month      = (int) ($this->data['month']   ?? now()->month);
-        $quarter    = (int) ($this->data['quarter'] ?? ceil(now()->month / 3));
+        $year = (int) ($this->data['year'] ?? now()->year);
+        $month = (int) ($this->data['month'] ?? now()->month);
+        $quarter = (int) ($this->data['quarter'] ?? ceil(now()->month / 3));
 
         $churchId = auth()->user()->church_id;
 
         if ($periodType === 'monthly') {
             $startDate = Carbon::create($year, $month, 1)->startOfDay();
-            $endDate   = $startDate->clone()->endOfMonth()->endOfDay();
+            $endDate = $startDate->clone()->endOfMonth()->endOfDay();
         } else {
             $startMonth = ($quarter - 1) * 3 + 1;
-            $startDate  = Carbon::create($year, $startMonth, 1)->startOfDay();
-            $endDate    = $startDate->clone()->addMonths(2)->endOfMonth()->endOfDay();
+            $startDate = Carbon::create($year, $startMonth, 1)->startOfDay();
+            $endDate = $startDate->clone()->addMonths(2)->endOfMonth()->endOfDay();
         }
 
         // Fetch events with eager loading
@@ -157,7 +166,7 @@ class LaporanRapatPage extends Page implements HasForms
             ->whereBetween('start_datetime', [$startDate, $endDate])
             ->with([
                 'category',
-                'rosters' => fn($q) => $q->with([
+                'rosters' => fn ($q) => $q->with([
                     'role',
                     'member',
                     'official.member',
@@ -175,17 +184,17 @@ class LaporanRapatPage extends Page implements HasForms
         $closingBalance = $openingBalance + $totalIncome - $totalExpenses;
 
         return [
-            'startDate'      => $startDate,
-            'endDate'        => $endDate,
-            'events'         => $events,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'events' => $events,
             'openingBalance' => $openingBalance,
-            'income'         => $income,
-            'expenses'       => $expenses,
-            'totalIncome'    => $totalIncome,
-            'totalExpenses'  => $totalExpenses,
+            'income' => $income,
+            'expenses' => $expenses,
+            'totalIncome' => $totalIncome,
+            'totalExpenses' => $totalExpenses,
             'closingBalance' => $closingBalance,
-            'churchName'     => auth()->user()->church->name ?? 'Gereja',
-            'periodLabel'    => $this->getPeriodLabel($periodType, $month, $quarter, $year),
+            'churchName' => auth()->user()->church->name ?? 'Gereja',
+            'periodLabel' => $this->getPeriodLabel($periodType, $month, $quarter, $year),
         ];
     }
 
@@ -223,7 +232,7 @@ class LaporanRapatPage extends Page implements HasForms
             ->with('category')
             ->get()
             ->groupBy('category.name')
-            ->map(fn($transactions) => [
+            ->map(fn ($transactions) => [
                 'category' => $transactions[0]->category->name,
                 'total' => $transactions->sum('amount'),
             ])
@@ -244,7 +253,7 @@ class LaporanRapatPage extends Page implements HasForms
             ->with('category')
             ->get()
             ->groupBy('category.name')
-            ->map(fn($transactions) => [
+            ->map(fn ($transactions) => [
                 'category' => $transactions[0]->category->name,
                 'total' => $transactions->sum('amount'),
             ])
@@ -272,7 +281,7 @@ class LaporanRapatPage extends Page implements HasForms
                 12 => 'Desember',
             ];
 
-            return ($months[$month] ?? '') . " {$year}";
+            return ($months[$month] ?? '')." {$year}";
         }
 
         $quarters = [
@@ -282,7 +291,7 @@ class LaporanRapatPage extends Page implements HasForms
             4 => 'Q4 (Okt–Des)',
         ];
 
-        return ($quarters[$quarter] ?? '') . " {$year}";
+        return ($quarters[$quarter] ?? '')." {$year}";
     }
 
     /**
@@ -297,13 +306,13 @@ class LaporanRapatPage extends Page implements HasForms
             $output = fopen('php://output', 'w');
 
             // Set header encoding
-            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
             // Header info
             fputcsv($output, [''], ';');
             fputcsv($output, [$reportData['churchName']], ';');
             fputcsv($output, ['Laporan Rapat & Keuangan'], ';');
-            fputcsv($output, ['Periode: ' . $reportData['periodLabel']], ';');
+            fputcsv($output, ['Periode: '.$reportData['periodLabel']], ';');
             fputcsv($output, [''], ';');
 
             // Events section
@@ -323,7 +332,7 @@ class LaporanRapatPage extends Page implements HasForms
                         $event->start_datetime->locale('id')->format('d M Y'),
                         $event->title,
                         $event->category->name ?? '-',
-                        ($roster->role->name ?? '-') . ': ' . $pelayan,
+                        ($roster->role->name ?? '-').': '.$pelayan,
                         $event->attendance_male ?? 0,
                         $event->attendance_female ?? 0,
                         $event->total_attendance,
