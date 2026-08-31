@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\AuditsActivity;
 use App\Traits\BelongsToChurch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
 {
-    use BelongsToChurch, HasFactory;
+    use AuditsActivity, BelongsToChurch, HasFactory, SoftDeletes;
 
     /**
      * Kolom FK yang harus satu gereja dengan event ini (HIGH-2 Vera).
      *
-     * @return array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     * @return array<string, class-string<Model>>
      */
     protected function churchForeignKeyMap(): array
     {

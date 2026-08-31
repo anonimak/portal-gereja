@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\AuditsActivity;
 use App\Traits\BelongsToChurch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Family extends Model
 {
-    use BelongsToChurch, HasFactory;
+    use AuditsActivity, BelongsToChurch, HasFactory, SoftDeletes;
 
     /**
      * @var array<int, string>

@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\AuditsActivity;
 use App\Traits\BelongsToChurch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MinistryRole extends Model
 {
-    use HasFactory, BelongsToChurch;
+    use AuditsActivity, BelongsToChurch, HasFactory, SoftDeletes;
 
     /**
      * @var array<int, string>
