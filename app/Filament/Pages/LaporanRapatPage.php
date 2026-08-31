@@ -252,9 +252,11 @@ class LaporanRapatPage extends Page implements HasForms
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
             ->get()
-            ->groupBy('category.name')
+            // H4 Vera: kategori bisa di-soft-delete → relasi null. Kelompokkan
+            // dengan fallback 'Tanpa kategori' agar laporan tidak 500.
+            ->groupBy(fn ($t) => $t->category?->name ?? 'Tanpa kategori')
             ->map(fn ($transactions) => [
-                'category' => $transactions[0]->category->name,
+                'category' => $transactions[0]->category?->name ?? 'Tanpa kategori',
                 'total' => $transactions->sum('amount'),
             ])
             ->values();
@@ -272,9 +274,11 @@ class LaporanRapatPage extends Page implements HasForms
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
             ->get()
-            ->groupBy('category.name')
+            // H4 Vera: kategori bisa di-soft-delete → relasi null. Kelompokkan
+            // dengan fallback 'Tanpa kategori' agar laporan tidak 500.
+            ->groupBy(fn ($t) => $t->category?->name ?? 'Tanpa kategori')
             ->map(fn ($transactions) => [
-                'category' => $transactions[0]->category->name,
+                'category' => $transactions[0]->category?->name ?? 'Tanpa kategori',
                 'total' => $transactions->sum('amount'),
             ])
             ->values();

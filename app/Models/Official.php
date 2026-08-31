@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\BelongsToChurch;
+use App\Traits\RecordsAuditTrail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Official extends Model
 {
-    use BelongsToChurch, HasFactory;
+    use BelongsToChurch, HasFactory, RecordsAuditTrail;
 
     /**
      * Kolom FK yang harus satu gereja dengan official ini (HIGH-2 Vera).
      *
-     * @return array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     * @return array<string, class-string<Model>>
      */
     protected function churchForeignKeyMap(): array
     {
