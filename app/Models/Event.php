@@ -106,8 +106,15 @@ class Event extends Model
             $hasRecords = $this->attendances->isNotEmpty();
             $present = $this->attendances->where('status', 'hadir')->count();
         } else {
-            $hasRecords = $this->attendances()->exists();
-            $present = $this->attendances()->where('status', 'hadir')->count();
+            // MED-2 Vera: SATU query agregat (COUNT + SUM CASE), bukan exists+count
+            // (double query per event). Portabel SQLite & MySQL.
+            $stats = $this->attendances()
+                ->toBase()
+                ->selectRaw('COUNT(*) as total_count, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as present_count', ['hadir'])
+                ->first();
+
+            $hasRecords = (int) ($stats->total_count ?? 0) > 0;
+            $present = (int) ($stats->present_count ?? 0);
         }
 
         if ($hasRecords) {
