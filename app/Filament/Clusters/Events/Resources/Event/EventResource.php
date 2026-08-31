@@ -7,7 +7,6 @@ namespace App\Filament\Clusters\Events\Resources\Event;
 use App\Filament\Clusters\Events\EventsCluster;
 use App\Models\Event;
 use App\Models\Official;
-use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -20,12 +19,10 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -84,20 +81,13 @@ class EventResource extends Resource
                         TextInput::make('location')
                             ->label('Lokasi')
                             ->maxLength(255),
-                        Fieldset::make('Kehadiran')
-                            ->schema([
-                                TextInput::make('attendance_male')
-                                    ->label('Kehadiran Laki-laki')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->minValue(0),
-                                TextInput::make('attendance_female')
-                                    ->label('Kehadiran Perempuan')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->minValue(0),
-                            ])
-                            ->columns(2),
+                        // AC-T2-11: kolom legacy attendance_male/attendance_female disembunyikan
+                        // dari form (tetap ada di DB sebagai fallback data historis).
+                        // Fieldset 'Kehadiran' dihapus; nilai lama dipertahankan via hidden input.
+                        TextInput::make('attendance_male')
+                            ->hidden(),
+                        TextInput::make('attendance_female')
+                            ->hidden(),
                     ]),
 
                 Section::make('Petugas Acara')
@@ -204,9 +194,25 @@ class EventResource extends Resource
                     ->counts('rosters')
                     ->label('Petugas')
                     ->formatStateUsing(fn (int $state): string => "{$state} Petugas"),
-                TextColumn::make('total_attendance')
+                // MED-2 Vera: accessor total_attendance (exists+count per event) = N+1.
+                // Ganti dengan aggregate subquery withCount — tanpa query tambahan per baris:
+                // present_count = jumlah record status 'hadir'; attendances_count = jumlah
+                // record (untuk deteksi "ada record tapi semua tidak_hadir"). Fallback legacy
+                // L/P hanya dipakai saat TIDAK ada record sama sekali (AC-T2-10).
+                TextColumn::make('present_count')
                     ->label('Total Kehadiran')
-                    ->sortable(),
+                    ->counts([
+                        'attendances',
+                        'attendances as present_count' => fn (Builder $query) => $query->where('status', 'hadir'),
+                    ])
+                    ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy('present_count', $direction))
+                    ->formatStateUsing(function (Event $record): int {
+                        if ((int) $record->attendances_count > 0) {
+                            return (int) $record->present_count;
+                        }
+
+                        return (int) ($record->attendance_male ?? 0) + (int) ($record->attendance_female ?? 0);
+                    }),
                 TextColumn::make('location')
                     ->label('Lokasi')
                     ->limit(40)
@@ -242,7 +248,7 @@ class EventResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\AttendancesRelationManager::class,
         ];
     }
 

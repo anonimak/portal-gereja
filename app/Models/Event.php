@@ -84,10 +84,99 @@ class Event extends Model
     }
 
     /**
-     * Calculate total attendance from male and female attendees.
+     * Catatan kehadiran per anggota pada acara ini.
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(EventAttendance::class);
+    }
+
+    /**
+     * Total kehadiran acara (AC-T2-10): bila ada record EventAttendance status
+     * 'hadir' → jumlah record; bila kosong → fallback data legacy
+     * (attendance_male + attendance_female) supaya laporan lama tetap berfungsi.
      */
     public function getTotalAttendanceAttribute(): int
     {
+        // AC-T2-10: bila event punya >=1 record attendance (berapapun statusnya,
+        // termasuk semua tidak_hadir), total = jumlah record status 'hadir'
+        // dan fallback legacy TIDAK dipakai. Fallback hanya saat tidak ada
+        // record sama sekali (data lama manual L/P).
+        if ($this->relationLoaded('attendances')) {
+            $hasRecords = $this->attendances->isNotEmpty();
+            $present = $this->attendances->where('status', 'hadir')->count();
+        } else {
+            // MED-2 Vera: SATU query agregat (COUNT + SUM CASE), bukan exists+count
+            // (double query per event). Portabel SQLite & MySQL.
+            $stats = $this->attendances()
+                ->toBase()
+                ->selectRaw('COUNT(*) as total_count, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as present_count', ['hadir'])
+                ->first();
+
+            $hasRecords = (int) ($stats->total_count ?? 0) > 0;
+            $present = (int) ($stats->present_count ?? 0);
+        }
+
+        if ($hasRecords) {
+            return $present;
+        }
+
         return ($this->attendance_male ?? 0) + ($this->attendance_female ?? 0);
+    }
+
+    /**
+     * Check-in massal (AC-T2-09): buat/restore record attendance untuk member.
+     *
+     * Blocker re-review Vera: member yang pernah di-soft-delete untuk event yang
+     * sama TIDAK boleh dibuat ulang (melanggar UNIQUE(event_id, member_id)) —
+     * record lama di-restore dan di-update (status/checked_in_at/checked_in_by).
+     *
+     * @param  array<int, int>  $memberIds
+     * @return array{created: int, restored: int, skipped: int}
+     */
+    public function checkInMembers(array $memberIds): array
+    {
+        $memberIds = array_values(array_unique(array_map('intval', $memberIds)));
+
+        $created = 0;
+        $restored = 0;
+        $skipped = 0;
+
+        foreach ($memberIds as $memberId) {
+            $existing = $this->attendances()
+                ->withTrashed()
+                ->where('member_id', $memberId)
+                ->first();
+
+            if (! $existing) {
+                EventAttendance::checkInOrRestore([
+                    'event_id' => $this->id,
+                    'member_id' => $memberId,
+                    'status' => 'hadir',
+                ]);
+                $created++;
+
+                continue;
+            }
+
+            if ($existing->trashed()) {
+                EventAttendance::checkInOrRestore([
+                    'event_id' => $this->id,
+                    'member_id' => $memberId,
+                    'status' => 'hadir',
+                ]);
+                $restored++;
+
+                continue;
+            }
+
+            $skipped++;
+        }
+
+        return [
+            'created' => $created,
+            'restored' => $restored,
+            'skipped' => $skipped,
+        ];
     }
 }

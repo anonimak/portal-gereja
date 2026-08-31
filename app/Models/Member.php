@@ -87,6 +87,14 @@ class Member extends Model
     }
 
     /**
+     * Catatan kehadiran ibadah anggota ini (Fase 2 Task 2 — riwayat per member).
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(EventAttendance::class);
+    }
+
+    /**
      * Official position(s) held by this member (if Majelis).
      */
     public function official(): HasMany

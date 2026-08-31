@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Church;
 use App\Models\Event;
+use App\Models\EventAttendance;
 use App\Models\EventCategory;
 use App\Models\EventRoster;
 use App\Models\Family;
@@ -20,6 +21,7 @@ use App\Models\User;
 use App\Observers\ChurchObserver;
 use App\Observers\UserObserver;
 use App\Policies\ChurchPolicy;
+use App\Policies\EventAttendancePolicy;
 use App\Policies\EventCategoryPolicy;
 use App\Policies\EventPolicy;
 use App\Policies\EventRosterPolicy;
@@ -67,6 +69,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Event::class, EventPolicy::class);
         Gate::policy(EventRoster::class, EventRosterPolicy::class);
         Gate::policy(EventCategory::class, EventCategoryPolicy::class);
+        Gate::policy(EventAttendance::class, EventAttendancePolicy::class);
         Gate::policy(Fund::class, FundPolicy::class);
         Gate::policy(FinancialCategory::class, FinancialCategoryPolicy::class);
         Gate::policy(MinistryRole::class, MinistryRolePolicy::class);
