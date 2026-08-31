@@ -51,3 +51,24 @@ Verifikasi dijalankan sungguhan di sandbox (Podman 5.8.4 + podman-compose 1.6.0)
 - **Suite:** hijau penuh (**29 test, 88 assertions, 0 failure/error/risky**) — dijalankan ulang setelah verifikasi runtime.
 - **Runtime:** 5/5 container healthy, migrasi MariaDB sukses, seed sukses (4 user / 3 gereja), `/up`=200, `/admin/login`=200.
 - **Verdict: APPROVED (LUNAS).** Verifikasi runtime podman yang tadinya memblokir sudah tuntas; aplikasi **siap untuk owner review** dan Fase 2 boleh dibuka setelah owner menyetujui.
+
+---
+
+## RE-REVIEW FINAL PR #1 — commit ae816714 (Vera, QA gate, 2026-08-31)
+
+**Metode:** `gh pr checks 1` (CI pass 24s) → `gh pr diff 1` dibaca penuh → verifikasi independen di repo bersama (HEAD = ae816714, working tree bersih) → `php vendor/bin/phpunit --no-coverage` dijalankan SENDIRI.
+
+**Hasil eksekusi sendiri:**
+```
+OK (42 tests, 124 assertions) — 0 failure, 0 error, 0 risky
+```
+
+**Klaim 6/6 terverifikasi ✅** (BLOCK-1/2/3, HIGH-1/2, MED events NOT NULL) — detail di review GitHub.
+
+**Temuan tersisa (BELUM APPROVED):**
+1. [HIGH] `SacramentsRelationManager.php` (~:69) — `relationship('official','display_name')` memakai accessor sbg kolom → `pluck('display_name')` SQL error saat render form (vendor Select.php:836/1219).
+2. [MED] `LaporanRapatPage.php:152,165,207,213,229,250` — masih `where('church_id', auth()->user()->church_id)` eksplisit → super_admin tetap ter-scope gereja sendiri (inkonsisten AC-T1-04/09).
+3. [MED] AC-T1-01 sebagian — `member_sacraments` & `event_rosters` church_id tetap nullable (tidak ada migrasi NOT NULL lanjutan, hanya events via 000003).
+4. [MED] `EventResource.php:107-116` — `assignee_type` `dehydrated(false)` → roster tak bisa diedit ulang (member_id/official_id hidden).
+
+**Verdict: BELUM APPROVED** — review dikirim via GitHub (comment, karena request-changes diblokir utk PR milik sendiri). Re-review setelah 4 temuan ditutup.

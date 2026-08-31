@@ -149,8 +149,6 @@ class LaporanRapatPage extends Page implements HasForms
         $month = (int) ($this->data['month'] ?? now()->month);
         $quarter = (int) ($this->data['quarter'] ?? ceil(now()->month / 3));
 
-        $churchId = auth()->user()->church_id;
-
         if ($periodType === 'monthly') {
             $startDate = Carbon::create($year, $month, 1)->startOfDay();
             $endDate = $startDate->clone()->endOfMonth()->endOfDay();
@@ -160,9 +158,15 @@ class LaporanRapatPage extends Page implements HasForms
             $endDate = $startDate->clone()->addMonths(2)->endOfMonth()->endOfDay();
         }
 
+        // Scoping church_id TIDAK ditulis eksplisit DI SINI — dijamin global scope
+        // BelongsToChurch (HIGH-1 Vera, konsisten dengan WartaJemaat/Stats/CashFlow):
+        // - church_admin / finance_admin → hanya data gereja sendiri.
+        // - super_admin → SEMUA gereja (tanpa ter-scope ke gereja seed-nya).
+        // Menambahkan ->where('church_id', auth()->user()->church_id) justru akan
+        // mengunci super_admin ke satu gereja — inkonsisten dengan AC-T1-04/09.
+
         // Fetch events with eager loading
         $events = Event::query()
-            ->where('church_id', $churchId)
             ->whereBetween('start_datetime', [$startDate, $endDate])
             ->with([
                 'category',
@@ -176,9 +180,9 @@ class LaporanRapatPage extends Page implements HasForms
             ->get();
 
         // Fetch financial data
-        $openingBalance = $this->getOpeningBalance($churchId, $startDate);
-        $income = $this->getIncomeByCategory($churchId, $startDate, $endDate);
-        $expenses = $this->getExpensesByCategory($churchId, $startDate, $endDate);
+        $openingBalance = $this->getOpeningBalance($startDate);
+        $income = $this->getIncomeByCategory($startDate, $endDate);
+        $expenses = $this->getExpensesByCategory($startDate, $endDate);
         $totalIncome = $income->sum('total');
         $totalExpenses = $expenses->sum('total');
         $closingBalance = $openingBalance + $totalIncome - $totalExpenses;
@@ -193,24 +197,42 @@ class LaporanRapatPage extends Page implements HasForms
             'totalIncome' => $totalIncome,
             'totalExpenses' => $totalExpenses,
             'closingBalance' => $closingBalance,
-            'churchName' => auth()->user()->church->name ?? 'Gereja',
+            'churchName' => $this->getChurchName(),
             'periodLabel' => $this->getPeriodLabel($periodType, $month, $quarter, $year),
         ];
     }
 
     /**
+     * Nama gereja pada kop laporan.
+     * - super_admin → 'Semua Gereja' (data lintas gereja).
+     * - church_admin / finance_admin → nama gereja sendiri.
+     */
+    private function getChurchName(): string
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return 'Gereja';
+        }
+
+        if ($user->role === 'super_admin') {
+            return 'Semua Gereja';
+        }
+
+        return $user->church?->name ?? 'Gereja';
+    }
+
+    /**
      * Calculate opening balance (before start date).
      */
-    private function getOpeningBalance(int $churchId, Carbon $startDate): int
+    private function getOpeningBalance(Carbon $startDate): int
     {
         $debit = Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'debit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');
 
         $credit = Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'credit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');
@@ -223,10 +245,9 @@ class LaporanRapatPage extends Page implements HasForms
      *
      * @return Collection<int, array{category: string, total: int}>
      */
-    private function getIncomeByCategory(int $churchId, Carbon $startDate, Carbon $endDate): Collection
+    private function getIncomeByCategory(Carbon $startDate, Carbon $endDate): Collection
     {
         return Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'debit')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')
@@ -244,10 +265,9 @@ class LaporanRapatPage extends Page implements HasForms
      *
      * @return Collection<int, array{category: string, total: int}>
      */
-    private function getExpensesByCategory(int $churchId, Carbon $startDate, Carbon $endDate): Collection
+    private function getExpensesByCategory(Carbon $startDate, Carbon $endDate): Collection
     {
         return Transaction::query()
-            ->where('church_id', $churchId)
             ->where('type', 'credit')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->with('category')

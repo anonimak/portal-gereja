@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\Events\Resources\Event;
 
 use App\Filament\Clusters\Events\EventsCluster;
-use App\Filament\Clusters\Events\Resources\Event\Pages;
 use App\Models\Event;
+use App\Models\Official;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -15,15 +15,15 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,7 +39,6 @@ class EventResource extends Resource
     // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
 
     protected static ?string $cluster = EventsCluster::class;
-
 
     protected static ?int $navigationSort = 7;
 
@@ -61,12 +60,12 @@ class EventResource extends Resource
                             ->relationship(
                                 'category',
                                 'name',
-                                fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
                             )
                             ->createOptionForm([
                                 TextInput::make('name')
                                     ->label('Nama Kategori')
-                                    ->required()
+                                    ->required(),
                             ])
                             ->createOptionAction(function (Action $action) {
                                 return $action
@@ -95,7 +94,7 @@ class EventResource extends Resource
                                     ->default(0)
                                     ->minValue(0),
                             ])
-                            ->columns(2)
+                            ->columns(2),
                     ]),
 
                 Section::make('Petugas Acara')
@@ -103,6 +102,19 @@ class EventResource extends Resource
                         Repeater::make('rosters')
                             ->label('Daftar Petugas')
                             ->relationship()
+                            // MED Vera (re-review PR #1): assignee_type tidak disimpan ke DB
+                            // (dehydrated false), sehingga saat edit member_id/official_id
+                            // tersembunyi dan petugas tidak bisa diubah. Isi assignee_type
+                            // dari data roster yang tersimpan agar field yang benar tampil.
+                            ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
+                                if (filled($data['member_id'] ?? null)) {
+                                    $data['assignee_type'] = 'member';
+                                } elseif (filled($data['official_id'] ?? null)) {
+                                    $data['assignee_type'] = 'official';
+                                }
+
+                                return $data;
+                            })
                             ->schema([
                                 Select::make('assignee_type')
                                     ->label('Tipe Petugas')
@@ -113,30 +125,42 @@ class EventResource extends Resource
                                     ])
                                     ->live()
                                     ->native(false)
-                                    ->dehydrated(false),
+                                    // UI-only: tidak ada kolom assignee_type di event_rosters.
+                                    ->dehydrated(false)
+                                    // Saat pindah tipe, null-kan field yang tidak dipakai
+                                    // supaya satu roster tidak punya member DAN official.
+                                    ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                        if ($state === 'member') {
+                                            $set('official_id', null);
+                                        } elseif ($state === 'official') {
+                                            $set('member_id', null);
+                                        }
+                                    }),
                                 Select::make('member_id')
                                     ->label('Anggota')
-                                    ->required()
+                                    ->required(fn (Get $get): bool => $get('assignee_type') === 'member')
                                     ->searchable()
                                     ->preload()
-                                    ->hidden(fn(Get $get): bool => $get('assignee_type') !== 'member')
+                                    ->hidden(fn (Get $get): bool => $get('assignee_type') !== 'member')
                                     ->relationship(
                                         'member',
                                         'full_name',
-                                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
                                     ),
                                 Select::make('official_id')
                                     ->label('Pendeta / Majelis')
-                                    ->required()
+                                    ->required(fn (Get $get): bool => $get('assignee_type') === 'official')
                                     ->searchable()
                                     ->preload()
-                                    ->hidden(fn(Get $get): bool => $get('assignee_type') !== 'official')
+                                    ->hidden(fn (Get $get): bool => $get('assignee_type') !== 'official')
+                                    // Title attribute kolom nyata 'id' + label dari accessor
+                                    // (hindari pluck display_name yang bukan kolom).
                                     ->relationship(
                                         'official',
                                         'id',
-                                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
                                     )
-                                    ->getOptionLabelUsing(fn($value) => $value?->display_name ?? ''),
+                                    ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
                                 Select::make('role_id')
                                     ->label('Peran')
                                     ->required()
@@ -145,7 +169,7 @@ class EventResource extends Resource
                                     ->relationship(
                                         'role',
                                         'name',
-                                        fn(Builder $query) => $query->where('church_id', auth()->user()->church_id)
+                                        fn (Builder $query) => $query->where('church_id', auth()->user()->church_id)
                                     ),
                             ])
                             ->columns(2)
@@ -174,7 +198,7 @@ class EventResource extends Resource
                 TextColumn::make('rosters_count')
                     ->counts('rosters')
                     ->label('Petugas')
-                    ->formatStateUsing(fn(int $state): string => "{$state} Petugas"),
+                    ->formatStateUsing(fn (int $state): string => "{$state} Petugas"),
                 TextColumn::make('total_attendance')
                     ->label('Total Kehadiran')
                     ->sortable(),

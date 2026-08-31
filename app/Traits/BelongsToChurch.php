@@ -33,6 +33,20 @@ trait BelongsToChurch
     }
 
     /**
+     * Turunkan church_id dari FK induk ketika church_id belum terisi.
+     *
+     * Dipakai untuk skenario super_admin yang menambah record pada gereja lain
+     * (mis. sakramen untuk member gereja lain via RelationManager): church_id
+     * harus mengikuti gereja induk, bukan gereja aktor.
+     *
+     * Default null — model yang punya FK induk harus meng-override method ini.
+     */
+    protected function deriveChurchIdFromParent(): ?int
+    {
+        return null;
+    }
+
+    /**
      * Boot the trait: add global scope, creating event, and FK consistency guard.
      */
     public static function bootBelongsToChurch(): void
@@ -46,13 +60,22 @@ trait BelongsToChurch
         static::creating(function ($model) {
             $actor = auth()->user();
 
-            // Non-super_admin DIPAKSA menulis ke gereja sendiri — menutup celah
-            // mass-assignment yang mengarahkan church_id ke gereja lain.
+            // 1. Non-super_admin DIPAKSA menulis ke gereja sendiri — menutup celah
+            //    mass-assignment yang mengarahkan church_id ke gereja lain.
             if ($actor && $actor->role !== 'super_admin') {
                 $model->church_id = $actor->church_id;
             }
 
-            // Tanpa aktor terautentikasi: isi otomatis jika kosong (fallback).
+            // 2. Kalau masih kosong, turunkan dari FK induk (member/event/family/dst).
+            //    Penting untuk super_admin yang menambah data pada gereja lain.
+            if (empty($model->church_id)) {
+                $derived = $model->deriveChurchIdFromParent();
+                if ($derived !== null) {
+                    $model->church_id = $derived;
+                }
+            }
+
+            // 3. Fallback terakhir: gereja aktor.
             if (empty($model->church_id) && $actor) {
                 $model->church_id = $actor->church_id;
             }

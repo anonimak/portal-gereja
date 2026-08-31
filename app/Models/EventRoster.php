@@ -29,6 +29,22 @@ class EventRoster extends Model
     }
 
     /**
+     * Church_id roster mengikuti gereja event-nya (untuk super_admin yang
+     * menambah roster pada event gereja lain via form Repeater).
+     */
+    protected function deriveChurchIdFromParent(): ?int
+    {
+        if (! $this->event_id) {
+            return null;
+        }
+
+        return Event::query()
+            ->withoutGlobalScopes()
+            ->whereKey($this->event_id)
+            ->value('church_id');
+    }
+
+    /**
      * @var array<int, string>
      */
     protected $fillable = [

@@ -27,6 +27,22 @@ class MemberSacrament extends Model
     }
 
     /**
+     * Church_id sakramen mengikuti gereja member-nya (untuk super_admin yang
+     * menambah sakramen pada member gereja lain via RelationManager).
+     */
+    protected function deriveChurchIdFromParent(): ?int
+    {
+        if (! $this->member_id) {
+            return null;
+        }
+
+        return Member::query()
+            ->withoutGlobalScopes()
+            ->whereKey($this->member_id)
+            ->value('church_id');
+    }
+
+    /**
      * @var array<int, string>
      */
     protected $fillable = [
