@@ -18,6 +18,13 @@ use Illuminate\Support\Facades\Schema;
  *
  * Portabilitas: backfill baris-per-baris di PHP (berjalan di MySQL & SQLite),
  * NOT NULL via change() (didukung Laravel 12 di SQLite/MySQL).
+ *
+ * FIX (MySQL error 1830): FK yang dibuat di 2026_03_09_000001 memakai
+ * nullOnDelete() (ON DELETE SET NULL) — MySQL MENOLAK kolom NOT NULL yang masih
+ * terikat FK SET NULL. Solusi: drop FK terlebih dahulu, ubah kolom menjadi NOT
+ * NULL, lalu pasang kembali FK dengan RESTRICT (kompatibel dengan kolom NOT NULL,
+ * mencegah orphan). Tidak terdeteksi di CI karena test memakai SQLite yang tidak
+ * menegakkan aturan ini seketat MySQL.
  */
 return new class extends Migration
 {
@@ -54,6 +61,14 @@ return new class extends Migration
             DB::table('event_rosters')->whereNull('church_id')->update(['church_id' => $firstChurchId]);
         }
 
+        // ---------- Drop FK (ON DELETE SET NULL tidak kompatibel dengan NOT NULL di MySQL) ----------
+        Schema::table('member_sacraments', function (Blueprint $table): void {
+            $table->dropForeign(['church_id']);
+        });
+        Schema::table('event_rosters', function (Blueprint $table): void {
+            $table->dropForeign(['church_id']);
+        });
+
         // ---------- Jadikan NOT NULL ----------
         Schema::table('member_sacraments', function (Blueprint $table): void {
             $table->unsignedBigInteger('church_id')->nullable(false)->change();
@@ -61,15 +76,38 @@ return new class extends Migration
         Schema::table('event_rosters', function (Blueprint $table): void {
             $table->unsignedBigInteger('church_id')->nullable(false)->change();
         });
+
+        // ---------- Pasang kembali FK dengan RESTRICT (kompatibel NOT NULL, cegah orphan) ----------
+        Schema::table('member_sacraments', function (Blueprint $table): void {
+            $table->foreign('church_id')->references('id')->on('churches')->restrictOnDelete();
+        });
+        Schema::table('event_rosters', function (Blueprint $table): void {
+            $table->foreign('church_id')->references('id')->on('churches')->restrictOnDelete();
+        });
     }
 
     public function down(): void
     {
+        // Drop FK RESTRICT dulu agar kolom bisa dikembalikan ke nullable
+        Schema::table('member_sacraments', function (Blueprint $table): void {
+            $table->dropForeign(['church_id']);
+        });
+        Schema::table('event_rosters', function (Blueprint $table): void {
+            $table->dropForeign(['church_id']);
+        });
+
         Schema::table('member_sacraments', function (Blueprint $table): void {
             $table->unsignedBigInteger('church_id')->nullable()->change();
         });
         Schema::table('event_rosters', function (Blueprint $table): void {
             $table->unsignedBigInteger('church_id')->nullable()->change();
+        });
+
+        Schema::table('member_sacraments', function (Blueprint $table): void {
+            $table->foreign('church_id')->references('id')->on('churches')->nullOnDelete();
+        });
+        Schema::table('event_rosters', function (Blueprint $table): void {
+            $table->foreign('church_id')->references('id')->on('churches')->nullOnDelete();
         });
     }
 };
