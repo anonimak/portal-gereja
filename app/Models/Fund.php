@@ -8,6 +8,7 @@ use App\Traits\BelongsToChurch;
 use App\Traits\RecordsAuditTrail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Fund extends Model
 {
@@ -20,4 +21,9 @@ class Fund extends Model
         'church_id',
         'name',
     ];
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }
