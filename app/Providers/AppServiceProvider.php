@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\BirthRecord;
 use App\Models\Church;
 use App\Models\Event;
 use App\Models\EventAttendance;
@@ -25,6 +26,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Observers\ChurchObserver;
 use App\Observers\UserObserver;
+use App\Policies\BirthRecordPolicy;
 use App\Policies\ChurchPolicy;
 use App\Policies\EventAttendancePolicy;
 use App\Policies\EventCategoryPolicy;
@@ -76,6 +78,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Family::class, FamilyPolicy::class);
         Gate::policy(Member::class, MemberPolicy::class);
         Gate::policy(MemberSacrament::class, MemberSacramentPolicy::class);
+        Gate::policy(BirthRecord::class, BirthRecordPolicy::class);
         Gate::policy(Event::class, EventPolicy::class);
         Gate::policy(EventRoster::class, EventRosterPolicy::class);
         Gate::policy(EventCategory::class, EventCategoryPolicy::class);

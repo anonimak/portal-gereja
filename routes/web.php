@@ -1,6 +1,8 @@
 <?php
 
 use App\Filament\Pages\LaporanRapatPage;
+use App\Http\Controllers\BaptisAnakExportController;
+use App\Http\Controllers\BirthRecordExportController;
 use App\Http\Controllers\WartaJemaatExportController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,3 +32,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin/warta-jemaat')->group(fun
     Route::post('/export-pdf', [WartaJemaatExportController::class, 'pdf'])->name('warta-jemaat.export-pdf');
     Route::post('/export-excel', [WartaJemaatExportController::class, 'excel'])->name('warta-jemaat.export-excel');
 });
+
+// Fase 3B T5 — Akta Lahir (PDF via dompdf). GET + auth; guard role/church di controller.
+Route::middleware(['auth', 'verified'])->prefix('admin/birth-record')->group(function () {
+    Route::get('/{birthRecord}/export-pdf', [BirthRecordExportController::class, 'pdf'])->name('birth-record.export-pdf');
+});
+
+// Fase 3B T6 — penerbitan Dokumen Baptis Anak (dompdf).
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin/sakramen/baptis-anak')
+    ->group(function () {
+        Route::get('/{sacrament}/export-pdf', [BaptisAnakExportController::class, 'pdf'])
+            ->name('sakramen.baptis-anak.export-pdf');
+    });
