@@ -53,6 +53,6 @@
         <div class="line">{{ $ministerName ?? 'Pendeta' }}</div>
     </div>
 
-    <div class="footer">Dokumen ini diterbitkan oleh {{ $churchName ?? '' }}. {{ $certificateNumber ? 'No. '.$certificateNumber : '' }}</div>
+    <div class="footer">Dokumen ini diterbitkan oleh {{ $churchName ?? '' }}. {{ ! empty($certificateNumber) ? 'No. '.$certificateNumber : '' }}</div>
 </body>
 </html>

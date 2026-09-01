@@ -192,4 +192,49 @@ class BaptisAnakTest extends TestCase
         $this->get(route('sakramen.baptis-anak.export-pdf', $record->id))
             ->assertRedirect(route('login'));
     }
+
+    public function test_baptis_anak_gender_mapping_label(): void
+    {
+        // HIGH-1 Vera: nilai DB gender = enum 'm'/'f' (bukan 'L'/'P').
+        $this->assertSame('Laki-laki', \App\Http\Controllers\BaptisAnakExportController::genderLabel('m'));
+        $this->assertSame('Perempuan', \App\Http\Controllers\BaptisAnakExportController::genderLabel('f'));
+        $this->assertSame('', \App\Http\Controllers\BaptisAnakExportController::genderLabel(null));
+    }
+
+    public function test_baptis_anak_dokumen_gender_tertampil_benar(): void
+    {
+        // Render view dokumen — label gender 'Laki-laki'/'Perempuan' muncul,
+        // bukan nilai mentah 'm'/'f'.
+        $htmlL = view('pdf.dokumen-baptis-anak', [
+            'churchName' => 'Gereja A',
+            'childName' => 'Anak Test',
+            'gender' => \App\Http\Controllers\BaptisAnakExportController::genderLabel('m'),
+        ])->render();
+        $this->assertStringContainsString('Laki-laki', $htmlL);
+
+        $htmlP = view('pdf.dokumen-baptis-anak', [
+            'churchName' => 'Gereja A',
+            'childName' => 'Anak Test',
+            'gender' => \App\Http\Controllers\BaptisAnakExportController::genderLabel('f'),
+        ])->render();
+        $this->assertStringContainsString('Perempuan', $htmlP);
+    }
+
+    public function test_baptis_anak_soft_deleted_tidak_bisa_diunduh(): void
+    {
+        // MED-1 Vera: record yang sudah di-soft-delete tidak boleh lagi diunduh.
+        // withoutGlobalScope('church') mempertahankan SoftDeletingScope sehingga
+        // findOrFail -> 404 (bukan 200 dengan dokumen).
+        $record = $this->makeBaptisAnak($this->churchA);
+
+        $this->actingAs($this->churchAdmin);
+        $record->delete();
+
+        $this->assertSoftDeleted('member_sacraments', ['id' => $record->id]);
+
+        $response = $this->actingAs($this->churchAdmin)
+            ->get(route('sakramen.baptis-anak.export-pdf', $record->id));
+
+        $response->assertNotFound();
+    }
 }

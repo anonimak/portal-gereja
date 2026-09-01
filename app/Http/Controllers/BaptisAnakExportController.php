@@ -18,6 +18,18 @@ use Illuminate\Support\Facades\View;
  */
 class BaptisAnakExportController extends Controller
 {
+    /**
+     * Label gender untuk dokumen (nilai DB: enum 'm'/'f' — HIGH-1 Vera).
+     */
+    public static function genderLabel(?string $gender): string
+    {
+        return match ($gender) {
+            'm' => 'Laki-laki',
+            'f' => 'Perempuan',
+            default => $gender ?? '',
+        };
+    }
+
     public function pdf(Request $request, int $sacrament)
     {
         $user = $request->user();
@@ -29,11 +41,12 @@ class BaptisAnakExportController extends Controller
             'Tidak diizinkan menerbitkan dokumen baptis anak.'
         );
 
-        // Pakai withoutGlobalScopes supaya record gereja lain tetap ketemu lalu
-        // ditolak eksplisit 403 (AC-LC-13: URL langsung record gereja lain -> 403),
-        // bukan 404 dari scope global.
+        // Hanya nonaktifkan scope church (record gereja lain tetap ketemu lalu
+        // ditolak 403 eksplisit — AC-LC-13), TAPI pertahankan SoftDeletingScope:
+        // record yang sudah di-soft-delete tidak boleh lagi diunduh (MED-1 Vera)
+        // -> findOrFail -> 404.
         $record = MemberSacrament::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScope('church')
             ->with(['member.family', 'official'])
             ->findOrFail($sacrament);
 
@@ -58,11 +71,7 @@ class BaptisAnakExportController extends Controller
             'churchLocation' => $record->church?->address,
             'certificateNumber' => $record->certificate_number,
             'childName' => $member?->full_name,
-            'gender' => match ($member?->gender) {
-                'L' => 'Laki-laki',
-                'P' => 'Perempuan',
-                default => $member?->gender,
-            },
+            'gender' => self::genderLabel($member?->gender),
             'birthPlace' => $member?->birth_place,
             'birthDate' => $member?->birth_date?->format('d M Y'),
             'fatherName' => $father?->full_name,
