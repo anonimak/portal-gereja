@@ -8,6 +8,7 @@ use App\Filament\Clusters\Lifecycle\LifecycleCluster;
 use App\Filament\Clusters\Lifecycle\Resources\GuidanceProgram\Pages;
 use App\Filament\Clusters\Lifecycle\Resources\GuidanceProgram\RelationManagers\SessionsRelationManager;
 use App\Models\GuidanceProgram;
+use App\Support\ChurchContext;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -45,8 +46,6 @@ class GuidanceProgramResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $user = auth()->user();
-
         return $schema
             ->schema([
                 Section::make('Program Bimbingan')
@@ -83,9 +82,9 @@ class GuidanceProgramResource extends Resource
                             ->relationship(
                                 'template',
                                 'name',
-                                fn (Builder $query): Builder => $query->where('church_id', $user->church_id)
+                                fn (Builder $query): Builder => ChurchContext::activeChurchId() !== null ? $query->where('church_id', ChurchContext::activeChurchId()) : $query
                             )
-                            ->helperText('Pilih template lalu simpan: sistem membuat sesi otomatis sesuai topik template.')
+                            ->helperText('Sesi 1..N dibuat otomatis dari template saat program disimpan (instantiate); sesi tetap bisa disesuaikan di halaman Edit.')
                             ->native(false),
                         DatePicker::make('start_date')
                             ->label('Tanggal Mulai')

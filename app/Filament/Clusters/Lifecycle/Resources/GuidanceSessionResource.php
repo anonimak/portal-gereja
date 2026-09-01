@@ -8,6 +8,8 @@ use App\Filament\Clusters\Lifecycle\LifecycleCluster;
 use App\Filament\Clusters\Lifecycle\Resources\GuidanceSession\Pages;
 use App\Filament\Clusters\Lifecycle\Resources\GuidanceSession\RelationManagers\ParticipantsRelationManager;
 use App\Models\GuidanceSession;
+use App\Models\Official;
+use App\Support\ChurchContext;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -48,7 +50,7 @@ class GuidanceSessionResource extends Resource
                             ->relationship(
                                 'program',
                                 'title',
-                                fn (Builder $query): Builder => $query->where('church_id', auth()->user()->church_id),
+                                fn (Builder $query): Builder => ChurchContext::activeChurchId() !== null ? $query->where('church_id', ChurchContext::activeChurchId()) : $query,
                             )
                             ->native(false),
                         TextInput::make('title')
@@ -69,9 +71,10 @@ class GuidanceSessionResource extends Resource
                             ->nullable()
                             ->relationship(
                                 'official',
-                                'display_name',
-                                fn (Builder $query): Builder => $query->where('church_id', auth()->user()->church_id),
+                                'id',
+                                fn (Builder $query): Builder => ChurchContext::activeChurchId() !== null ? $query->where('church_id', ChurchContext::activeChurchId()) : $query,
                             )
+                            ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name)
                             ->native(false),
                     ])
                     ->columns(2),

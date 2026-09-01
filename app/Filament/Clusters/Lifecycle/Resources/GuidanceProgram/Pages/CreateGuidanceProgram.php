@@ -10,4 +10,13 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateGuidanceProgram extends CreateRecord
 {
     protected static string $resource = GuidanceProgramResource::class;
+
+    /**
+     * Auto-instantiate sesi 1..N dari template saat program dibuat (AC-LC-18 penuh di UI).
+     * instantiateFromTemplate() idempotent: sesi yang sudah ada tidak diduplikasi.
+     */
+    protected function afterCreate(): void
+    {
+        $this->record->instantiateFromTemplate();
+    }
 }

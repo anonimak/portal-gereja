@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Clusters\Lifecycle\Resources\GuidanceProgram\RelationManagers;
 
+use App\Models\Official;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -60,9 +61,10 @@ class SessionsRelationManager extends RelationManager
                             ->nullable()
                             ->relationship(
                                 'official',
-                                'display_name',
+                                'id',
                                 fn (Builder $query): Builder => $query->where('church_id', $this->ownerChurchId()),
-                            ),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
                     ])
                     ->columns(2),
             ]);
