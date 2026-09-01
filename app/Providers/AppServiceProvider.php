@@ -12,6 +12,11 @@ use App\Models\EventRoster;
 use App\Models\Family;
 use App\Models\FinancialCategory;
 use App\Models\Fund;
+use App\Models\GuidanceProgram;
+use App\Models\GuidanceSession;
+use App\Models\GuidanceSessionMember;
+use App\Models\GuidanceTemplate;
+use App\Models\GuidanceTemplateSession;
 use App\Models\Member;
 use App\Models\MemberSacrament;
 use App\Models\MinistryRole;
@@ -28,6 +33,11 @@ use App\Policies\EventRosterPolicy;
 use App\Policies\FamilyPolicy;
 use App\Policies\FinancialCategoryPolicy;
 use App\Policies\FundPolicy;
+use App\Policies\GuidanceProgramPolicy;
+use App\Policies\GuidanceSessionMemberPolicy;
+use App\Policies\GuidanceSessionPolicy;
+use App\Policies\GuidanceTemplatePolicy;
+use App\Policies\GuidanceTemplateSessionPolicy;
 use App\Policies\MemberPolicy;
 use App\Policies\MemberSacramentPolicy;
 use App\Policies\MinistryRolePolicy;
@@ -74,6 +84,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(FinancialCategory::class, FinancialCategoryPolicy::class);
         Gate::policy(MinistryRole::class, MinistryRolePolicy::class);
         Gate::policy(Transaction::class, TransactionPolicy::class);
+        Gate::policy(GuidanceTemplate::class, GuidanceTemplatePolicy::class);
+        Gate::policy(GuidanceTemplateSession::class, GuidanceTemplateSessionPolicy::class);
+        Gate::policy(GuidanceProgram::class, GuidanceProgramPolicy::class);
+        Gate::policy(GuidanceSession::class, GuidanceSessionPolicy::class);
+        Gate::policy(GuidanceSessionMember::class, GuidanceSessionMemberPolicy::class);
 
         // Fallback default: resource tenant lain yang tidak punya policy spesifik
         // tetap terlindungi oleh aturan tenant (church_id) via TenantPolicy.
