@@ -12,13 +12,15 @@ return new class extends Migration
     {
         Schema::create('guidance_programs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id', 'guidance_programs_church_id_index');
             $table->string('type'); // pra_sidi | pra_nikah
             $table->string('title');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->string('status')->default('draft'); // draft | berjalan | selesai | batal
-            $table->foreignId('template_id')->nullable()->constrained('guidance_templates')->nullOnDelete()->index();
+            $table->foreignId('template_id')->nullable()->constrained('guidance_templates')->nullOnDelete();
+            $table->index('template_id', 'guidance_programs_template_id_index');
             $table->text('notes')->nullable();
             $table->softDeletes();
             $table->timestamps();

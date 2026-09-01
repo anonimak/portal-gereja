@@ -12,8 +12,10 @@ return new class extends Migration
     {
         Schema::create('guidance_template_sessions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
-            $table->foreignId('template_id')->constrained('guidance_templates')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id', 'guidance_template_sessions_church_id_index');
+            $table->foreignId('template_id')->constrained('guidance_templates')->cascadeOnDelete();
+            $table->index('template_id', 'guidance_template_sessions_template_id_index');
             $table->unsignedInteger('session_number');
             $table->string('topic');
             $table->text('notes')->nullable();
