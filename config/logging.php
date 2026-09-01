@@ -123,6 +123,28 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Structured Log Channel
+        |--------------------------------------------------------------------------
+        |
+        | Channel daily dengan formatter JSON (satu baris JSON per entry) untuk
+        | observability / centralized logging. Aktifkan via LOG_STACK=structured.
+        |
+        */
+
+        'structured' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'formatter_with' => [
+                'includeStacktraces' => true,
+            ],
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
