@@ -25,8 +25,11 @@ class WartaJemaatTest extends TestCase
     use RefreshDatabase;
 
     private Church $churchA;
+
     private Church $churchB;
+
     private User $adminA;
+
     private Member $memberA;
 
     protected function setUp(): void
@@ -84,12 +87,14 @@ class WartaJemaatTest extends TestCase
             'sacrament_date' => $weekStart->copy()->addDays(2)->toDateString(),
         ]);
 
-        // Transaksi A minggu ini
+        // Transaksi A minggu ini (clamp ke bulan berjalan agar widget 'bulan ini' stabil
+        // di awal bulan, saat minggu berjalan masih di bulan sebelumnya).
+        $transactionDate = $weekStart->copy()->addDays(1)->max(Carbon::now()->startOfMonth());
         Transaction::factory()->create([
             'church_id' => $this->churchA->id,
             'type' => 'debit',
             'amount' => 100_000,
-            'transaction_date' => $weekStart->copy()->addDays(1),
+            'transaction_date' => $transactionDate,
         ]);
 
         // ---- Data gereja B (tidak boleh bocor) ----
@@ -123,7 +128,7 @@ class WartaJemaatTest extends TestCase
     {
         $this->actingAs($this->adminA);
 
-        $page = new WartaJemaat();
+        $page = new WartaJemaat;
         $page->mount();
 
         // Dulu: roster ber-official (member null) menyebabkan crash (Carbon::parse(null) dkk)
@@ -139,7 +144,7 @@ class WartaJemaatTest extends TestCase
     {
         $this->actingAs($this->adminA);
 
-        $page = new WartaJemaat();
+        $page = new WartaJemaat;
         $page->mount();
         $data = $page->getReportData();
 
@@ -168,7 +173,7 @@ class WartaJemaatTest extends TestCase
     {
         $this->actingAs($this->adminA);
 
-        $widget = new \App\Filament\Widgets\StatsOverview();
+        $widget = new \App\Filament\Widgets\StatsOverview;
         $reflection = new \ReflectionMethod($widget, 'getStats');
         $stats = $reflection->invoke($widget);
 
