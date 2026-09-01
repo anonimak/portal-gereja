@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Pages\LaporanRapatPage;
 use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
 use App\Http\Controllers\WartaJemaatExportController;
@@ -19,12 +20,18 @@ Route::post('/admin/laporan-rapat/export-excel', function () {
     // Guard: hanya role panel yang diizinkan mengekspor laporan.
     abort_unless(in_array($user->role, ['super_admin', 'church_admin', 'finance_admin'], true), 403, 'Tidak diizinkan mengekspor laporan.');
 
-    $page = app(\App\Filament\Clusters\Reporting\Pages\LaporanRapatPage::class);
+    // Isi data periode langsung (tanpa lifecycle Livewire) — baca dari request.
+    $page = app(LaporanRapatPage::class);
+    $page->data = request()->only(['period_type', 'month', 'quarter', 'year']);
 
-    $data = $page->getReportData();
+    return $page->exportToExcel();
+})->middleware(['auth', 'verified'])->name('laporan-rapat.export-excel');
 
-    return $page->downloadExcel($data);
-})->middleware(['auth', 'verified']);
+// Fase 3A — export Warta Jemaat (kontrak Pixel #14: POST + start_date/end_date).
+Route::middleware(['auth', 'verified'])->prefix('admin/warta-jemaat')->group(function () {
+    Route::post('/export-pdf', [WartaJemaatExportController::class, 'pdf'])->name('warta-jemaat.export-pdf');
+    Route::post('/export-excel', [WartaJemaatExportController::class, 'excel'])->name('warta-jemaat.export-excel');
+});
 
 // Fase 3B T5 — Akta Lahir (PDF via dompdf). GET + auth; guard role/church di controller.
 Route::middleware(['auth', 'verified'])->prefix('admin/birth-record')->group(function () {
