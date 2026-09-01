@@ -59,6 +59,10 @@ class ParticipantsRelationManager extends RelationManager
                         Toggle::make('attended')
                             ->label('Hadir pada pertemuan ini')
                             ->default(false),
+                        \Filament\Forms\Components\TextInput::make('notes')
+                            ->label('Catatan')
+                            ->nullable()
+                            ->maxLength(255),
                     ])
                     ->columns(1),
             ]);
@@ -118,7 +122,17 @@ class ParticipantsRelationManager extends RelationManager
                     ->visible(fn (GuidanceSessionMember $record): bool => ! $record->trashed()),
             ])
             ->toolbarActions([
-                \Filament\Actions\CreateAction::make(),
+                \Filament\Actions\CreateAction::make()
+                    ->using(function (array $data): ?GuidanceSessionMember {
+                        $session = $this->getOwnerRecord();
+
+                        return GuidanceSessionMember::checkInOrRestore(
+                            (int) $session->id,
+                            (int) $data['member_id'],
+                            (bool) ($data['attended'] ?? false),
+                            $data['notes'] ?? null,
+                        );
+                    }),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     RestoreBulkAction::make(),

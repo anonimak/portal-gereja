@@ -43,7 +43,8 @@ class GuidanceTemplateResource extends Resource
                                 'pra_sidi' => 'Pra-Sidi',
                                 'pra_nikah' => 'Pra-Nikah',
                             ])
-                            ->disabled()
+                            ->default('pra_sidi')
+                            ->disabledOn('edit')
                             ->native(false),
                         TextInput::make('name')
                             ->label('Nama Template')

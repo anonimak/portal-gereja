@@ -499,4 +499,51 @@ class GuidanceBimbinganTest extends TestCase
         $this->assertSame(2, GuidanceTemplate::count());
         $this->assertSame(0, GuidanceTemplate::where('church_id', $churchB->id)->count());
     }
+
+    // ---- AC-LC-03 via jalur create UI (fix review Vera) ----
+    // CreateAction di ParticipantsRelationManager kini memakai
+    // GuidanceSessionMember::checkInOrRestore() sehingga re-add member yang
+    // soft-deleted di sesi sama TIDAK melanggar UNIQUE(session_id, member_id).
+
+    public function test_guidance_peserta_ui_create_path_restore_or_create(): void
+    {
+        $church = $this->makeChurch();
+        $admin = $this->makeUser($church, 'church_admin');
+        $this->actingAs($admin);
+
+        $member = Member::factory()->create(['church_id' => $church->id]);
+        $program = $this->makeProgram($church);
+        $session = $program->sessions()->create([
+            'church_id' => $church->id,
+            'title' => 'Pertemuan 1',
+            'session_at' => now(),
+        ]);
+
+        // create pertama lewat jalur UI (data form: member_id + attended)
+        $first = GuidanceSessionMember::checkInOrRestore(
+            (int) $session->id,
+            (int) $member->id,
+            true,
+            null,
+        );
+        $this->assertNotNull($first);
+
+        // member dihapus dari sesi (soft delete)
+        $first->delete();
+        $this->assertSame(0, GuidanceSessionMember::where('session_id', $session->id)->count());
+
+        // create ulang lewat jalur UI -> restore, BUKAN create baru
+        // (tanpa fix: create baru melanggar UNIQUE(session_id, member_id) -> 500)
+        $second = GuidanceSessionMember::checkInOrRestore(
+            (int) $session->id,
+            (int) $member->id,
+            true,
+            'hadir',
+        );
+        $this->assertNotNull($second);
+        $this->assertSame($first->id, $second->id, 'harus restore record lama, bukan create baru.');
+        $this->assertSame(1, GuidanceSessionMember::withTrashed()->where('session_id', $session->id)->count());
+        $this->assertSame('hadir', $second->notes);
+    }
 }
+
