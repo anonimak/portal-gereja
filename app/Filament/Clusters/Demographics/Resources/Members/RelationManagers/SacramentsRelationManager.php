@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Clusters\Demographics\Resources\Members\RelationManagers;
 
+use App\Models\MemberSacrament;
 use App\Models\Official;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -77,6 +79,9 @@ class SacramentsRelationManager extends RelationManager
                         TextInput::make('certificate_number')
                             ->label('Nomor Sertifikat')
                             ->nullable(),
+                        DatePicker::make('issued_at')
+                            ->label('Tanggal Terbit Dokumen')
+                            ->nullable(),
                     ]),
             ]);
     }
@@ -128,6 +133,12 @@ class SacramentsRelationManager extends RelationManager
                 CreateAction::make(),
             ])
             ->recordActions([
+                Action::make('cetak_dokumen')
+                    ->label('Cetak Dokumen')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->visible(fn (MemberSacrament $record): bool => $record->type === 'baptis_anak')
+                    ->url(fn (MemberSacrament $record): string => route('sakramen.baptis-anak.export-pdf', $record->id))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
                 DeleteAction::make(),
                 RestoreAction::make(),

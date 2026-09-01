@@ -53,6 +53,8 @@ class MemberSacrament extends Model
         'sacrament_date',
         'official_id',
         'certificate_number',
+        'issued_at',
+        'document_path',
     ];
 
     /**
@@ -60,6 +62,7 @@ class MemberSacrament extends Model
      */
     protected $casts = [
         'sacrament_date' => 'date',
+        'issued_at' => 'date',
     ];
 
     /**
