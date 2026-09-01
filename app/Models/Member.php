@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Member extends Model
@@ -100,5 +101,13 @@ class Member extends Model
     public function official(): HasMany
     {
         return $this->hasMany(Official::class);
+    }
+
+    /**
+     * Akta lahir (Fase 3B T5) — satu member maksimal satu birth record.
+     */
+    public function birthRecord(): HasOne
+    {
+        return $this->hasOne(BirthRecord::class);
     }
 }
