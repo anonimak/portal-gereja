@@ -90,7 +90,7 @@ class DeathRecordTest extends TestCase
             ->get(route('death-record.export-pdf', $record));
 
         $response->assertOk();
-        $this->assertStringContainsString('%PDF', $response->streamedContent());
+        $this->assertStringContainsString('%PDF', $response->getContent());
     }
 
     public function test_export_pdf_null_data_aman(): void

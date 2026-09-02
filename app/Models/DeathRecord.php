@@ -19,6 +19,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class DeathRecord extends Model
 {
+    /**
+     * Tabel di migrasi 2026_03_14_000001.
+     */
+    protected $table = 'member_deaths';
+
     use BelongsToChurch, HasFactory, RecordsAuditTrail, SoftDeletes;
 
     /**
