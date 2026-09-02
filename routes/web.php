@@ -3,6 +3,7 @@
 use App\Filament\Pages\LaporanRapatPage;
 use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
+use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,4 +45,12 @@ Route::middleware(['auth', 'verified'])
     ->group(function () {
         Route::get('/{sacrament}/export-pdf', [BaptisAnakExportController::class, 'pdf'])
             ->name('sakramen.baptis-anak.export-pdf');
+    });
+
+// Fase 3B T8 — penerbitan Dokumen Sidi / Dokumen Baptis Dewasa (dompdf).
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin/sakramen/sidi')
+    ->group(function () {
+        Route::get('/{sacrament}/export-pdf', [SidiExportController::class, 'pdf'])
+            ->name('sakramen.sidi.export-pdf');
     });

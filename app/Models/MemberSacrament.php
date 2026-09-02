@@ -25,6 +25,7 @@ class MemberSacrament extends Model
         return [
             'member_id' => Member::class,
             'official_id' => Official::class,
+            'program_id' => GuidanceProgram::class,
         ];
     }
 
@@ -52,6 +53,7 @@ class MemberSacrament extends Model
         'type',
         'sacrament_date',
         'official_id',
+        'program_id',
         'certificate_number',
         'issued_at',
         'document_path',
@@ -79,5 +81,13 @@ class MemberSacrament extends Model
     public function official(): BelongsTo
     {
         return $this->belongsTo(Official::class);
+    }
+
+    /**
+     * Program bimbingan pra-sidi yang diselesaikan (T8 — sidi/baptis dewasa).
+     */
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(GuidanceProgram::class, 'program_id');
     }
 }

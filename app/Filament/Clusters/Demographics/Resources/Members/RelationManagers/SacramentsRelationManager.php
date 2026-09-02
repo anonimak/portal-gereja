@@ -76,6 +76,27 @@ class SacramentsRelationManager extends RelationManager
                             // via getOptionLabelFromRecordUsing (tidak di-pluck).
                             ->relationship('official', 'id')
                             ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
+                        Select::make('program_id')
+                            ->label('Program Bimbingan (Pra-Sidi)')
+                            ->helperText('Diisi saat menerbitkan Sidi / Baptis Dewasa (T8)')
+                            ->nullable()
+                            ->searchable()
+                            ->preload()
+                            ->relationship(
+                                'program',
+                                'title',
+                                function (Builder $query): Builder {
+                                    $query->where('type', 'pra_sidi');
+
+                                    // Super admin: ikut gereja yang dipilih (null = semua gereja).
+                                    $activeChurchId = \App\Support\ChurchContext::activeChurchId();
+                                    if ($activeChurchId !== null) {
+                                        $query->where('church_id', $activeChurchId);
+                                    }
+
+                                    return $query;
+                                }
+                            ),
                         TextInput::make('certificate_number')
                             ->label('Nomor Sertifikat')
                             ->nullable(),
@@ -136,8 +157,14 @@ class SacramentsRelationManager extends RelationManager
                 Action::make('cetak_dokumen')
                     ->label('Cetak Dokumen')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->visible(fn (MemberSacrament $record): bool => $record->type === 'baptis_anak')
-                    ->url(fn (MemberSacrament $record): string => route('sakramen.baptis-anak.export-pdf', $record->id))
+                    ->visible(fn (MemberSacrament $record): bool => in_array($record->type, ['baptis_anak', 'sidi', 'baptis_dewasa'], true))
+                    ->url(function (MemberSacrament $record): string {
+                        if ($record->type === 'baptis_anak') {
+                            return route('sakramen.baptis-anak.export-pdf', $record->id);
+                        }
+
+                        return route('sakramen.sidi.export-pdf', $record->id);
+                    })
                     ->openUrlInNewTab(),
                 EditAction::make(),
                 DeleteAction::make(),
