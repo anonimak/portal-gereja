@@ -97,6 +97,12 @@ class Marriage extends Model
 
             $marriage->sacraments()->get()->each->delete();
         });
+
+        // Saat marriage di-restore, sakramen nikah ikut di-restore
+        // (konsisten cascade soft-delete pola Member->MemberSacrament).
+        static::restored(function (Marriage $marriage): void {
+            $marriage->sacraments()->onlyTrashed()->get()->each->restore();
+        });
     }
 
     /**

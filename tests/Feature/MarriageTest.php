@@ -114,14 +114,14 @@ class MarriageTest extends TestCase
 
     public function test_akta_nikah_dokumen_null_data_aman(): void
     {
-        // Pasangan null — blade harus null-safe, tidak crash.
-        $marriage = Marriage::factory()->create([
-            'church_id' => $this->churchA->id,
-            'husband_member_id' => null,
-            'wife_member_id' => null,
-            'marriage_date' => null,
+        // Pasangan VALID + field dokumen null — blade harus null-safe, tidak crash.
+        $marriage = $this->makeMarriage($this->churchA);
+        $marriage->update([
+            // marriage_date NOT NULL di DB — biarkan terisi; uji null-safe
+            // pada field dokumen yang memang nullable.
             'certificate_number' => null,
             'issued_at' => null,
+            'location' => null,
         ]);
 
         $response = $this->actingAs($this->churchAdminA)
