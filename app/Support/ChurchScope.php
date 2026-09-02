@@ -29,6 +29,23 @@ final class ChurchScope
         return $query;
     }
 
+    /**
+     * Select parent-derived untuk CREATE & EDIT (AC-T3-13 / MED Vera):
+     * - EDIT ($parentChurchId != null) → ikut gereja OWNER RECORD (forChurch).
+     * - CREATE ($parentChurchId == null) → super_admin melihat semua gereja,
+     *   non-super_admin terscope ke gereja aktor (forActorSelect).
+     * Menghilangkan fallback `?? 0` yang membuat opsi kosong saat super_admin
+     * membuat record baru (record belum punya church_id).
+     */
+    public static function forParentOrCreate(Builder $query, ?int $parentChurchId): Builder
+    {
+        if ($parentChurchId !== null) {
+            return self::forChurch($parentChurchId, $query);
+        }
+
+        return self::forActorSelect($query);
+    }
+
     public static function forChurch(int $churchId, Builder $query): Builder
     {
         // forChurch mengikuti OWNER RECORD (AC-T3-13): lepaskan global scope

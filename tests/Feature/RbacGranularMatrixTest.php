@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Filament\Clusters\Reporting\Pages\WartaJemaat;
 use App\Filament\Pages\LaporanRapatPage;
+use App\Models\BirthRecord;
 use App\Models\Church;
 use App\Models\Event;
 use App\Models\EventAttendance;
@@ -48,6 +49,8 @@ class RbacGranularMatrixTest extends TestCase
 
     private Fund $fund;
 
+    private BirthRecord $birthRecord;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -66,6 +69,7 @@ class RbacGranularMatrixTest extends TestCase
         // membutuhkan instance, bukan class-string (class-string di-shift → 1 arg).
         $this->member = Member::factory()->create(['church_id' => $this->church->id]);
         $this->fund = Fund::factory()->create(['church_id' => $this->church->id]);
+        $this->birthRecord = BirthRecord::factory()->create(['church_id' => $this->church->id]);
     }
 
     // ---- AC-T3-03: finance_admin dibatasi ke modul keuangan + laporan rapat ----
@@ -159,5 +163,58 @@ class RbacGranularMatrixTest extends TestCase
         $this->assertTrue(Gate::forUser($this->superAdmin)->allows('create', Transaction::class));
         $this->assertTrue(RoleRegistry::isCrossChurch($this->superAdmin));
         $this->assertFalse(RoleRegistry::isCrossChurch($this->churchAdmin));
+    }
+
+    // ---- AC-T3-08 (blocker Vera): BirthRecordPolicy module 'lifecycle' ----
+    // Hanya super_admin & church_admin yang boleh view+CRUD BirthRecord;
+    // finance_admin / jemaat_admin / warta_editor / report_viewer DITOLAK total
+    // (tidak mewarisi member.* dari TenantPolicy).
+
+    public function test_birth_record_policy_hanya_super_admin_dan_church_admin(): void
+    {
+        // [user, ekspektasi allows] — object TIDAK boleh jadi array key di PHP.
+        $cases = [
+            [$this->superAdmin, true],
+            [$this->churchAdmin, true],
+            [$this->financeAdmin, false],
+            [$this->jemaatAdmin, false],
+            [$this->wartaEditor, false],
+            [$this->reportViewer, false],
+        ];
+
+        $abilities = ['viewAny', 'view', 'create', 'update', 'delete'];
+
+        foreach ($cases as [$user, $expected]) {
+            foreach ($abilities as $ability) {
+                $record = in_array($ability, ['view', 'update', 'delete'], true)
+                    ? $this->birthRecord
+                    : BirthRecord::class;
+
+                if ($expected) {
+                    $this->assertTrue(
+                        Gate::forUser($user)->allows($ability, $record),
+                        "{$user->role} harus BOLEH {$ability} BirthRecord"
+                    );
+                } else {
+                    $this->assertTrue(
+                        Gate::forUser($user)->denies($ability, $record),
+                        "{$user->role} harus DITOLAK {$ability} BirthRecord"
+                    );
+                }
+            }
+        }
+    }
+
+    // AC-T3-13: church_admin tetap ter-isolasi — BirthRecord gereja lain ditolak.
+    public function test_birth_record_church_admin_tidak_bisa_akses_gereja_lain(): void
+    {
+        $other = Church::factory()->create();
+        $otherRecord = BirthRecord::factory()->create(['church_id' => $other->id]);
+
+        $this->assertTrue(Gate::forUser($this->churchAdmin)->denies('view', $otherRecord));
+        $this->assertTrue(Gate::forUser($this->churchAdmin)->denies('update', $otherRecord));
+        $this->assertTrue(Gate::forUser($this->churchAdmin)->denies('delete', $otherRecord));
+
+        $this->assertTrue(Gate::forUser($this->superAdmin)->allows('view', $otherRecord));
     }
 }

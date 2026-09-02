@@ -48,6 +48,12 @@ enum Permission: string
     case MasterEventUpdate = 'master.event.update';
     case MasterEventDelete = 'master.event.delete';
 
+    // Lifecycle (BirthRecord — akta lahir; modul sakramen/kematian dll)
+    case LifecycleView = 'lifecycle.view';
+    case LifecycleCreate = 'lifecycle.create';
+    case LifecycleUpdate = 'lifecycle.update';
+    case LifecycleDelete = 'lifecycle.delete';
+
     // Halaman laporan
     case ReportWartaView = 'report.warta.view';
     case ReportRapatView = 'report.rapat.view';

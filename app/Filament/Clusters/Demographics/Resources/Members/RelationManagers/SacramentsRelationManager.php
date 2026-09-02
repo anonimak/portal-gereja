@@ -20,11 +20,11 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SacramentsRelationManager extends RelationManager
 {
@@ -81,9 +81,9 @@ class SacramentsRelationManager extends RelationManager
                             ->relationship(
                                 'official',
                                 'id',
-                                fn (Builder $query): Builder => ChurchScope::forChurch(
-                                    (int) ($this->getOwnerRecord()?->church_id ?? auth()->user()?->church_id ?? 0),
-                                    $query
+                                fn (Builder $query): Builder => ChurchScope::forParentOrCreate(
+                                    $query,
+                                    $this->getOwnerRecord()?->church_id
                                 )
                             )
                             ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
