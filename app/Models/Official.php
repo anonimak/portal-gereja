@@ -56,13 +56,15 @@ class Official extends Model
     /**
      * Status keaktifan jabatan (LOW-4 / AC-T3-16..18):
      *
-     * - end_date terisi dan sudah lewat hari ini → Nonaktif.
+     * - end_date terisi dan sudah lewat / hari ini → Nonaktif.
      * - Untuk majelis_lokal: member terkait di-soft-delete → Nonaktif.
      * - Selain itu → Aktif.
      */
     public function getIsActiveAttribute(): bool
     {
-        if ($this->end_date !== null && $this->end_date->lt(today())) {
+        // LOW-4: begitu end_date diisi (termasuk hari ini saat member dihapus),
+        // jabatan dianggap sudah berakhir — restore member TIDAK mengaktifkan lagi.
+        if ($this->end_date !== null && ! $this->end_date->isFuture()) {
             return false;
         }
 

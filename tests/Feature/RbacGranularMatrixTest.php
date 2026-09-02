@@ -44,6 +44,10 @@ class RbacGranularMatrixTest extends TestCase
 
     private User $reportViewer;
 
+    private Member $member;
+
+    private Fund $fund;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -57,6 +61,11 @@ class RbacGranularMatrixTest extends TestCase
         $this->jemaatAdmin = User::factory()->create(['church_id' => $this->church->id, 'role' => 'jemaat_admin']);
         $this->wartaEditor = User::factory()->create(['church_id' => $this->church->id, 'role' => 'warta_editor']);
         $this->reportViewer = User::factory()->create(['church_id' => $this->church->id, 'role' => 'report_viewer']);
+
+        // Instance model untuk ability ber-record (update/delete/view) — Gate
+        // membutuhkan instance, bukan class-string (class-string di-shift → 1 arg).
+        $this->member = Member::factory()->create(['church_id' => $this->church->id]);
+        $this->fund = Fund::factory()->create(['church_id' => $this->church->id]);
     }
 
     // ---- AC-T3-03: finance_admin dibatasi ke modul keuangan + laporan rapat ----
@@ -92,7 +101,7 @@ class RbacGranularMatrixTest extends TestCase
         $this->assertTrue(Gate::forUser($this->jemaatAdmin)->denies('viewAny', EventAttendance::class));
 
         $this->assertTrue(Gate::forUser($this->jemaatAdmin)->allows('create', Member::class));
-        $this->assertTrue(Gate::forUser($this->jemaatAdmin)->allows('update', Member::class));
+        $this->assertTrue(Gate::forUser($this->jemaatAdmin)->allows('update', $this->member));
         $this->assertTrue(Gate::forUser($this->jemaatAdmin)->denies('create', Event::class));
     }
 
@@ -105,8 +114,8 @@ class RbacGranularMatrixTest extends TestCase
         $this->assertTrue(Gate::forUser($this->wartaEditor)->allows('viewAny', Transaction::class));
 
         $this->assertTrue(Gate::forUser($this->wartaEditor)->denies('create', Member::class));
-        $this->assertTrue(Gate::forUser($this->wartaEditor)->denies('update', Member::class));
-        $this->assertTrue(Gate::forUser($this->wartaEditor)->denies('delete', Member::class));
+        $this->assertTrue(Gate::forUser($this->wartaEditor)->denies('update', $this->member));
+        $this->assertTrue(Gate::forUser($this->wartaEditor)->denies('delete', $this->member));
         $this->assertTrue(Gate::forUser($this->wartaEditor)->denies('create', Event::class));
 
         $this->actingAs($this->wartaEditor);
@@ -124,7 +133,7 @@ class RbacGranularMatrixTest extends TestCase
         $this->assertTrue(Gate::forUser($this->reportViewer)->allows('viewAny', Member::class));
 
         $this->assertTrue(Gate::forUser($this->reportViewer)->denies('create', Transaction::class));
-        $this->assertTrue(Gate::forUser($this->reportViewer)->denies('update', Fund::class));
+        $this->assertTrue(Gate::forUser($this->reportViewer)->denies('update', $this->fund));
         $this->assertTrue(Gate::forUser($this->reportViewer)->denies('viewAny', EventAttendance::class));
 
         $this->actingAs($this->reportViewer);

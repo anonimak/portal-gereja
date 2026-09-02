@@ -31,6 +31,12 @@ final class ChurchScope
 
     public static function forChurch(int $churchId, Builder $query): Builder
     {
+        // forChurch mengikuti OWNER RECORD (AC-T3-13): lepaskan global scope
+        // tenant yang memfilter ke gereja aktor sebelum menerapkan gereja owner.
+        // Tanpa ini, query dari relationship yang sudah ter-scope akan bertabrakan
+        // (where church_id = aktor AND church_id = owner) → opsi kosong.
+        $query->withoutGlobalScope('church');
+
         return $query->where('church_id', $churchId);
     }
 }
