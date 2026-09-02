@@ -21,6 +21,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -141,6 +142,12 @@ class GuidanceProgramResource extends Resource
                     ->placeholder('-'),
             ])
             ->filters([
+                SelectFilter::make('type')
+                    ->label('Jenis Bimbingan')
+                    ->options([
+                        'pra_sidi' => 'Pra-Sidi (Katakisasi)',
+                        'pra_nikah' => 'Pra-Nikah',
+                    ]),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->recordActions([
