@@ -64,10 +64,12 @@ class DeathRecordResource extends Resource
                             ->relationship(
                                 'member',
                                 'full_name',
-                                fn (Builder $query): Builder => $query->when(
-                                    ChurchContext::activeChurchId() !== null,
-                                    fn (Builder $q) => $q->where('church_id', ChurchContext::activeChurchId())
-                                )
+                                fn (Builder $query): Builder => $query
+                                    ->whereDoesntHave('deathRecord')
+                                    ->when(
+                                        ChurchContext::activeChurchId() !== null,
+                                        fn (Builder $q) => $q->where('church_id', ChurchContext::activeChurchId())
+                                    )
                             ),
                         DatePicker::make('death_date')
                             ->label('Tanggal Meninggal')
@@ -99,12 +101,13 @@ class DeathRecordResource extends Resource
                             ->preload()
                             ->relationship(
                                 'event',
-                                'name',
+                                'id',
                                 fn (Builder $query): Builder => $query->when(
                                     ChurchContext::activeChurchId() !== null,
                                     fn (Builder $q) => $q->where('church_id', ChurchContext::activeChurchId())
                                 )
                             )
+                            ->getOptionLabelFromRecordUsing(fn (Event $record): string => $record->title)
                             ->nullable(),
                     ])->columns(2),
                 Section::make('Dokumen Surat Keterangan Kematian')

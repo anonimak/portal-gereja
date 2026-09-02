@@ -83,15 +83,21 @@ class DeathRecord extends Model
     protected static function booted(): void
     {
         // AC-LC-05: status anggota berubah menjadi 'meninggal' saat dicatat.
+        // Update via instance supaya RecordsAuditTrail Member mencatat perubahan status
+        // (audit status member — temuan re-review Vera).
         static::created(function (DeathRecord $record): void {
             if (! $record->member_id) {
                 return;
             }
 
-            Member::query()
+            $member = Member::query()
                 ->withoutGlobalScopes()
                 ->whereKey($record->member_id)
-                ->update(['status' => 'meninggal']);
+                ->first();
+
+            if ($member !== null && $member->status !== 'meninggal') {
+                $member->update(['status' => 'meninggal']);
+            }
         });
     }
 

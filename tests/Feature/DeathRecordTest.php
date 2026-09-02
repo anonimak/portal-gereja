@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Filament\Clusters\Lifecycle\Resources\DeathRecord\DeathRecordResource;
 use App\Models\AuditLog;
 use App\Models\Church;
 use App\Models\DeathRecord;
+use App\Models\Event;
+use App\Models\EventCategory;
 use App\Models\Family;
 use App\Models\Member;
 use App\Models\Official;
@@ -37,6 +40,8 @@ class DeathRecordTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Environment test tanpa Vite build — matikan agar render panel tidak error manifest.
+        $this->withoutVite();
 
         $this->church = Church::factory()->create();
         $this->admin = User::factory()->create([
@@ -185,5 +190,73 @@ class DeathRecordTest extends TestCase
 
         $record->restore();
         $this->assertSame(1, DeathRecord::query()->count());
+    }
+
+    /**
+     * Re-review Vera HIGH — halaman create render tanpa SQL error.
+     * Bug lama: Select event pakai relationship('event', 'name') padahal tabel
+     * events hanya punya kolom title (name = accessor tidak ada) -> pluck SQL error.
+     * Fix: 'id' + getOptionLabelFromRecordUsing(fn (Event $r) => $r->title).
+     */
+    public function test_halaman_create_render_tanpa_sql_error(): void
+    {
+        // Sediakan event & kategori agar select event punya opsi valid.
+        $category = EventCategory::factory()->create(['church_id' => $this->church->id]);
+        Event::factory()->create([
+            'church_id' => $this->church->id,
+            'category_id' => $category->id,
+            'title' => 'Ibadah Pemakaman Test',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(DeathRecordResource::getUrl('create'))
+            ->assertStatus(200);
+    }
+
+    /**
+     * Re-review Vera HIGH — halaman edit render tanpa SQL error.
+     */
+    public function test_halaman_edit_render_tanpa_sql_error(): void
+    {
+        $record = $this->makeDeath();
+
+        $this->actingAs($this->admin)
+            ->get(DeathRecordResource::getUrl('edit', ['record' => $record]))
+            ->assertStatus(200);
+    }
+
+    /**
+     * Re-review Vera — member yang sudah punya death record tidak boleh
+     * muncul lagi di opsi select (UNIQUE member_id).
+     */
+    public function test_member_dengan_death_record_tidak_muncul_di_opsi_select(): void
+    {
+        $this->makeDeath();
+
+        $this->actingAs($this->admin)
+            ->get(DeathRecordResource::getUrl('create'))
+            ->assertStatus(200)
+            ->assertSee('Anggota Meninggal');
+    }
+
+    /**
+     * Re-review Vera — perubahan status member menjadi 'meninggal'
+     * tercatat di audit log (auditable Member, action updated).
+     */
+    public function test_status_member_tercatat_audit(): void
+    {
+        $this->actingAs($this->admin);
+        $this->makeDeath();
+
+        $audit = AuditLog::query()
+            ->where('auditable_type', Member::class)
+            ->where('action', 'updated')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($audit, 'Perubahan status member harus tercatat audit.');
+        $this->assertSame('meninggal', $audit->new_values['status'] ?? null);
+        $this->assertSame($this->church->id, (int) $audit->church_id);
+        $this->assertSame($this->admin->id, (int) $audit->user_id);
     }
 }
