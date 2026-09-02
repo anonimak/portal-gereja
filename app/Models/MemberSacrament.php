@@ -25,6 +25,7 @@ class MemberSacrament extends Model
         return [
             'member_id' => Member::class,
             'official_id' => Official::class,
+            'marriage_id' => Marriage::class,
         ];
     }
 
@@ -49,9 +50,11 @@ class MemberSacrament extends Model
      */
     protected $fillable = [
         'church_id',
+        'member_id',
         'type',
         'sacrament_date',
         'official_id',
+        'marriage_id',
         'certificate_number',
         'issued_at',
         'document_path',
@@ -79,5 +82,13 @@ class MemberSacrament extends Model
     public function official(): BelongsTo
     {
         return $this->belongsTo(Official::class);
+    }
+
+    /**
+     * Pernikahan asal sakramen nikah (T9 — dibuat otomatis dari Marriage).
+     */
+    public function marriage(): BelongsTo
+    {
+        return $this->belongsTo(Marriage::class, 'marriage_id');
     }
 }
