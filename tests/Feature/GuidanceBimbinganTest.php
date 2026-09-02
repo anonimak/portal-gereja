@@ -140,9 +140,11 @@ class GuidanceBimbinganTest extends TestCase
             'template_id' => $template->id,
         ]);
 
+        // create() dengan template_id sudah auto-instantiate 12 sesi (AC-LC-18);
+        // panggilan eksplisit berikutnya idempotent (tidak menduplikasi).
         $created = $program->instantiateFromTemplate();
 
-        $this->assertSame(12, $created);
+        $this->assertSame(0, $created, 'idempotent: sesi sudah dibuat otomatis saat create');
         $this->assertSame(12, $program->sessions()->count());
         $this->assertSame($template->id, $program->template_id);
 

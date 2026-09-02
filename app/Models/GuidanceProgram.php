@@ -138,4 +138,21 @@ class GuidanceProgram extends Model
 
         return $created;
     }
+
+    /**
+     * AC-LC-18: program yang dibuat dari template otomatis meng-install
+     * sesi 1..N sesuai topik template (urutan session_number).
+     * Idempotent — panggilan ulang (mis. dari CreateGuidanceProgram::afterCreate)
+     * tidak menduplikasi sesi karena instantiateFromTemplate() me-skip title
+     * yang sudah ada.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (GuidanceProgram $program): void {
+            if ($program->template_id) {
+                $program->instantiateFromTemplate();
+            }
+        });
+    }
 }
+
