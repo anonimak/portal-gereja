@@ -12,9 +12,12 @@ return new class extends Migration
     {
         Schema::create('guidance_session_members', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
-            $table->foreignId('session_id')->constrained('guidance_sessions')->cascadeOnDelete()->index();
-            $table->foreignId('member_id')->constrained('members')->cascadeOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id', 'guidance_session_members_church_id_index');
+            $table->foreignId('session_id')->constrained('guidance_sessions')->cascadeOnDelete();
+            $table->index('session_id', 'guidance_session_members_session_id_index');
+            $table->foreignId('member_id')->constrained('members')->cascadeOnDelete();
+            $table->index('member_id', 'guidance_session_members_member_id_index');
             $table->boolean('attended')->default(false);
             $table->text('notes')->nullable();
             $table->softDeletes();
