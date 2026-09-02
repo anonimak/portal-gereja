@@ -6,7 +6,9 @@ namespace App\Filament\Clusters\System\Resources\Official;
 
 use App\Filament\Clusters\System\Resources\Official\Pages;
 use App\Filament\Clusters\System\SystemCluster;
+use App\Models\Church;
 use App\Models\Official;
+use App\Support\ChurchScope;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -23,6 +25,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class OfficialResource extends Resource
 {
@@ -70,6 +73,15 @@ class OfficialResource extends Resource
             ->schema([
                 Section::make('Data Pelayan Gereja')
                     ->schema([
+                        // AC-T3-14: church_id hanya untuk super_admin (create lintas gereja).
+                        Select::make('church_id')
+                            ->label('Gereja')
+                            ->options(fn (): array => Church::query()->pluck('name', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn (): bool => auth()->user()?->role === 'super_admin')
+                            ->rules([Rule::exists('churches', 'id')])
+                            ->nullable(),
                         Select::make('type')
                             ->label('Tipe Pelayan')
                             ->required()
@@ -89,7 +101,7 @@ class OfficialResource extends Resource
                             ->relationship(
                                 'member',
                                 'full_name',
-                                fn(Builder $query): Builder => $query->where('church_id', auth()->user()->church_id)
+                                fn(Builder $query): Builder => ChurchScope::forActorSelect($query)
                             ),
                         TextInput::make('external_name')
                             ->label('Nama Lengkap')
@@ -145,7 +157,13 @@ class OfficialResource extends Resource
                     ->label('Tanggal Akhir Melayani')
                     ->date()
                     ->sortable()
-                    ->formatStateUsing(fn(?string $state): string => $state ? $state : 'Aktif'),
+                    ->placeholder('—'),
+                // AC-T3-18: badge Aktif/Nonaktif dari Official::isActive (LOW-4).
+                TextColumn::make('is_active')
+                    ->label('Status')
+                    ->badge()
+                    ->getStateUsing(fn (Official $record): string => $record->is_active ? 'Aktif' : 'Nonaktif')
+                    ->color(fn (string $state): string => $state === 'Aktif' ? 'success' : 'danger'),
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime()

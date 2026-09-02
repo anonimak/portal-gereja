@@ -9,4 +9,6 @@ namespace App\Policies;
  */
 class MinistryRolePolicy extends TenantPolicy
 {
+
+    protected static string $module = 'master.event';
 }

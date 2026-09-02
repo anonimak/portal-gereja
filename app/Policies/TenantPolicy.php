@@ -8,25 +8,25 @@ use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
- * Base policy untuk resource tenant (multi-church).
- * Lapisan kedua di atas global scope BelongsToChurch: menutup IDOR lintas gereja
- * untuk jalur yang melewati Policy (view/update/delete/forceDelete).
+ * Base policy untuk resource tenant (multi-church) — RBAC granular (Fase 2 Task 3).
  *
- * Role yang boleh mengakses modul ini ditentukan oleh $allowedRoles.
- * Default: super_admin + church_admin (resource NON-keuangan).
- * Resource keuangan (Transaction, Fund, FinancialCategory) menambahkan finance_admin
- * dengan meng-override $allowedRoles — lihat AC-T2-03 (BLOCK-1 Vera).
+ * Mengganti $allowedRoles dengan permission keys per modul:
+ * - viewAny/view        → user->hasPermission("{$module}.view")
+ * - create/update/delete/restore/forceDelete/deleteAny
+ *                       → user->hasPermission("{$module}.<ability>")
+ * - KECUALI modul `attendance`: semua aksi tulis memakai `attendance.manage`
+ *   (permission create/update/delete tidak ada untuk attendance).
+ *
+ * canAccessChurch() (scope gereja) tetap — menutup IDOR lintas gereja.
  */
 class TenantPolicy
 {
     use HandlesAuthorization;
 
     /**
-     * Role yang diizinkan mengakses resource yang memakai policy ini.
-     *
-     * @var array<int, string>
+     * Modul permission untuk resource ini. Subclass wajib set.
      */
-    protected array $allowedRoles = ['super_admin', 'church_admin'];
+    protected static string $module = 'member';
 
     /**
      * Super admin dapat mengakses semua record semua gereja; admin gereja
@@ -43,48 +43,59 @@ class TenantPolicy
             && $record->church_id === $user->church_id;
     }
 
-    protected function hasModuleAccess(User $user): bool
+    protected function hasViewPermission(User $user): bool
     {
-        return in_array($user->role, $this->allowedRoles, true);
+        return $user->hasPermission(static::$module . '.view');
+    }
+
+    protected function hasWritePermission(User $user, string $ability): bool
+    {
+        // Pengecualian attendance (AC-T3-02): semua aksi tulis memakai
+        // attendance.manage, bukan create/update/delete.
+        if (static::$module === 'attendance') {
+            return $user->hasPermission('attendance.manage');
+        }
+
+        return $user->hasPermission(static::$module . '.' . $ability);
     }
 
     public function viewAny(User $user): bool
     {
-        return $this->hasModuleAccess($user);
+        return $this->hasViewPermission($user);
     }
 
     public function view(User $user, mixed $record): bool
     {
-        return $this->hasModuleAccess($user) && $this->canAccessChurch($user, $record);
+        return $this->hasViewPermission($user) && $this->canAccessChurch($user, $record);
     }
 
     public function create(User $user): bool
     {
-        return $this->hasModuleAccess($user);
+        return $this->hasWritePermission($user, 'create');
     }
 
     public function update(User $user, mixed $record): bool
     {
-        return $this->hasModuleAccess($user) && $this->canAccessChurch($user, $record);
+        return $this->hasWritePermission($user, 'update') && $this->canAccessChurch($user, $record);
     }
 
     public function delete(User $user, mixed $record): bool
     {
-        return $this->hasModuleAccess($user) && $this->canAccessChurch($user, $record);
+        return $this->hasWritePermission($user, 'delete') && $this->canAccessChurch($user, $record);
     }
 
     public function deleteAny(User $user): bool
     {
-        return $this->hasModuleAccess($user);
+        return $this->hasWritePermission($user, 'delete');
     }
 
     public function restore(User $user, mixed $record): bool
     {
-        return $this->hasModuleAccess($user) && $this->canAccessChurch($user, $record);
+        return $this->hasWritePermission($user, 'update') && $this->canAccessChurch($user, $record);
     }
 
     public function forceDelete(User $user, mixed $record): bool
     {
-        return $this->hasModuleAccess($user) && $this->canAccessChurch($user, $record);
+        return $this->hasWritePermission($user, 'delete') && $this->canAccessChurch($user, $record);
     }
 }

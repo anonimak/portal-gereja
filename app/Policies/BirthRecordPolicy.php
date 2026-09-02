@@ -16,5 +16,11 @@ namespace App\Policies;
  */
 class BirthRecordPolicy extends TenantPolicy
 {
-    // $allowedRoles default: ['super_admin', 'church_admin'] — sudah sesuai matriks.
+    /**
+     * Modul permission lifecycle (AC-T3 blocker Vera): tanpa ini policy mewarisi
+     * `member.*` dari TenantPolicy sehingga jemaat_admin/warta_editor/report_viewer
+     * bisa CRUD BirthRecord. Hanya super_admin & church_admin yang punya
+     * lifecycle.* (lihat RoleRegistry).
+     */
+    protected static string $module = 'lifecycle';
 }

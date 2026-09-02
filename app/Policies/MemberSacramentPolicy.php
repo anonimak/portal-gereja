@@ -9,4 +9,6 @@ namespace App\Policies;
  */
 class MemberSacramentPolicy extends TenantPolicy
 {
+
+    protected static string $module = 'member';
 }

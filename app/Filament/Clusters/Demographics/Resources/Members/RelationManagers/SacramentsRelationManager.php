@@ -6,6 +6,7 @@ namespace App\Filament\Clusters\Demographics\Resources\Members\RelationManagers;
 
 use App\Models\MemberSacrament;
 use App\Models\Official;
+use App\Support\ChurchScope;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -23,6 +24,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SacramentsRelationManager extends RelationManager
 {
@@ -74,7 +76,16 @@ class SacramentsRelationManager extends RelationManager
                             // membuat Filament memanggil pluck('display_name') → SQL error.
                             // Solusi: title attribute = kolom nyata 'id' + label dari accessor
                             // via getOptionLabelFromRecordUsing (tidak di-pluck).
-                            ->relationship('official', 'id')
+                            // AC-T3-13: opsi parent-derived (sakramen) mengikuti gereja
+                            // OWNER RECORD (member), bukan gereja aktor.
+                            ->relationship(
+                                'official',
+                                'id',
+                                fn (Builder $query): Builder => ChurchScope::forParentOrCreate(
+                                    $query,
+                                    $this->getOwnerRecord()?->church_id
+                                )
+                            )
                             ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
                         Select::make('program_id')
                             ->label('Program Bimbingan (Pra-Sidi)')

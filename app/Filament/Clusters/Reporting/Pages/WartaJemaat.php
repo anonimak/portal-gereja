@@ -26,8 +26,8 @@ class WartaJemaat extends BaseReportPage
 
     protected static function allowedRoles(): array
     {
-        // Matriks §1.1: super_admin, church_admin, warta_editor.
-        return ['super_admin', 'church_admin', 'warta_editor'];
+        // Matriks §1.1 + spec T3: super_admin, church_admin, warta_editor, report_viewer (read-only).
+        return ['super_admin', 'church_admin', 'warta_editor', 'report_viewer'];
     }
 
     public ?Carbon $startDate = null;

@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Policies;
 
 /**
- * Policy untuk model tenant yang mengikuti aturan base TenantPolicy.
+ * Policy master data keuangan (FinancialCategory) — RBAC granular (Fase 2 Task 3).
  *
- * finance_admin diizinkan mengelola master data keuangan (FinancialCategory)
- * gereja sendiri (AC-T2-03 — BLOCK-1 Vera).
+ * Modul `master.finance`: finance_admin diizinkan (AC-T2-03 — BLOCK-1 Vera).
  */
 class FinancialCategoryPolicy extends TenantPolicy
 {
-    protected array $allowedRoles = ['super_admin', 'church_admin', 'finance_admin'];
+    protected static string $module = 'master.finance';
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\UserRole;
 use App\Models\User;
 
 /**
@@ -14,9 +15,14 @@ use App\Models\User;
 class UserObserver
 {
     /**
-     * Role yang diizinkan (whitelist server-side).
+     * Whitelist role server-side (AC-T3-01): 6 role panel.
+     *
+     * @return array<int, string>
      */
-    private const ALLOWED_ROLES = ['super_admin', 'church_admin', 'finance_admin'];
+    private static function allowedRoles(): array
+    {
+        return UserRole::panelRoles();
+    }
 
     public function creating(User $user): void
     {
@@ -94,7 +100,7 @@ class UserObserver
 
     private function assertValidRole(?string $role): void
     {
-        if ($role !== null && !in_array($role, self::ALLOWED_ROLES, true)) {
+        if ($role !== null && !in_array($role, self::allowedRoles(), true)) {
             abort(422, "Role '{$role}' tidak valid.");
         }
     }

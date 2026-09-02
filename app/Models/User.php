@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\UserRole;
+use App\Support\RoleRegistry;
 use App\Traits\RecordsAuditTrail;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Filament\Models\Contracts\FilamentUser;
@@ -63,14 +65,25 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Gerbang akses panel Filament (AC-T2-04 — BLOCK-2 Vera).
+     * Gerbang akses panel Filament (AC-T2-04 — BLOCK-2 Vera; AC-T3-01).
      *
-     * Hanya role panel yang sah yang boleh masuk ke /admin:
-     * super_admin, church_admin, finance_admin.
-     * User tanpa role / role tak dikenal ('reader', '', dll.) DITOLAK.
+     * 6 role panel yang sah: super_admin, church_admin, finance_admin,
+     * jemaat_admin, warta_editor, report_viewer. Role tak dikenal ('reader', dll.)
+     * DITOLAK.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array($this->role, ['super_admin', 'church_admin', 'finance_admin'], true);
+        return in_array($this->role, UserRole::panelRoles(), true);
+    }
+
+    /**
+     * RBAC granular (Fase 2 Task 3): cek permission via RoleRegistry.
+     *
+     * Menerima string key ('member.view') atau enum Permission. super_admin
+     * selalu true (wildcard).
+     */
+    public function hasPermission(string|\App\Enums\Permission $permission): bool
+    {
+        return RoleRegistry::has($this, $permission);
     }
 }

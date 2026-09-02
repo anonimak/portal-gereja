@@ -54,9 +54,35 @@ class Official extends Model
     }
 
     /**
+     * Status keaktifan jabatan (LOW-4 / AC-T3-16..18):
+     *
+     * - end_date terisi dan sudah lewat / hari ini → Nonaktif.
+     * - Untuk majelis_lokal: member terkait di-soft-delete → Nonaktif.
+     * - Selain itu → Aktif.
+     */
+    public function getIsActiveAttribute(): bool
+    {
+        // LOW-4: begitu end_date diisi (termasuk hari ini saat member dihapus),
+        // jabatan dianggap sudah berakhir — restore member TIDAK mengaktifkan lagi.
+        if ($this->end_date !== null && ! $this->end_date->isFuture()) {
+            return false;
+        }
+
+        if ($this->type === 'majelis_lokal' && $this->member_id) {
+            $member = $this->member()->withTrashed()->first();
+
+            if ($member === null || $member->trashed()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Get the display name of the official.
      * - For Pelayan Tamu: returns "external_name (origin_church)"
-     * - For Majelis Lokal: returns member's full name
+     * - For Majelis Lokal: returns member's full name (+ "(Nonaktif)" jika trashed)
      * - For Pendeta Internal: returns external_name
      */
     public function getDisplayNameAttribute(): string
@@ -65,8 +91,14 @@ class Official extends Model
             return "{$this->external_name} ({$this->origin_church})";
         }
 
-        if ($this->member_id && $this->member) {
-            return $this->member->full_name;
+        if ($this->member_id) {
+            $member = $this->member()->withTrashed()->first();
+
+            if ($member) {
+                $suffix = $member->trashed() ? ' (Nonaktif)' : '';
+
+                return $member->full_name . $suffix;
+            }
         }
 
         return $this->external_name ?? 'Unknown';

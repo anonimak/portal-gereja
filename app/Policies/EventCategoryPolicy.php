@@ -9,4 +9,6 @@ namespace App\Policies;
  */
 class EventCategoryPolicy extends TenantPolicy
 {
+
+    protected static string $module = 'master.event';
 }
