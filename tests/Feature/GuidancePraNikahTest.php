@@ -175,16 +175,20 @@ class GuidancePraNikahTest extends TestCase
         $otherChurch = Church::factory()->create();
         (new GuidanceTemplateSeeder)->run($otherChurch->id);
 
-        $program = GuidanceProgram::query()->create([
+        // super_admin membuat program di gereja lain → church_id mengikuti gereja target.
+        $this->actingAs($this->superAdmin);
+        GuidanceProgram::query()->create([
             'church_id' => $otherChurch->id,
             'type' => 'pra_nikah',
             'title' => 'Pra-Nikah Gereja Lain',
             'status' => 'draft',
         ]);
 
-        // Super admin melihat semua; church_admin hanya gereja sendiri.
+        // super_admin melihat semua gereja (global scope dinonaktifkan utk super_admin).
         $this->assertSame(1, GuidanceProgram::query()->count());
+
+        // church_admin hanya melihat gereja sendiri (A) — program di gereja B tidak terlihat.
         $this->actingAs($this->admin);
-        $this->assertSame(1, GuidanceProgram::query()->count()); // church admin scoped ke gereja A
+        $this->assertSame(0, GuidanceProgram::query()->count());
     }
 }
