@@ -110,4 +110,12 @@ class Member extends Model
     {
         return $this->hasOne(BirthRecord::class);
     }
+
+    /**
+     * Catatan kematian (Fase 3B T11) — satu member maksimal satu death record.
+     */
+    public function deathRecord(): HasOne
+    {
+        return $this->hasOne(DeathRecord::class);
+    }
 }

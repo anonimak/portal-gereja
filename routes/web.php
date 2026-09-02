@@ -3,6 +3,7 @@
 use App\Filament\Pages\LaporanRapatPage;
 use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
+use App\Http\Controllers\DeathRecordExportController;
 use App\Http\Controllers\MarriageExportController;
 use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
@@ -54,6 +55,14 @@ Route::middleware(['auth', 'verified'])
     ->group(function () {
         Route::get('/{marriage}/export-pdf', [MarriageExportController::class, 'pdf'])
             ->name('marriage.export-pdf');
+    });
+
+// Fase 3B T11 — penerbitan Surat Keterangan Kematian (dompdf).
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin/death-record')
+    ->group(function () {
+        Route::get('/{deathRecord}/export-pdf', [DeathRecordExportController::class, 'pdf'])
+            ->name('death-record.export-pdf');
     });
 
 // Fase 3B T8 — penerbitan Dokumen Sidi / Dokumen Baptis Dewasa (dompdf).
