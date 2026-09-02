@@ -88,8 +88,10 @@ class SacramentsRelationManager extends RelationManager
                                 function (Builder $query): Builder {
                                     $query->where('type', 'pra_sidi');
 
-                                    if (auth()->user()?->role !== 'super_admin') {
-                                        $query->where('church_id', auth()->user()->church_id);
+                                    // Super admin: ikut gereja yang dipilih (null = semua gereja).
+                                    $activeChurchId = \App\Support\ChurchContext::activeChurchId();
+                                    if ($activeChurchId !== null) {
+                                        $query->where('church_id', $activeChurchId);
                                     }
 
                                     return $query;

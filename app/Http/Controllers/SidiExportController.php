@@ -66,13 +66,13 @@ class SidiExportController extends Controller
             'memberName' => $member?->full_name,
             'gender' => self::genderLabel($member?->gender),
             'birthPlace' => $member?->birth_place,
-            'birthDate' => $member?->birth_date?->format('d M Y'),
+            'birthDate' => $member?->birth_date ? \Illuminate\Support\Carbon::parse($member->birth_date)->locale('id')->translatedFormat('d F Y') : null,
             'fatherName' => $member?->family?->members
                 ?->first(fn ($m) => $m->family_relation === 'kepala_keluarga')?->full_name,
             'motherName' => $member?->family?->members
                 ?->first(fn ($m) => $m->family_relation === 'istri')?->full_name,
-            'sacramentDate' => $record->sacrament_date?->format('d M Y'),
-            'issuedAt' => $record->issued_at?->format('d M Y'),
+            'sacramentDate' => $record->sacrament_date ? \Illuminate\Support\Carbon::parse($record->sacrament_date)->locale('id')->translatedFormat('d F Y') : null,
+            'issuedAt' => $record->issued_at ? \Illuminate\Support\Carbon::parse($record->issued_at)->locale('id')->translatedFormat('d F Y') : null,
             'ministerName' => $record->official?->display_name,
             'programName' => $record->program?->title,
             'recordTypeLabel' => $record->type === 'sidi' ? 'Sidi' : 'Baptis',

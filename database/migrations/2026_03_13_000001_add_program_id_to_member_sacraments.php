@@ -23,7 +23,7 @@ return new class extends Migration
                 ->after('official_id')
                 ->constrained('guidance_programs')
                 ->nullOnDelete()
-                ->index();
+                ->index('member_sacraments_program_id_index');
         });
     }
 
