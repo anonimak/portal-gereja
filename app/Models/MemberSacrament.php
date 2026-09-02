@@ -26,6 +26,7 @@ class MemberSacrament extends Model
             'member_id' => Member::class,
             'official_id' => Official::class,
             'marriage_id' => Marriage::class,
+            'program_id' => GuidanceProgram::class,
         ];
     }
 
@@ -55,6 +56,7 @@ class MemberSacrament extends Model
         'sacrament_date',
         'official_id',
         'marriage_id',
+        'program_id',
         'certificate_number',
         'issued_at',
         'document_path',
@@ -90,5 +92,13 @@ class MemberSacrament extends Model
     public function marriage(): BelongsTo
     {
         return $this->belongsTo(Marriage::class, 'marriage_id');
+    }
+
+    /**
+     * Program bimbingan pra-sidi yang diselesaikan (T8 — sidi/baptis dewasa).
+     */
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(GuidanceProgram::class, 'program_id');
     }
 }
