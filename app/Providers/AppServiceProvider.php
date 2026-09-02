@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\BirthRecord;
-use App\Models\DeathRecord;
 use App\Models\Church;
+use App\Models\DeathRecord;
 use App\Models\Event;
 use App\Models\EventAttendance;
 use App\Models\EventCategory;
@@ -19,19 +19,20 @@ use App\Models\GuidanceSession;
 use App\Models\GuidanceSessionMember;
 use App\Models\GuidanceTemplate;
 use App\Models\GuidanceTemplateSession;
-use App\Models\Member;
 use App\Models\Marriage;
+use App\Models\Member;
 use App\Models\MemberSacrament;
 use App\Models\MinistryRole;
 use App\Models\Official;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\WartaPublication;
 use App\Observers\ChurchObserver;
 use App\Observers\MemberObserver;
 use App\Observers\UserObserver;
 use App\Policies\BirthRecordPolicy;
-use App\Policies\DeathPolicy;
 use App\Policies\ChurchPolicy;
+use App\Policies\DeathPolicy;
 use App\Policies\EventAttendancePolicy;
 use App\Policies\EventCategoryPolicy;
 use App\Policies\EventPolicy;
@@ -44,14 +45,15 @@ use App\Policies\GuidanceSessionMemberPolicy;
 use App\Policies\GuidanceSessionPolicy;
 use App\Policies\GuidanceTemplatePolicy;
 use App\Policies\GuidanceTemplateSessionPolicy;
+use App\Policies\MarriagePolicy;
 use App\Policies\MemberPolicy;
 use App\Policies\MemberSacramentPolicy;
-use App\Policies\MarriagePolicy;
 use App\Policies\MinistryRolePolicy;
 use App\Policies\OfficialPolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\TransactionPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\WartaPublicationPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -102,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(GuidanceProgram::class, GuidanceProgramPolicy::class);
         Gate::policy(GuidanceSession::class, GuidanceSessionPolicy::class);
         Gate::policy(GuidanceSessionMember::class, GuidanceSessionMemberPolicy::class);
+        Gate::policy(WartaPublication::class, WartaPublicationPolicy::class);
 
         // Fallback default: resource tenant lain yang tidak punya policy spesifik
         // tetap terlindungi oleh aturan tenant (church_id) via TenantPolicy.

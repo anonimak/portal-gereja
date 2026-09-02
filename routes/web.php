@@ -5,8 +5,10 @@ use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
 use App\Http\Controllers\DeathRecordExportController;
 use App\Http\Controllers\MarriageExportController;
+use App\Http\Controllers\PublicWartaController;
 use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
+use App\Http\Controllers\WartaPublishController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -72,3 +74,21 @@ Route::middleware(['auth', 'verified'])
         Route::get('/{sacrament}/export-pdf', [SidiExportController::class, 'pdf'])
             ->name('sakramen.sidi.export-pdf');
     });
+
+// Publikasi Warta ke portal publik — admin publish snapshot periode.
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin/warta')
+    ->group(function () {
+        Route::post('/publish', WartaPublishController::class)->name('warta.publish');
+    });
+
+// Portal publik Warta Jemaat — TANPA login; satu gereja per halaman (route by code).
+Route::prefix('warta')->group(function () {
+    Route::get('/{church?}', [PublicWartaController::class, 'index'])
+        ->where('church', '[A-Za-z0-9\-]+')
+        ->name('public.warta.index');
+    Route::get('/{church}/{publication}', [PublicWartaController::class, 'show'])
+        ->where('church', '[A-Za-z0-9\-]+')
+        ->where('publication', '[0-9]+')
+        ->name('public.warta.show');
+});
