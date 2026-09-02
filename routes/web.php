@@ -3,6 +3,7 @@
 use App\Filament\Pages\LaporanRapatPage;
 use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
+use App\Http\Controllers\MarriageExportController;
 use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,14 @@ Route::middleware(['auth', 'verified'])
     ->group(function () {
         Route::get('/{sacrament}/export-pdf', [BaptisAnakExportController::class, 'pdf'])
             ->name('sakramen.baptis-anak.export-pdf');
+    });
+
+// Fase 3B T9 — penerbitan Akta Nikah (dompdf).
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin/marriage')
+    ->group(function () {
+        Route::get('/{marriage}/export-pdf', [MarriageExportController::class, 'pdf'])
+            ->name('marriage.export-pdf');
     });
 
 // Fase 3B T8 — penerbitan Dokumen Sidi / Dokumen Baptis Dewasa (dompdf).
