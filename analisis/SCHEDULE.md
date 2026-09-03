@@ -17,40 +17,52 @@
 
 ---
 
-## Ground Truth (Kamis, 3 Sep 2026 · origin/master `7b06a6e`)
-- **Fase 3B TUNTAS (T1–T11 merged):** T5 Kelahiran (#21) · T6 Baptis Anak (#23/#26) · T7 Pra-Sidi (#25) · T8 Sidi/Baptis Dewasa (#28) · T9 Pernikahan (#29) · T10 Bimbingan Pra-Nikah (#33) · T11 Kematian (#34).
-- **Publikasi Warta ke jemaat (portal publik) ✅ MERGED (#36)** — halaman publik live (snapshot periode, publish admin, halaman publik per gereja), suite 238/238.
-- **PR #37 (jadwal detil 2–4 Sep) & PR #35 (planning 16:00)** — masih OPEN → **di-supersede** dokumen ini agar tidak duplikat dan master langsung memuat agenda resmi hari ini + besok.
-- Backlog belum dikerjakan: **Super Admin pemilih gereja + Laporan Keuangan per Dana/Kas** dan **rombak laporan Fase 3A** (spec `analisis/SPEC-FASE3A-LAPORAN.md` sudah di master).
+## Ground Truth (Kamis, 3 Sep 2026 · origin/master `7a34fbf`)
+
+### KOREKSI JADWAL (hasil verifikasi master, bukan dari ingatan)
+Agenda PR #38 (Rombak Warta, Rombak Laporan Rapat, Laporan Jemaat/Kehadiran/Sakramen/Pelayan, gap audit F2) **TERNYATA SUDAH ADA di master sejak Fase 3A** → ditandai **DONE**, tidak boleh dikerjakan ulang.
+
+### Yang SUDAH ADA di master (verified via `git ls-tree` + `git grep`)
+- **Fase 3A Laporan TUNTAS:** Rombak UI Warta + PDF/Excel (PR #14) · Rombak modul Laporan **7 tipe** — Warta, Jemaat, Keuangan per Dana/Kas, Kehadiran, Sakramen, Pelayan, Rapat (PR #15, `Reporting/Pages/*`) · Fix Laporan Rapat `isAllChurches`/`canSelectChurch` (PR #17) · dark/light laporan (PR #18) · styling export Excel (PR #19) · docker ext-gd dompdf/excel (PR #16). Model `MeetingMinutes` + migrasi ada.
+- **Super Admin pemilih gereja (All/satu gereja) + Laporan Keuangan per Dana/Kas:** ✅ ada di `BaseReportPage` (§9 church select) + `LaporanKeuanganPage` (per dana, saldo awal/akhir, export).
+- **Fase 2 Task 1 gap audit — HAMPIR TUNTAS:** `church_id` di `audit_logs` ✅ (migrasi `000007`), scope tenant `AuditLog` ✅, FK `restrictOnDelete` ✅ (`000008`), `RestoreAction`/`TrashedFilter` di resource (Members/Transaction/Event/Sacraments/Attendances/Birth/Death/Guidance/Marriage) ✅, `MemberObserver` LOW-4 ✅.
+- **Fase 3B TUNTAS (T1–T11):** Kelahiran · Baptis Anak · Pra-Sidi · Sidi · Pernikahan · Pra-Nikah · Kematian (PR #21–#34).
+- **Lainnya:** Publikasi Warta portal publik ✅ (#36) · RBAC granular 6 role + ChurchScope ✅ (#30) · Kehadiran per anggota (EventAttendance) ✅.
+
+### Backlog NYATA (verified BELUM ada di master)
+1. **AuditLogResource** — UI lihat audit log (System cluster) belum ada; model `AuditLog` + scope sudah siap.
+2. **Notifikasi email** (ulang tahun & jadwal ibadah) + scheduler — `app/Notifications`, `app/Mail`, `app/Console` **tidak ada** di master.
+3. **Deteksi bentrok roster pelayan** — `grep conflict/bentrok` kosong.
+4. **Import/export CSV jemaat** — hanya ada Excel export laporan; import CSV jemaat belum ada.
+5. **Kalender ibadah + event berulang (recurring)** — `grep recurring/repeat` kosong.
+6. **Portal mandiri anggota / API** — tidak ada `routes/api.php`; baru halaman publik warta.
+7. **Donasi online QRIS/VA** — `grep donasi/payment/qris` kosong.
+8. **Notifikasi WhatsApp** — belum ada.
 
 ---
 
-## Agenda Resmi
+## Agenda Resmi (pasca-koreksi)
 
-### Kamis, 3 September 2026 (HARI INI) — 4 task (2 pagi + 2 sore)
-- **[Kamis, 3 Sep] 07:00 — Task 1: Rombak Warta Jemaat (layout modern, PDF + Excel)** — Owner: Byte (backend export) + Pixel (layout/styling) — Branch: `byte/f3a-warta-rombak` — PR: baru — DoD: CI hijau + review Vera + merge PIC (spec Fase 3A §2).
-- **[Kamis, 3 Sep] (setelah Task 1) 07:00+ — Task 2: Rombak Laporan Rapat (agenda, peserta, notulen, keputusan, lampiran) + tabel `meeting_minutes`** — Owner: Byte — Branch: `byte/f3a-laporan-rapat` — PR: baru — DoD: CI hijau + review Vera + merge PIC (spec Fase 3A §3).
-- **[Kamis, 3 Sep] 16:00 — Task 3: Laporan Jemaat/Anggota (isi, struktur, export)** — Owner: Byte — Branch: `byte/f3a-laporan-jemaat` — PR: baru — DoD: CI hijau + review Vera + merge PIC (spec Fase 3A §1).
-- **[Kamis, 3 Sep] (setelah Task 3) 16:00+ — Task 4: Laporan Kehadiran Ibadah per periode** — Owner: Byte — Branch: `byte/f3a-laporan-kehadiran` — PR: baru — DoD: CI hijau + review Vera + merge PIC (spec Fase 3A §1).
+### Kamis, 3 September 2026 (HARI INI)
+- **[Kamis, 3 Sep] 07:00 — Task 1: Rombak Warta Jemaat (PDF/Excel)** — ✅ **DONE di master (PR #14)** — tidak dikerjakan ulang.
+- **[Kamis, 3 Sep] 07:00+ — Task 2: Rombak Laporan Rapat (+`meeting_minutes`)** — ✅ **DONE di master (PR #15/#17/#18)**.
+- **[Kamis, 3 Sep] 16:00 — Task 1 (slot sore): AuditLogResource — UI lihat audit log (System cluster, read-only; super_admin semua gereja, church_admin gereja sendiri)** — Owner: Byte — Branch: `byte/auditlog-resource` — PR: baru — DoD: CI hijau + review Vera + merge PIC (gap Fase 2 Task 1).
+- **[Kamis, 3 Sep] (setelah Task 1) 16:00+ — Task 2 (slot sore): Notifikasi email (ulang tahun & jadwal ibadah) + scheduler/queue** — Owner: Byte — Branch: `byte/notifikasi-email` — PR: baru — DoD: CI hijau + review Vera + merge PIC.
 - **[Kamis, 3 Sep] Setelah slot 16:00 selesai (2 hal WAJIB):** (1) ritual update `SCHEDULE.md` agenda Jumat + Senin → PR docs-only → review & merge hari yang sama (fast-track); (2) **build preview web** dari HEAD master terbaru → http://192.168.1.8:8000.
 
 ### Jumat, 4 September 2026 — 4 task (2 pagi + 2 sore)
-- **[Jumat, 4 Sep] 07:00 — Task 1: Laporan Sakramen/Lifecycle** — Owner: Byte — Branch: `byte/f3a-laporan-sakramen` — PR: baru — DoD: CI + Vera + merge (spec Fase 3A §1).
-- **[Jumat, 4 Sep] (setelah Task 1) 07:00+ — Task 2: Laporan Pelayan/Official** — Owner: Byte — Branch: `byte/f3a-laporan-pelayan` — PR: baru — DoD: CI + Vera + merge (spec Fase 3A §1).
-- **[Jumat, 4 Sep] 16:00 — Task 3: Soft delete lanjutan / audit trail (tutup gap Fase 2 Task 1: `church_id` di `audit_logs`, model scope, `AuditLogResource`, `RestoreAction`, `TrashedFilter`, FK `restrictOnDelete`)** — Owner: Byte — Branch: `byte/f2-audit-gap` — PR: baru — DoD: CI + Vera + merge.
-- **[Jumat, 4 Sep] (setelah Task 3) 16:00+ — Task 4: Notifikasi (email) — ulang tahun & jadwal ibadah** — Owner: Byte — Branch: `byte/notifikasi-email` — PR: baru — DoD: CI + Vera + merge.
+- **[Jumat, 4 Sep] 07:00 — Task 1: Deteksi bentrok roster pelayan (validasi tumpang-tindih jadwal per orang)** — Owner: Byte — Branch: `byte/roster-bentrok` — PR: baru — DoD: CI + Vera + merge.
+- **[Jumat, 4 Sep] (setelah Task 1) 07:00+ — Task 2: Import/export CSV jemaat (bulk + template)** — Owner: Byte — Branch: `byte/csv-jemaat` — PR: baru — DoD: CI + Vera + merge.
+- **[Jumat, 4 Sep] 16:00 — Task 3: Kalender ibadah + event berulang (recurring schedule)** — Owner: Byte — Branch: `byte/kalender-ibadah` — PR: baru — DoD: CI + Vera + merge.
+- **[Jumat, 4 Sep] (setelah Task 3) 16:00+ — Task 4: Portal mandiri anggota / API (baca data diri, jadwal, warta)** — Owner: Byte (backend) + Pixel (tampilan) — Branch: `byte/portal-anggota` — PR: baru — DoD: CI + Vera + merge.
 - **[Jumat, 4 Sep] Setelah slot 16:00 selesai:** ritual update `SCHEDULE.md` agenda Senin (07:00 + 16:00) → PR docs-only fast-track → merge hari yang sama + **build preview web** dari master terbaru.
 
 ---
 
-## Backlog Berikutnya (belum dijadwalkan — kandidat setelah backlog F3A/F2 terselesaikan)
-- Super Admin pemilih gereja (select "Satu gereja"/"All") + Laporan Keuangan per Dana/Kas.
+## Backlog Berikutnya (belum dijadwalkan — kandidat setelah Jumat tuntas)
 - Donasi/persembahan online (QRIS/VA).
-- Kalender ibadah + event berulang.
-- Import/export CSV jemaat & analitik demografi.
-- Pengingat/roster bentrok (deteksi konflik jadwal pelayan).
-- Portal mandiri anggota / API.
-- Notifikasi WhatsApp; backup & dokumentasi deployment.
+- Notifikasi WhatsApp.
+- Notifikasi/reminder lanjutan & backup-dokumentasi deployment.
 
 ## Alur kerja tiap task
 Branch sendiri (`byte/<slug>`) → push → buka PR via `gh pr create` → CI hijau → review Vera (`gh pr review`) → approval Vera → merge oleh PIC (Vera). Tidak ada merge oleh non-PIC.
