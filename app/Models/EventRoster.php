@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Exceptions\RosterConflictException;
+use App\Services\RosterConflictService;
 use App\Traits\BelongsToChurch;
 use App\Traits\RecordsAuditTrail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,6 +46,29 @@ class EventRoster extends Model
             ->withoutGlobalScopes()
             ->whereKey($this->event_id)
             ->value('church_id');
+    }
+
+    public static function booted(): void
+    {
+        // Guard bentrok jadwal (level model — berlaku untuk semua jalur tulis:
+        // Filament Repeater, tinker, import, dsb). Roster yang sudah ada (update)
+        // tidak dihitung sebagai dirinya sendiri.
+        static::saving(function (EventRoster $roster): void {
+            if ($roster->member_id === null && $roster->official_id === null) {
+                return;
+            }
+
+            try {
+                RosterConflictService::assertNoConflict($roster, $roster->exists ? $roster->id : null);
+            } catch (RosterConflictException $e) {
+                // Guard lintas-gereja di BelongsToChurch sudah menangani 403;
+                // di sini kita lempar ValidationException agar Filament
+                // menampilkannya sebagai error validasi yang ramah, bukan 500.
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'rosters' => $e->getMessage(),
+                ]);
+            }
+        });
     }
 
     /**
