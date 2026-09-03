@@ -19,14 +19,19 @@ return new class extends Migration
     {
         Schema::create('marriages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete()->index();
-            $table->foreignId('husband_member_id')->constrained('members')->restrictOnDelete()->index();
-            $table->foreignId('wife_member_id')->constrained('members')->restrictOnDelete()->index();
+            $table->foreignId('church_id')->constrained('churches')->cascadeOnDelete();
+            $table->index('church_id', 'marriages_church_id_index');
+            $table->foreignId('husband_member_id')->constrained('members')->restrictOnDelete();
+            $table->index('husband_member_id', 'marriages_husband_member_id_index');
+            $table->foreignId('wife_member_id')->constrained('members')->restrictOnDelete();
+            $table->index('wife_member_id', 'marriages_wife_member_id_index');
             $table->date('marriage_date');
-            $table->foreignId('official_id')->nullable()->constrained('officials')->nullOnDelete()->index();
+            $table->foreignId('official_id')->nullable()->constrained('officials')->nullOnDelete();
+            $table->index('official_id', 'marriages_official_id_index');
             $table->string('location')->nullable();
             $table->json('witness_names')->nullable();
-            $table->foreignId('program_id')->nullable()->constrained('guidance_programs')->nullOnDelete()->index();
+            $table->foreignId('program_id')->nullable()->constrained('guidance_programs')->nullOnDelete();
+            $table->index('program_id', 'marriages_program_id_index');
             $table->string('certificate_number')->nullable();
             $table->date('issued_at')->nullable();
             $table->text('notes')->nullable();

@@ -21,8 +21,8 @@ return new class extends Migration
                 ->nullable()
                 ->after('official_id')
                 ->constrained('marriages')
-                ->nullOnDelete()
-                ->index();
+                ->nullOnDelete();
+            $table->index('marriage_id', 'member_sacraments_marriage_id_index');
         });
     }
 
