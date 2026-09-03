@@ -81,6 +81,9 @@ class AppServiceProvider extends ServiceProvider
         // Register Member observer — LOW-4: soft-delete member menonaktifkan jabatan official
         Member::observe(MemberObserver::class);
 
+        // Register Event observer — notifikasi email ke church_admin saat acara baru
+        Event::observe(\App\Observers\EventObserver::class);
+
         // ---- Register policies (RBAC) ----
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Church::class, ChurchPolicy::class);
