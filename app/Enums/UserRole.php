@@ -19,6 +19,7 @@ enum UserRole: string
     case JemaatAdmin = 'jemaat_admin';
     case WartaEditor = 'warta_editor';
     case ReportViewer = 'report_viewer';
+    case Member = 'member';
 
     /**
      * Semua role yang boleh masuk panel Filament (AC-T3-01).
@@ -27,6 +28,13 @@ enum UserRole: string
      */
     public static function panelRoles(): array
     {
-        return array_map(static fn (self $role): string => $role->value, self::cases());
+        return [
+            self::SuperAdmin->value,
+            self::ChurchAdmin->value,
+            self::FinanceAdmin->value,
+            self::JemaatAdmin->value,
+            self::WartaEditor->value,
+            self::ReportViewer->value,
+        ];
     }
 }

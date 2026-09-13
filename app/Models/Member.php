@@ -118,4 +118,12 @@ class Member extends Model
     {
         return $this->hasOne(DeathRecord::class);
     }
+
+    /**
+     * User account associated with this member (Portal Mandiri).
+     */
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class);
+    }
 }

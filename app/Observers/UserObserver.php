@@ -15,13 +15,13 @@ use App\Models\User;
 class UserObserver
 {
     /**
-     * Whitelist role server-side (AC-T3-01): 6 role panel.
+     * Whitelist role server-side (AC-T3-01): role panel + role member.
      *
      * @return array<int, string>
      */
     private static function allowedRoles(): array
     {
-        return UserRole::panelRoles();
+        return array_map(static fn (UserRole $role): string => $role->value, UserRole::cases());
     }
 
     public function creating(User $user): void
@@ -34,8 +34,20 @@ class UserObserver
         }
 
         // Non-super_admin hanya bisa membuat user untuk gereja sendiri
-        if ($actor && $actor->role !== 'super_admin' && !empty($user->church_id) && $user->church_id !== $actor->church_id) {
+        if ($actor && $actor->role !== 'super_admin' && ! empty($user->church_id) && $user->church_id !== $actor->church_id) {
             abort(403, 'Tidak diizinkan membuat user untuk gereja lain.');
+        }
+
+        // Validasi dan sinkronisasi member_id dengan church_id
+        if (! empty($user->member_id)) {
+            $member = \App\Models\Member::withoutGlobalScopes()->find($user->member_id);
+            if ($member) {
+                if (empty($user->church_id)) {
+                    $user->church_id = $member->church_id;
+                } elseif ((int) $user->church_id !== (int) $member->church_id) {
+                    abort(403, 'Member yang ditautkan harus berada di gereja yang sama.');
+                }
+            }
         }
 
         // Paksa church_id ke gereja aktor jika tidak diisi (cegah user yatim NULL)
@@ -80,6 +92,14 @@ class UserObserver
             abort(403, 'Super Admin tidak dapat menurunkan role dirinya sendiri.');
         }
 
+        // Validasi sinkronisasi member_id dengan church_id saat update
+        if (! empty($user->member_id)) {
+            $member = \App\Models\Member::withoutGlobalScopes()->find($user->member_id);
+            if ($member && ! empty($user->church_id) && (int) $user->church_id !== (int) $member->church_id) {
+                abort(403, 'Member yang ditautkan harus berada di gereja yang sama.');
+            }
+        }
+
         $this->assertValidRole($user->role);
     }
 
@@ -100,7 +120,7 @@ class UserObserver
 
     private function assertValidRole(?string $role): void
     {
-        if ($role !== null && !in_array($role, self::allowedRoles(), true)) {
+        if ($role !== null && ! in_array($role, self::allowedRoles(), true)) {
             abort(422, "Role '{$role}' tidak valid.");
         }
     }

@@ -44,7 +44,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
@@ -54,7 +54,7 @@ class UserFactory extends Factory
      */
     public function superAdmin(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'role' => 'super_admin',
         ]);
     }
@@ -64,8 +64,24 @@ class UserFactory extends Factory
      */
     public function financeAdmin(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'role' => 'finance_admin',
         ]);
+    }
+
+    /**
+     * Set user as portal member.
+     */
+    public function member(?\App\Models\Member $member = null): static
+    {
+        return $this->state(function (array $attributes) use ($member) {
+            $churchId = $member?->church_id ?? $attributes['church_id'] ?? Church::factory();
+
+            return [
+                'role' => 'member',
+                'church_id' => $churchId,
+                'member_id' => $member?->id,
+            ];
+        });
     }
 }
