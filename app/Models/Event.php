@@ -23,7 +23,10 @@ class Event extends Model
      */
     protected function churchForeignKeyMap(): array
     {
-        return ['category_id' => EventCategory::class];
+        return [
+            'category_id' => EventCategory::class,
+            'recurring_schedule_id' => RecurringSchedule::class,
+        ];
     }
 
     /**
@@ -51,6 +54,7 @@ class Event extends Model
     protected $fillable = [
         'church_id',
         'category_id',
+        'recurring_schedule_id',
         'title',
         'start_datetime',
         'end_datetime',
@@ -73,6 +77,22 @@ class Event extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(EventCategory::class);
+    }
+
+    /**
+     * Jadwal berulang asal event ini.
+     */
+    public function recurringSchedule(): BelongsTo
+    {
+        return $this->belongsTo(RecurringSchedule::class, 'recurring_schedule_id');
+    }
+
+    /**
+     * Alias untuk recurringSchedule.
+     */
+    public function recurringPattern(): BelongsTo
+    {
+        return $this->recurringSchedule();
     }
 
     /**

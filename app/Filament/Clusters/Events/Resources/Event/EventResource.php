@@ -94,6 +94,20 @@ class EventResource extends Resource
                         TextInput::make('location')
                             ->label('Lokasi')
                             ->maxLength(255),
+                        Select::make('recurring_schedule_id')
+                            ->label('Jadwal Berulang')
+                            ->relationship(
+                                'recurringSchedule',
+                                'title',
+                                fn (Builder $query, ?Event $record): Builder => ChurchScope::forParentOrCreate(
+                                    $query,
+                                    $record?->church_id
+                                )
+                            )
+                            ->placeholder('Bukan dari Jadwal Berulang')
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
                         // AC-T2-11: kolom legacy attendance_male/attendance_female disembunyikan
                         // dari form (tetap ada di DB sebagai fallback data historis).
                         TextInput::make('attendance_male')
@@ -239,6 +253,10 @@ class EventResource extends Resource
                     ->label('Lokasi')
                     ->limit(40)
                     ->toggleable(isToggledHiddenByDefault: false),
+                TextColumn::make('recurringSchedule.title')
+                    ->label('Jadwal Berulang')
+                    ->placeholder('Tunggal')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime()
