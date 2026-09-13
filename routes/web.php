@@ -102,3 +102,20 @@ Route::middleware(['auth', 'verified'])
         Route::get('/export', [MemberCsvController::class, 'export'])->name('csv-jemaat.export');
         Route::post('/import', [MemberCsvController::class, 'import'])->name('csv-jemaat.import');
     });
+
+// Task 4: Portal Mandiri Anggota (Web Interface)
+Route::prefix('portal')->group(function () {
+    Route::get('/login', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'showLoginForm'])->name('portal.login');
+    Route::post('/login', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'login'])->name('portal.login.submit');
+    Route::post('/logout', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'logout'])->name('portal.logout');
+
+    Route::middleware('portal.auth')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'dashboard'])->name('portal.dashboard');
+        Route::get('/profile', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'profile'])->name('portal.profile');
+        Route::get('/events', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'events'])->name('portal.events');
+        Route::get('/schedules', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'events'])->name('portal.schedules');
+        Route::get('/events/{event}', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'showEvent'])->name('portal.events.show');
+        Route::get('/warta', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'warta'])->name('portal.warta');
+        Route::get('/warta/{publication}', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'showWarta'])->name('portal.warta.show');
+    });
+});

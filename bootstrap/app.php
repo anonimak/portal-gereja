@@ -11,15 +11,24 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
+
+        $middleware->alias([
+            'portal.auth' => \App\Http\Middleware\PortalAuthenticate::class,
+        ]);
+
         // Preview ngrok/proxy: percayai header X-Forwarded-* (nginx di depan
         // php-fpm) supaya scheme https & host mengikuti request asli,
         // tanpa hardcode domain ngrok (URL free-tier bisa berubah).
         $middleware->trustProxies(
-            at: "*",
+            at: '*',
             headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
                 | \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST
                 | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO

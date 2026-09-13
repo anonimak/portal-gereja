@@ -30,6 +30,8 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'church_id',
+        'member_id',
+        'api_token',
         'role',
     ];
 
@@ -41,6 +43,7 @@ class User extends Authenticatable implements FilamentUser
     protected $hidden = [
         'password',
         'remember_token',
+        'api_token',
     ];
 
     /**
@@ -62,6 +65,22 @@ class User extends Authenticatable implements FilamentUser
     public function church(): BelongsTo
     {
         return $this->belongsTo(Church::class);
+    }
+
+    /**
+     * Member associated with this user account (Portal Mandiri).
+     */
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    /**
+     * Cek apakah user adalah anggota jemaat portal mandiri.
+     */
+    public function isMember(): bool
+    {
+        return $this->role === UserRole::Member->value || ! empty($this->member_id);
     }
 
     /**

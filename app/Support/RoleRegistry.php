@@ -94,6 +94,8 @@ final class RoleRegistry
                 Permission::FinanceView,
                 Permission::MasterFinanceView,
             ],
+
+            UserRole::Member => [],
         };
     }
 
