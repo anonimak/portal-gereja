@@ -5,6 +5,7 @@ use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
 use App\Http\Controllers\DeathRecordExportController;
 use App\Http\Controllers\MarriageExportController;
+use App\Http\Controllers\MemberCsvController;
 use App\Http\Controllers\PublicWartaController;
 use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
@@ -92,3 +93,12 @@ Route::prefix('warta')->group(function () {
         ->where('publication', '[0-9]+')
         ->name('public.warta.show');
 });
+
+// Import/Export CSV Jemaat - Task slot 07:00 Jumat 4 Sep.
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin/csv-jemaat')
+    ->group(function () {
+        Route::get('/template', [MemberCsvController::class, 'template'])->name('csv-jemaat.template');
+        Route::get('/export', [MemberCsvController::class, 'export'])->name('csv-jemaat.export');
+        Route::post('/import', [MemberCsvController::class, 'import'])->name('csv-jemaat.import');
+    });
