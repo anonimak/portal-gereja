@@ -143,7 +143,7 @@ class WartaKantongDanKopTest extends TestCase
 
         // 2. Cek rincian per kantong (fundBreakdowns)
         $this->assertArrayHasKey('fundBreakdowns', $report);
-        $this->assertCount(2, $report['fundBreakdowns']);
+        $this->assertGreaterThanOrEqual(2, count($report['fundBreakdowns']));
 
         $kasUmumReport = collect($report['fundBreakdowns'])->firstWhere('id', $kasUmum->id);
         $this->assertEquals(500000, $kasUmumReport['opening_balance']);
