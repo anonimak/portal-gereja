@@ -95,6 +95,7 @@ class WartaKantongDanKopTest extends TestCase
             'category_id' => $kolekte->id,
             'amount' => 500000,
             'type' => 'debit',
+            'description' => 'Saldo awal persembahan',
             'transaction_date' => '2026-09-10',
         ]);
 
@@ -105,6 +106,7 @@ class WartaKantongDanKopTest extends TestCase
             'category_id' => $kolekte->id,
             'amount' => 200000,
             'type' => 'debit',
+            'description' => 'Kolekte Minggu',
             'transaction_date' => '2026-09-15',
         ]);
         Transaction::create([
@@ -113,6 +115,7 @@ class WartaKantongDanKopTest extends TestCase
             'category_id' => $listrik->id,
             'amount' => 100000,
             'type' => 'credit',
+            'description' => 'Tagihan Listrik',
             'transaction_date' => '2026-09-16',
         ]);
         Transaction::create([
@@ -121,6 +124,7 @@ class WartaKantongDanKopTest extends TestCase
             'category_id' => $semen->id,
             'amount' => 150000,
             'type' => 'credit',
+            'description' => 'Beli Semen',
             'transaction_date' => '2026-09-17',
         ]);
 
@@ -165,7 +169,7 @@ class WartaKantongDanKopTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertJson(['ok' => true]);
+        $response->assertJsonStructure(['message', 'publication' => ['id', 'title', 'church_id', 'url']]);
 
         $publication = WartaPublication::where('church_id', $this->churchA->id)->latest()->first();
         $this->assertNotNull($publication);
