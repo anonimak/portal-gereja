@@ -72,6 +72,7 @@ abstract class BaseReportPage extends Page
     public function downloadPdf(): Response
     {
         $data = array_merge([
+            'church' => $this->activeChurchModel(),
             'churchName' => $this->activeChurchName(),
             'title' => $this->reportTitle(),
             'blocks' => $this->exportBlocks(),

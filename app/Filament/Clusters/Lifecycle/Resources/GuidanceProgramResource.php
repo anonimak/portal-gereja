@@ -14,6 +14,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -22,6 +23,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -148,7 +150,7 @@ class GuidanceProgramResource extends Resource
                         'pra_sidi' => 'Pra-Sidi (Katakisasi)',
                         'pra_nikah' => 'Pra-Nikah',
                     ]),
-                Tables\Filters\TrashedFilter::make(),
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -158,7 +160,7 @@ class GuidanceProgramResource extends Resource
                 CreateAction::make(),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

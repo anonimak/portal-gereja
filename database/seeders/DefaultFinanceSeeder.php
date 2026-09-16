@@ -25,12 +25,19 @@ class DefaultFinanceSeeder extends Seeder
         ];
 
         foreach ($defaultFunds as $fundName) {
-            DB::table('funds')->insert([
-                'church_id' => $churchId,
-                'name' => $fundName,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+            $exists = DB::table('funds')
+                ->where('church_id', $churchId)
+                ->where('name', $fundName)
+                ->exists();
+
+            if (! $exists) {
+                DB::table('funds')->insert([
+                    'church_id' => $churchId,
+                    'name' => $fundName,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
 
         // Create default income categories
@@ -45,13 +52,20 @@ class DefaultFinanceSeeder extends Seeder
         ];
 
         foreach ($incomeCategories as $categoryName) {
-            DB::table('financial_categories')->insert([
-                'church_id' => $churchId,
-                'name' => $categoryName,
-                'type' => 'debit',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+            $exists = DB::table('financial_categories')
+                ->where('church_id', $churchId)
+                ->where('name', $categoryName)
+                ->exists();
+
+            if (! $exists) {
+                DB::table('financial_categories')->insert([
+                    'church_id' => $churchId,
+                    'name' => $categoryName,
+                    'type' => 'debit',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
 
         // Create default expense categories
@@ -67,13 +81,20 @@ class DefaultFinanceSeeder extends Seeder
         ];
 
         foreach ($expenseCategories as $categoryName) {
-            DB::table('financial_categories')->insert([
-                'church_id' => $churchId,
-                'name' => $categoryName,
-                'type' => 'credit',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+            $exists = DB::table('financial_categories')
+                ->where('church_id', $churchId)
+                ->where('name', $categoryName)
+                ->exists();
+
+            if (! $exists) {
+                DB::table('financial_categories')->insert([
+                    'church_id' => $churchId,
+                    'name' => $categoryName,
+                    'type' => 'credit',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
     }
 }

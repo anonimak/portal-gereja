@@ -17,11 +17,12 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ $churchName ?? 'Portal Gereja' }}</h1>
-        <div class="sub">{{ $title ?? '' }}</div>
-        @isset($periodLabel)<div class="sub">{{ $periodLabel }}</div>@endisset
-    </div>
+    @include('pdf.components.letterhead', [
+        'church' => $church ?? null,
+        'churchName' => $churchName ?? null,
+        'title' => $title ?? null,
+        'periodLabel' => $periodLabel ?? null,
+    ])
 
     @forelse ($blocks ?? [] as $block)
         <h2>{{ $block['title'] }}</h2>

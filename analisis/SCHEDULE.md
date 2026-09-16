@@ -51,11 +51,12 @@ Agenda PR #38 (Rombak Warta, Rombak Laporan Rapat, Laporan Jemaat/Kehadiran/Sakr
 - **[Kamis, 3 Sep] Setelah slot 16:00 selesai (2 hal WAJIB):** (1) ritual update `SCHEDULE.md` agenda Jumat + Senin → PR docs-only → review & merge hari yang sama (fast-track); (2) **build preview web** dari HEAD master terbaru → http://192.168.1.8:8000.
 
 ### Jumat, 4 September 2026 — 4 task (2 pagi + 2 sore)
-- **[Jumat, 4 Sep] 07:00 — Task 1: Deteksi bentrok roster pelayan (validasi tumpang-tindih jadwal per orang)** — Owner: Byte — Branch: `byte/roster-bentrok` — PR: baru — DoD: CI + Vera + merge.
-- **[Jumat, 4 Sep] (setelah Task 1) 07:00+ — Task 2: Import/export CSV jemaat (bulk + template)** — Owner: Byte — Branch: `byte/csv-jemaat` — PR: baru — DoD: CI + Vera + merge.
-- **[Jumat, 4 Sep] 16:00 — Task 3: Kalender ibadah + event berulang (recurring schedule)** — Owner: Byte — Branch: `byte/kalender-ibadah` — PR: baru — DoD: CI + Vera + merge.
-- **[Jumat, 4 Sep] (setelah Task 3) 16:00+ — Task 4: Portal mandiri anggota / API (baca data diri, jadwal, warta)** — Owner: Byte (backend) + Pixel (tampilan) — Branch: `byte/portal-anggota` — PR: baru — DoD: CI + Vera + merge.
-- **[Jumat, 4 Sep] Setelah slot 16:00 selesai:** ritual update `SCHEDULE.md` agenda Senin (07:00 + 16:00) → PR docs-only fast-track → merge hari yang sama + **build preview web** dari master terbaru.
+- **[Jumat, 4 Sep] 07:00 — Task 1: Deteksi bentrok roster pelayan (validasi tumpang-tindih jadwal per orang)** — ✅ **DONE di master (PR #43)**.
+- **[Jumat, 4 Sep] (setelah Task 1) 07:00+ — Task 2: Import/export CSV jemaat (bulk + template)** — ✅ **DONE di master (PR #44)**.
+- **[Jumat, 4 Sep] 16:00 — Task 3: Kalender ibadah + event berulang (recurring schedule)** — ✅ **DONE di master (PR #45)**.
+- **[Jumat, 4 Sep] (setelah Task 3) 16:00+ — Task 4: Portal mandiri anggota / API (baca data diri, jadwal, warta)** — ✅ **DONE di master (PR #46)**.
+- **[Jumat, 4 Sep] Slot Lanjutan — Task 5: Laporan Keuangan Warta per Kantong (Cash Flow Tunai) & Standarisasi Kop Header Dokumen Gereja** — Owner: Byte (backend) + Pixel (frontend) — Branch: `byte/warta-kantong-dan-kop` — PR: baru — DoD: CI + Vera + merge.
+- **[Jumat, 4 Sep] Setelah slot selesai:** ritual update `SCHEDULE.md` → **build preview web** dari master terbaru.
 
 ---
 

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Clusters\Reporting\Pages;
 
+use App\Models\Church;
 use App\Models\Event;
+use App\Models\Fund;
 use App\Models\Member;
 use App\Models\MemberSacrament;
 use App\Models\Transaction;
@@ -152,25 +154,142 @@ class WartaJemaat extends BaseReportPage
             })
             ->values();
 
-        // Transaksi periode (grouped pemasukan/pengeluaran).
-        $transactions = $this->scopeToActiveChurch(Transaction::with(['fund', 'category']))
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->orderBy('transaction_date')
-            ->get()
-            ->groupBy(function ($transaction) {
-                return $transaction->type === 'debit' ? 'Pemasukan' : 'Pengeluaran';
-            });
-
         // Sakramen / berita jemaat periode.
         $sacraments = $this->scopeToActiveChurch(MemberSacrament::with(['member', 'official']))
             ->whereBetween('sacrament_date', [$startDate, $endDate])
             ->orderBy('sacrament_date')
             ->get();
 
-        $openingBalance = $this->getOpeningBalance($startDate);
-        $totalIncome = (int) ($transactions->get('Pemasukan')?->sum('amount') ?? 0);
-        $totalExpenses = (int) ($transactions->get('Pengeluaran')?->sum('amount') ?? 0);
-        $closingBalance = $openingBalance + $totalIncome - $totalExpenses;
+        // -------------------------------------------------------------
+        // Perhitungan Keuangan Kas Tunai per Kantong (Fund)
+        // -------------------------------------------------------------
+        $funds = $this->scopeToActiveChurch(Fund::query())->orderBy('name')->get();
+
+        // Single query saldo awal per fund sebelum $startDate
+        $openingBalancesQuery = $this->scopeToActiveChurch(Transaction::query())
+            ->whereDate('transaction_date', '<', $startDate);
+
+        if ($funds->isNotEmpty()) {
+            $openingBalancesQuery->whereIn('fund_id', $funds->pluck('id'));
+        }
+
+        $openingBalances = $openingBalancesQuery
+            ->selectRaw('fund_id, type, SUM(amount) as total')
+            ->groupBy('fund_id', 'type')
+            ->get()
+            ->groupBy('fund_id')
+            ->map(function ($items) {
+                $debit = (int) ($items->firstWhere('type', 'debit')?->total ?? 0);
+                $credit = (int) ($items->firstWhere('type', 'credit')?->total ?? 0);
+
+                return $debit - $credit;
+            });
+
+        // Transaksi periode warta
+        $periodTransactions = $this->scopeToActiveChurch(Transaction::with(['fund', 'category']))
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->orderBy('transaction_date')
+            ->get();
+
+        // Transaksi periode dikelompokkan legacy (Pemasukan / Pengeluaran)
+        $transactions = $periodTransactions->groupBy(function ($transaction) {
+            return $transaction->type === 'debit' ? 'Pemasukan' : 'Pengeluaran';
+        });
+
+        $fundBreakdowns = [];
+        $consolidatedOpening = 0;
+        $consolidatedIncome = 0;
+        $consolidatedExpenses = 0;
+
+        foreach ($funds as $fund) {
+            $fundTxns = $periodTransactions->where('fund_id', $fund->id);
+            $opening = (int) ($openingBalances[$fund->id] ?? 0);
+
+            // Grouping Pemasukan (debit) per kategori
+            $incomeTxns = $fundTxns->where('type', 'debit');
+            $incomeItems = $incomeTxns->groupBy(fn ($t) => $t->category?->name ?? 'Pemasukan Lain-lain')
+                ->map(fn ($group, $catName) => [
+                    'category' => $catName,
+                    'amount' => (int) $group->sum('amount'),
+                ])->values()->all();
+            $fundTotalIncome = (int) $incomeTxns->sum('amount');
+
+            // Grouping Pengeluaran (credit) per kategori
+            $expenseTxns = $fundTxns->where('type', 'credit');
+            $expenseItems = $expenseTxns->groupBy(fn ($t) => $t->category?->name ?? 'Pengeluaran Lain-lain')
+                ->map(fn ($group, $catName) => [
+                    'category' => $catName,
+                    'amount' => (int) $group->sum('amount'),
+                ])->values()->all();
+            $fundTotalExpense = (int) $expenseTxns->sum('amount');
+
+            $closing = $opening + $fundTotalIncome - $fundTotalExpense;
+
+            $fundBreakdowns[] = [
+                'id' => $fund->id,
+                'name' => $fund->name,
+                'opening_balance' => $opening,
+                'income' => [
+                    'total' => $fundTotalIncome,
+                    'items' => $incomeItems,
+                ],
+                'expense' => [
+                    'total' => $fundTotalExpense,
+                    'items' => $expenseItems,
+                ],
+                'closing_balance' => $closing,
+            ];
+
+            $consolidatedOpening += $opening;
+            $consolidatedIncome += $fundTotalIncome;
+            $consolidatedExpenses += $fundTotalExpense;
+        }
+
+        // Penanganan fallback jika ada transaksi tanpa fund_id atau dana belum dibuat
+        $rawOpening = $this->getOpeningBalance($startDate);
+        $rawIncome = (int) ($transactions->get('Pemasukan')?->sum('amount') ?? 0);
+        $rawExpense = (int) ($transactions->get('Pengeluaran')?->sum('amount') ?? 0);
+
+        if ($funds->isEmpty()) {
+            $consolidatedOpening = $rawOpening;
+            $consolidatedIncome = $rawIncome;
+            $consolidatedExpenses = $rawExpense;
+        } else {
+            $unassignedIncome = $rawIncome - $consolidatedIncome;
+            $unassignedExpense = $rawExpense - $consolidatedExpenses;
+            $unassignedOpening = $rawOpening - $consolidatedOpening;
+
+            if ($unassignedOpening !== 0 || $unassignedIncome > 0 || $unassignedExpense > 0) {
+                $unassignedTxns = $periodTransactions->whereNull('fund_id');
+                $unassignedDebit = $unassignedTxns->where('type', 'debit');
+                $unassignedCredit = $unassignedTxns->where('type', 'credit');
+
+                $fundBreakdowns[] = [
+                    'id' => null,
+                    'name' => 'Pos Kas Lainnya',
+                    'opening_balance' => $unassignedOpening,
+                    'income' => [
+                        'total' => $unassignedIncome,
+                        'items' => $unassignedDebit->groupBy(fn ($t) => $t->category?->name ?? 'Lain-lain')
+                            ->map(fn ($group, $name) => ['category' => $name, 'amount' => (int) $group->sum('amount')])
+                            ->values()->all(),
+                    ],
+                    'expense' => [
+                        'total' => $unassignedExpense,
+                        'items' => $unassignedCredit->groupBy(fn ($t) => $t->category?->name ?? 'Lain-lain')
+                            ->map(fn ($group, $name) => ['category' => $name, 'amount' => (int) $group->sum('amount')])
+                            ->values()->all(),
+                    ],
+                    'closing_balance' => $unassignedOpening + $unassignedIncome - $unassignedExpense,
+                ];
+
+                $consolidatedOpening += $unassignedOpening;
+                $consolidatedIncome += $unassignedIncome;
+                $consolidatedExpenses += $unassignedExpense;
+            }
+        }
+
+        $consolidatedClosing = $consolidatedOpening + $consolidatedIncome - $consolidatedExpenses;
 
         return [
             'events' => $events,
@@ -179,12 +298,16 @@ class WartaJemaat extends BaseReportPage
             'sacraments' => $sacraments,
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'church' => $this->activeChurchModel(),
             'churchName' => $this->activeChurchName(),
             'churchAddress' => $this->getChurchAddress(),
-            'openingBalance' => $openingBalance,
-            'totalIncome' => $totalIncome,
-            'totalExpenses' => $totalExpenses,
-            'closingBalance' => $closingBalance,
+            'openingBalance' => $consolidatedOpening,
+            'totalIncome' => $consolidatedIncome,
+            'totalExpenses' => $consolidatedExpenses,
+            'closingBalance' => $consolidatedClosing,
+            'fundBreakdowns' => $fundBreakdowns,
+            'funds_report' => $fundBreakdowns,
+            'fundsReport' => $fundBreakdowns,
             'periodLabel' => $this->formatPeriodLabel($startDate, $endDate),
             'editionLabel' => $this->formatEditionLabel($startDate),
         ];
@@ -234,19 +357,39 @@ class WartaJemaat extends BaseReportPage
             ])->all(),
         ];
 
-        // Keuangan Ringkas
-        $income = $data['transactions']->get('Pemasukan', collect());
-        $expense = $data['transactions']->get('Pengeluaran', collect());
+        // Keuangan Ringkas (Konsolidasi Global)
         $blocks[] = [
             'title' => 'Laporan Keuangan Ringkas',
             'headers' => ['Keterangan', 'Jumlah (Rp)'],
             'rows' => [
-                ['Total Pemasukan', number_format($income->sum('amount'), 0, ',', '.')],
-                ['Total Pengeluaran', number_format($expense->sum('amount'), 0, ',', '.')],
-                ['Selisih', number_format($income->sum('amount') - $expense->sum('amount'), 0, ',', '.')],
+                ['Total Saldo Awal', number_format($data['openingBalance'], 0, ',', '.')],
+                ['Total Pemasukan', number_format($data['totalIncome'], 0, ',', '.')],
+                ['Total Pengeluaran', number_format($data['totalExpenses'], 0, ',', '.')],
+                ['Total Saldo Akhir', number_format($data['closingBalance'], 0, ',', '.')],
             ],
             'options' => ['totalRows' => 1, 'currencyColumns' => [2]],
         ];
+
+        // Rincian Kas Tunai per Kantong
+        if (! empty($data['fundBreakdowns'])) {
+            $fundRows = [];
+            foreach ($data['fundBreakdowns'] as $fund) {
+                $fundRows[] = [
+                    $fund['name'],
+                    number_format($fund['opening_balance'], 0, ',', '.'),
+                    number_format($fund['income']['total'], 0, ',', '.'),
+                    number_format($fund['expense']['total'], 0, ',', '.'),
+                    number_format($fund['closing_balance'], 0, ',', '.'),
+                ];
+            }
+
+            $blocks[] = [
+                'title' => 'Laporan Arus Kas Tunai per Kantong',
+                'headers' => ['Nama Kantong / Pos Dana', 'Saldo Awal (Rp)', 'Pemasukan (Rp)', 'Pengeluaran (Rp)', 'Saldo Akhir (Rp)'],
+                'rows' => $fundRows,
+                'options' => ['currencyColumns' => [2, 3, 4, 5]],
+            ];
+        }
 
         return $blocks;
     }
@@ -256,6 +399,11 @@ class WartaJemaat extends BaseReportPage
      */
     private function getChurchAddress(): string
     {
+        $church = $this->activeChurchModel();
+        if ($church && ! empty($church->address)) {
+            return $church->address;
+        }
+
         $user = auth()->user();
 
         if (! $user || $user->role === 'super_admin') {
@@ -270,12 +418,12 @@ class WartaJemaat extends BaseReportPage
      */
     private function getOpeningBalance(Carbon $startDate): int
     {
-        $debit = Transaction::query()
+        $debit = $this->scopeToActiveChurch(Transaction::query())
             ->where('type', 'debit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');
 
-        $credit = Transaction::query()
+        $credit = $this->scopeToActiveChurch(Transaction::query())
             ->where('type', 'credit')
             ->whereDate('transaction_date', '<', $startDate)
             ->sum('amount');

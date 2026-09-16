@@ -19,15 +19,13 @@
     </style>
 </head>
 <body>
-    <div class="kop">
-        <h1>{{ $churchName ?? 'GEREJA KRISTEN' }}</h1>
-        <p>{{ $churchAddress ?? '' }}</p>
-    </div>
-
-    <div class="judul">
-        <h2>SURAT KETERANGAN KEMATIAN</h2>
-        <p>Nomor: {{ $certificateNumber ?? '-' }}</p>
-    </div>
+    @include('pdf.components.letterhead', [
+        'church' => $church ?? null,
+        'churchName' => $churchName ?? 'GEREJA KRISTEN',
+        'churchAddress' => $churchAddress ?? null,
+        'title' => 'SURAT KETERANGAN KEMATIAN',
+        'documentNumber' => $certificateNumber ?? '-',
+    ])
 
     <div class="isi">
         <p>Yang bertanda tangan di bawah ini, dengan ini menerangkan bahwa:</p>

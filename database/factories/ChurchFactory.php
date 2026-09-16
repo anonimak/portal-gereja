@@ -21,8 +21,12 @@ class ChurchFactory extends Factory
         return [
             'code' => $this->faker->unique()->regexify('[A-Z]{2}[0-9]{3}'),
             'name' => 'Gereja ' . $this->faker->word(),
+            'synod' => 'Sinode ' . $this->faker->company(),
             'address' => $this->faker->address(),
             'phone' => $this->faker->phoneNumber(),
+            'email' => $this->faker->safeEmail(),
+            'logo_path' => null,
+            'website' => $this->faker->url(),
         ];
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Models\Church;
 use App\Support\ChurchContext;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,6 +18,10 @@ trait HasChurchScope
      */
     protected function activeChurchId(): ?int
     {
+        if (isset($this->churchSelect) && $this->churchSelect !== null) {
+            return (int) $this->churchSelect;
+        }
+
         return ChurchContext::activeChurchId();
     }
 
@@ -25,7 +30,27 @@ trait HasChurchScope
      */
     protected function activeChurchName(): string
     {
+        $active = $this->activeChurchId();
+        if ($active !== null) {
+            $church = Church::query()->withoutGlobalScopes()->find($active);
+            return $church?->name ?? 'Gereja';
+        }
+
         return ChurchContext::churchName();
+    }
+
+    /**
+     * Model Church aktif untuk kop dokumen cetak/PDF.
+     */
+    protected function activeChurchModel(): ?Church
+    {
+        $active = $this->activeChurchId();
+
+        if ($active === null) {
+            return null;
+        }
+
+        return Church::query()->withoutGlobalScopes()->find($active);
     }
 
     /**
@@ -43,7 +68,7 @@ trait HasChurchScope
         $active = $this->activeChurchId();
 
         if ($active !== null) {
-            $builder->where('church_id', $active);
+            $builder->where($builder->getModel()->getTable() . '.church_id', $active);
         }
 
         return $builder;
