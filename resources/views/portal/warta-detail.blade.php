@@ -89,6 +89,115 @@
                     </section>
                 @endif
 
+                <!-- Laporan Keuangan Kas Tunai per Kantong -->
+                @if (!empty($content['finance']) && is_array($content['finance']))
+                    @php
+                        $fmt = fn ($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
+                        $fin = $content['finance'];
+                        $funds = $fin['funds'] ?? [];
+                    @endphp
+                    <section class="space-y-4">
+                        <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+                            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                Laporan Keuangan Kas Tunai
+                            </h2>
+                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                100% Kas Tunai
+                            </span>
+                        </div>
+
+                        <!-- Ringkasan Konsolidasi -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                                <p class="text-[10px] font-medium text-slate-400">Saldo Awal</p>
+                                <p class="text-xs font-bold text-slate-800 mt-0.5">{{ $fmt($fin['opening_balance'] ?? 0) }}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-emerald-50/50 border border-emerald-100 text-center">
+                                <p class="text-[10px] font-bold text-emerald-600">Total Masuk</p>
+                                <p class="text-xs font-black text-emerald-700 mt-0.5">+{{ $fmt($fin['total_income'] ?? 0) }}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-rose-50/50 border border-rose-100 text-center">
+                                <p class="text-[10px] font-bold text-rose-600">Total Keluar</p>
+                                <p class="text-xs font-black text-rose-700 mt-0.5">−{{ $fmt($fin['total_expenses'] ?? 0) }}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-amber-50/50 border border-amber-100 text-center">
+                                <p class="text-[10px] font-bold text-amber-600">Saldo Akhir</p>
+                                <p class="text-xs font-black text-amber-700 mt-0.5">{{ $fmt($fin['closing_balance'] ?? 0) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Rincian per Kantong Kas -->
+                        @if (!empty($funds))
+                            <div class="space-y-3">
+                                @foreach ($funds as $fund)
+                                    <div class="p-4 rounded-xl border border-slate-200 bg-white shadow-xs">
+                                        <div class="flex items-center justify-between pb-2 border-b border-slate-100 text-xs">
+                                            <div class="flex items-center gap-2">
+                                                <div class="h-2 w-2 rounded-full bg-amber-500"></div>
+                                                <span class="font-bold text-slate-900">{{ $fund['name'] ?? 'Pos Kas' }}</span>
+                                            </div>
+                                            <span class="text-slate-400">
+                                                Saldo Awal: <strong class="text-slate-700">{{ $fmt($fund['opening_balance'] ?? 0) }}</strong>
+                                            </span>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2.5 text-xs">
+                                            <!-- Uang Masuk -->
+                                            <div class="p-2.5 rounded-lg bg-emerald-50/40 border border-emerald-100/60">
+                                                <div class="flex justify-between font-bold text-[11px] text-emerald-800 pb-1 border-b border-emerald-100">
+                                                    <span>Uang Masuk</span>
+                                                    <span>Jumlah</span>
+                                                </div>
+                                                <ul class="mt-1.5 space-y-1 text-[11px]">
+                                                    @forelse ($fund['income']['items'] ?? [] as $item)
+                                                        <li class="flex justify-between text-slate-600">
+                                                            <span>{{ $item['category'] ?? '-' }}</span>
+                                                            <span class="font-semibold text-emerald-700">+{{ $fmt($item['amount'] ?? 0) }}</span>
+                                                        </li>
+                                                    @empty
+                                                        <li class="text-slate-400 italic text-center py-0.5">Tidak ada pemasukan</li>
+                                                    @endforelse
+                                                </ul>
+                                                <div class="mt-2 pt-1 border-t border-emerald-200/50 flex justify-between font-bold text-[11px] text-emerald-800">
+                                                    <span>Total Masuk</span>
+                                                    <span>+{{ $fmt($fund['income']['total'] ?? 0) }}</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Uang Keluar -->
+                                            <div class="p-2.5 rounded-lg bg-rose-50/40 border border-rose-100/60">
+                                                <div class="flex justify-between font-bold text-[11px] text-rose-800 pb-1 border-b border-rose-100">
+                                                    <span>Uang Keluar</span>
+                                                    <span>Jumlah</span>
+                                                </div>
+                                                <ul class="mt-1.5 space-y-1 text-[11px]">
+                                                    @forelse ($fund['expense']['items'] ?? [] as $item)
+                                                        <li class="flex justify-between text-slate-600">
+                                                            <span>{{ $item['category'] ?? '-' }}</span>
+                                                            <span class="font-semibold text-rose-700">−{{ $fmt($item['amount'] ?? 0) }}</span>
+                                                        </li>
+                                                    @empty
+                                                        <li class="text-slate-400 italic text-center py-0.5">Tidak ada pengeluaran</li>
+                                                    @endforelse
+                                                </ul>
+                                                <div class="mt-2 pt-1 border-t border-rose-200/50 flex justify-between font-bold text-[11px] text-rose-800">
+                                                    <span>Total Keluar</span>
+                                                    <span>−{{ $fmt($fund['expense']['total'] ?? 0) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-2.5 pt-2 border-t border-dashed border-slate-200 flex justify-between items-center bg-slate-50/80 rounded-lg px-2.5 py-1.5 text-xs">
+                                            <span class="font-semibold text-slate-700">Saldo Akhir {{ $fund['name'] ?? '' }}</span>
+                                            <span class="font-black text-amber-700">{{ $fmt($fund['closing_balance'] ?? 0) }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
+                @endif
+
                 <!-- Fallback JSON viewer jika format kustom lain -->
                 @if (empty($content['events']) && empty($content['announcements']) && empty($content['reflection']) && empty($content['renungan']))
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">

@@ -364,77 +364,119 @@
             @endif
         </div>
 
-        {{-- 6. Laporan Keuangan Ringkas --}}
+        {{-- 6. Laporan Keuangan per Kantong --}}
         <div class="px-8 pt-10 print:pt-8">
-            <div class="flex items-center gap-3 mb-5">
-                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h2m5 0h2m-9 4h10a2 2 0 002-2V8a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2zm0-13V3m2 1h6"></path>
-                    </svg>
+            <div class="flex items-center justify-between mb-5 border-b border-gray-200 dark:border-gray-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h2m5 0h2m-9 4h10a2 2 0 002-2V8a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2zm0-13V3m2 1h6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Laporan Keuangan Kas Tunai per Kantong</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Arus kas tunai masuk dan keluar per pos dana pelayanan</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Laporan Keuangan Ringkas</h2>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Ringkasan kas gereja periode ini</p>
+                <span class="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-600/20">
+                    100% Kas Tunai
+                </span>
+            </div>
+
+            {{-- Ringkasan Konsolidasi Global --}}
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3.5 text-center print:bg-white print:border-gray-300">
+                    <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">Total Saldo Awal</p>
+                    <p class="mt-1 text-base font-bold text-gray-900 dark:text-white">Rp{{ number_format($reportData['openingBalance'], 0, ',', '.') }}</p>
+                </div>
+                <div class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 p-3.5 text-center print:bg-white print:border-gray-300">
+                    <p class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Total Uang Masuk</p>
+                    <p class="mt-1 text-base font-black text-emerald-700 dark:text-emerald-400">+Rp{{ number_format($reportData['totalIncome'], 0, ',', '.') }}</p>
+                </div>
+                <div class="rounded-xl border border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/20 p-3.5 text-center print:bg-white print:border-gray-300">
+                    <p class="text-[11px] font-semibold text-red-700 dark:text-red-400">Total Uang Keluar</p>
+                    <p class="mt-1 text-base font-black text-red-700 dark:text-red-400">−Rp{{ number_format($reportData['totalExpenses'], 0, ',', '.') }}</p>
+                </div>
+                <div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/20 p-3.5 text-center print:bg-white print:border-gray-300">
+                    <p class="text-[11px] font-semibold text-amber-700 dark:text-amber-400">Total Saldo Akhir</p>
+                    <p class="mt-1 text-base font-black text-amber-700 dark:text-amber-400">Rp{{ number_format($reportData['closingBalance'], 0, ',', '.') }}</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 print:grid-cols-3">
-                <div class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/10 p-4 text-center print:bg-white print:border-gray-400">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Pemasukan</p>
-                    <p class="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-300">
-                        Rp{{ number_format($reportData['totalIncome'], 0, ',', '.') }}
-                    </p>
-                </div>
-                <div class="rounded-xl border border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/10 p-4 text-center print:bg-white print:border-gray-400">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">Pengeluaran</p>
-                    <p class="mt-1 text-xl font-black text-red-700 dark:text-red-300">
-                        Rp{{ number_format($reportData['totalExpenses'], 0, ',', '.') }}
-                    </p>
-                </div>
-                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-4 text-center print:bg-white print:border-gray-400">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">Saldo Akhir</p>
-                    <p class="mt-1 text-xl font-black text-gray-900 dark:text-white">
-                        Rp{{ number_format($reportData['closingBalance'], 0, ',', '.') }}
-                    </p>
-                </div>
-            </div>
+            {{-- Rincian Setiap Kantong (Fund) --}}
+            <div class="space-y-6">
+                @forelse ($reportData['fundBreakdowns'] ?? [] as $fund)
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 p-4 shadow-sm print:border-gray-300 print:shadow-none">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-700/60 pb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="h-3 w-3 rounded-full bg-amber-500"></div>
+                                <h3 class="font-bold text-gray-900 dark:text-white text-base">{{ $fund['name'] }}</h3>
+                            </div>
+                            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                                Saldo Awal: <span class="text-gray-900 dark:text-gray-100 font-bold">Rp{{ number_format($fund['opening_balance'], 0, ',', '.') }}</span>
+                            </div>
+                        </div>
 
-            @if ($reportData['transactions']->count() > 0)
-                <div class="mt-4 overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead>
-                            <tr class="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                <th scope="col" class="px-3 py-2 font-semibold">Tanggal</th>
-                                <th scope="col" class="px-3 py-2 font-semibold">Kategori</th>
-                                <th scope="col" class="px-3 py-2 font-semibold">Keterangan</th>
-                                <th scope="col" class="px-3 py-2 text-right font-semibold">Jumlah</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700/60">
-                            @foreach ($reportData['transactions'] as $type => $transactionList)
-                                @foreach ($transactionList as $transaction)
-                                    <tr class="text-gray-700 dark:text-gray-300">
-                                        <td class="px-3 py-2 whitespace-nowrap">{{ $transaction->transaction_date->locale('id')->translatedFormat('d M') }}</td>
-                                        <td class="px-3 py-2">
-                                            <span class="inline-block rounded px-2 py-0.5 text-xs font-semibold {{ $type === 'Pemasukan' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
-                                                {{ $transaction->category->name ?? ($type === 'Pemasukan' ? 'Pemasukan' : 'Pengeluaran') }}
-                                            </span>
-                                        </td>
-                                        <td class="px-3 py-2 max-w-xs truncate">{{ $transaction->description ?? '-' }}</td>
-                                        <td class="px-3 py-2 text-right font-bold {{ $type === 'Pemasukan' ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300' }}">
-                                            {{ $type === 'Pemasukan' ? '+' : '−' }}Rp{{ number_format($transaction->amount, 0, ',', '.') }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="mt-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                    Tidak ada transaksi pada periode ini.
-                </div>
-            @endif
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                            {{-- Uang Masuk --}}
+                            <div class="rounded-lg bg-emerald-50/40 dark:bg-emerald-950/20 p-3 border border-emerald-100 dark:border-emerald-900/40">
+                                <div class="flex items-center justify-between font-semibold text-xs text-emerald-800 dark:text-emerald-300 mb-2 border-b border-emerald-200/50 pb-1">
+                                    <span>Pos Uang Masuk</span>
+                                    <span>Jumlah</span>
+                                </div>
+                                <ul class="space-y-1.5 text-xs">
+                                    @forelse ($fund['income']['items'] as $item)
+                                        <li class="flex justify-between text-gray-700 dark:text-gray-300">
+                                            <span>{{ $item['category'] }}</span>
+                                            <span class="font-semibold text-emerald-700 dark:text-emerald-400">+Rp{{ number_format($item['amount'], 0, ',', '.') }}</span>
+                                        </li>
+                                    @empty
+                                        <li class="text-gray-400 italic text-center py-1">Tidak ada uang masuk</li>
+                                    @endforelse
+                                </ul>
+                                <div class="mt-3 pt-2 border-t border-emerald-200/60 flex justify-between font-bold text-xs text-emerald-800 dark:text-emerald-300">
+                                    <span>Total Masuk</span>
+                                    <span>+Rp{{ number_format($fund['income']['total'], 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+
+                            {{-- Uang Keluar --}}
+                            <div class="rounded-lg bg-red-50/40 dark:bg-red-950/20 p-3 border border-red-100 dark:border-red-900/40">
+                                <div class="flex items-center justify-between font-semibold text-xs text-red-800 dark:text-red-300 mb-2 border-b border-red-200/50 pb-1">
+                                    <span>Pos Uang Keluar</span>
+                                    <span>Jumlah</span>
+                                </div>
+                                <ul class="space-y-1.5 text-xs">
+                                    @forelse ($fund['expense']['items'] as $item)
+                                        <li class="flex justify-between text-gray-700 dark:text-gray-300">
+                                            <span>{{ $item['category'] }}</span>
+                                            <span class="font-semibold text-red-700 dark:text-red-400">−Rp{{ number_format($item['amount'], 0, ',', '.') }}</span>
+                                        </li>
+                                    @empty
+                                        <li class="text-gray-400 italic text-center py-1">Tidak ada uang keluar</li>
+                                    @endforelse
+                                </ul>
+                                <div class="mt-3 pt-2 border-t border-red-200/60 flex justify-between font-bold text-xs text-red-800 dark:text-red-300">
+                                    <span>Total Keluar</span>
+                                    <span>−Rp{{ number_format($fund['expense']['total'], 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Footer Saldo Akhir Kantong --}}
+                        <div class="mt-3 pt-2.5 border-t border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/60 dark:bg-gray-800/80 rounded-lg px-3 py-2">
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Saldo Akhir {{ $fund['name'] }}</span>
+                            <span class="text-sm font-black text-amber-700 dark:text-amber-400">
+                                Rp{{ number_format($fund['closing_balance'], 0, ',', '.') }}
+                            </span>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                        Belum ada kas/kantong yang tercatat pada periode ini.
+                    </div>
+                @endforelse
+            </div>
         </div>
 
         {{-- 7. Footer --}}

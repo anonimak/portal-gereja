@@ -34,15 +34,11 @@
         $birthOrder = $record->birth_order !== null ? "Anak ke-{$record->birth_order}" : '-';
     @endphp
 
-    <div class="kop">
-        <h1>{{ $church?->name ?? 'GEREJA' }}</h1>
-        <div class="alamat">{{ $church?->address ?? '' }}</div>
-    </div>
-
-    <div class="judul">
-        <h2>AKTA LAHIR</h2>
-        <div class="no">Nomor: {{ $record->certificate_number ?? '-' }}</div>
-    </div>
+    @include('pdf.components.letterhead', [
+        'church' => $church,
+        'title' => 'AKTA LAHIR',
+        'documentNumber' => $record->certificate_number ?? '-',
+    ])
 
     <table class="data">
         <tr><td class="label">Nama Anak</td><td class="colon">:</td><td>{{ $member?->full_name ?? '-' }}</td></tr>

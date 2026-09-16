@@ -24,15 +24,13 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ $churchName ?? 'Portal Gereja' }}</h1>
-        @if (!empty($churchAddress))<div class="sub">{{ $churchAddress }}</div>@endif
-    </div>
-
-    <div class="title-doc">
-        <h2>{{ $documentTitle ?? 'Dokumen Sidi' }}</h2>
-        <p>Nomor Sertifikat: {{ $certificateNumber ?? '-' }}</p>
-    </div>
+    @include('pdf.components.letterhead', [
+        'church' => $church ?? null,
+        'churchName' => $churchName ?? null,
+        'churchAddress' => $churchAddress ?? null,
+        'title' => $documentTitle ?? 'Dokumen Sidi',
+        'documentNumber' => $certificateNumber ?? '-',
+    ])
 
     <div class="content">
         <p>Yang bertanda tangan di bawah ini, menerangkan bahwa:</p>

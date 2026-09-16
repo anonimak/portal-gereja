@@ -52,6 +52,7 @@ class WartaPublishController extends Controller
 
         try {
             $page = new WartaJemaat;
+            $page->churchSelect = $churchId;
             $page->startDate = $startDate;
             $page->endDate = $endDate;
             $data = $page->getReportData();
@@ -61,12 +62,14 @@ class WartaPublishController extends Controller
             }
         }
 
+        $targetChurch = Church::query()->withoutGlobalScopes()->find($churchId);
+
         $publication = WartaPublication::create([
             'church_id' => $churchId,
             'title' => $data['periodLabel'] ?? ('Warta '.$startDate->format('d-m-Y')),
             'period_start' => $startDate->toDateString(),
             'period_end' => $endDate->toDateString(),
-            'content' => $this->snapshot($data),
+            'content' => $this->snapshot($data, $targetChurch),
             'status' => 'published',
             'published_at' => now(),
             'created_by' => $user->id,
@@ -81,7 +84,7 @@ class WartaPublishController extends Controller
                     'published_at' => $publication->published_at?->toIso8601String(),
                     'church_id' => $publication->church_id,
                     'url' => route('public.warta.show', [
-                        'church' => Church::query()->withoutGlobalScopes()->find($churchId)?->code,
+                        'church' => $targetChurch?->code,
                         'publication' => $publication->id,
                     ]),
                 ],
@@ -98,8 +101,10 @@ class WartaPublishController extends Controller
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function snapshot(array $data): array
+    private function snapshot(array $data, ?Church $church = null): array
     {
+        $church ??= ($data['church'] ?? null);
+
         $events = collect($data['events'] ?? [])->map(fn ($event) => [
             'name' => $event->name ?? $event->title ?? 'Ibadah',
             'start' => optional($event->start_datetime)->format('d/m/Y H:i'),
@@ -123,18 +128,27 @@ class WartaPublishController extends Controller
         ])->all();
 
         return [
-            'church_name' => $data['churchName'] ?? null,
-            'church_address' => $data['churchAddress'] ?? null,
+            'church' => [
+                'name' => $church?->name ?? $data['churchName'] ?? 'Gereja',
+                'synod' => $church?->synod,
+                'address' => $church?->address ?? $data['churchAddress'] ?? '',
+                'phone' => $church?->phone,
+                'email' => $church?->email,
+                'logo_url' => $church?->logo_url,
+            ],
+            'church_name' => $church?->name ?? $data['churchName'] ?? 'Gereja',
+            'church_address' => $church?->address ?? $data['churchAddress'] ?? '',
             'period_label' => $data['periodLabel'] ?? null,
             'edition_label' => $data['editionLabel'] ?? null,
             'events' => $events,
             'birthdays' => $birthdays,
             'sacraments' => $sacraments,
             'finance' => [
-                'opening_balance' => $data['openingBalance'] ?? 0,
-                'total_income' => $data['totalIncome'] ?? 0,
-                'total_expenses' => $data['totalExpenses'] ?? 0,
-                'closing_balance' => $data['closingBalance'] ?? 0,
+                'opening_balance' => (int) ($data['openingBalance'] ?? 0),
+                'total_income' => (int) ($data['totalIncome'] ?? 0),
+                'total_expenses' => (int) ($data['totalExpenses'] ?? 0),
+                'closing_balance' => (int) ($data['closingBalance'] ?? 0),
+                'funds' => $data['fundsReport'] ?? $data['fundBreakdowns'] ?? $data['funds_report'] ?? [],
             ],
         ];
     }

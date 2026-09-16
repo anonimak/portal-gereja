@@ -23,25 +23,34 @@ class DatabaseSeeder extends Seeder
             [
                 'code' => 'GKSBS-KEL-CDM',
                 'name' => 'Jemaat Kelompok Candimas',
-                'address' => 'Jl. Test No. 123',
-                'phone' => '081234567890',
+                'synod' => 'Gereja Kristen Sumatera Bagian Selatan (GKSBS) — Klasis Tulang Bawang',
+                'address' => 'Jl. Way Abung No. 45, Kel. Candimas, Kec. Natar, Lampung Selatan',
+                'phone' => '081272001234',
+                'email' => 'sekretariat.candimas@gksbs-filadelfia.org',
+                'website' => 'https://candimas.gksbs-filadelfia.org',
             ],
             [
                 'code' => 'GKSBS-KEL-TRM',
                 'name' => 'Jemaat Kelompok Trimulyo',
-                'address' => 'Jl. Test No. 456',
-                'phone' => '081234567891',
+                'synod' => 'Gereja Kristen Sumatera Bagian Selatan (GKSBS) — Klasis Tulang Bawang',
+                'address' => 'Jl. Raya Trimulyo No. 12, Trimulyo, Kec. Tegineneng, Pesawaran',
+                'phone' => '081272005678',
+                'email' => 'sekretariat.trimulyo@gksbs-filadelfia.org',
+                'website' => 'https://trimulyo.gksbs-filadelfia.org',
             ],
             [
                 'code' => 'GKSBS-KEL-MRG',
                 'name' => 'Jemaat Kelompok Margomulyo',
-                'address' => 'Jl. Test No. 789',
-                'phone' => '081234567892',
+                'synod' => 'Gereja Kristen Sumatera Bagian Selatan (GKSBS) — Klasis Tulang Bawang',
+                'address' => 'Jl. Margomulyo Indah No. 88, Margomulyo, Lampung Selatan',
+                'phone' => '081272009012',
+                'email' => 'sekretariat.margomulyo@gksbs-filadelfia.org',
+                'website' => 'https://margomulyo.gksbs-filadelfia.org',
             ],
         ];
 
         foreach ($churches as $churchData) {
-            $church = Church::create($churchData);
+            $church = Church::updateOrCreate(['code' => $churchData['code']], $churchData);
             // Manually call DefaultFinanceSeeder since WithoutModelEvents prevents observer from firing
             $this->call(DefaultFinanceSeeder::class, false, ['churchId' => $church->id]);
         }
@@ -51,37 +60,48 @@ class DatabaseSeeder extends Seeder
         $churchTrimulyo = Church::where('code', 'GKSBS-KEL-TRM')->first();
         $churchMargomulyo = Church::where('code', 'GKSBS-KEL-MRG')->first();
 
-        User::create([
-            'name' => 'Admin Kelompok Candimas',
-            'email' => 'admin.candimas@gksbs-filadelfia.org',
-            'password' => bcrypt('password'),
-            'church_id' => $churchCandimas->id,
-            'role' => 'church_admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin.candimas@gksbs-filadelfia.org'],
+            [
+                'name' => 'Admin Kelompok Candimas',
+                'password' => bcrypt('password'),
+                'church_id' => $churchCandimas->id,
+                'role' => 'church_admin',
+            ]
+        );
 
-        User::create([
-            'name' => 'Admin Kelompok Trimulyo',
-            'email' => 'admin.trimulyo@gksbs-filadelfia.org',
-            'password' => bcrypt('password'),
-            'church_id' => $churchTrimulyo->id,
-            'role' => 'church_admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin.trimulyo@gksbs-filadelfia.org'],
+            [
+                'name' => 'Admin Kelompok Trimulyo',
+                'password' => bcrypt('password'),
+                'church_id' => $churchTrimulyo->id,
+                'role' => 'church_admin',
+            ]
+        );
 
-        User::create([
-            'name' => 'Admin Kelompok Margomulyo',
-            'email' => 'admin.margomulyo@gksbs-filadelfia.org',
-            'password' => bcrypt('password'),
-            'church_id' => $churchMargomulyo->id,
-            'role' => 'church_admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin.margomulyo@gksbs-filadelfia.org'],
+            [
+                'name' => 'Admin Kelompok Margomulyo',
+                'password' => bcrypt('password'),
+                'church_id' => $churchMargomulyo->id,
+                'role' => 'church_admin',
+            ]
+        );
 
         // Create super admin user (can see all churches)
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@gereja.test',
-            'password' => bcrypt('password'),
-            'church_id' => $churchCandimas->id,
-            'role' => 'super_admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'superadmin@gereja.test'],
+            [
+                'name' => 'Super Admin',
+                'password' => bcrypt('password'),
+                'church_id' => $churchCandimas->id,
+                'role' => 'super_admin',
+            ]
+        );
+
+        // Seed dummy demo data
+        $this->call(DummyDataSeeder::class);
     }
 }

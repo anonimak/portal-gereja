@@ -13,6 +13,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
@@ -22,6 +23,8 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ChurchResource extends Resource
 {
@@ -31,15 +34,13 @@ class ChurchResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Gereja';
 
-    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
-
     protected static ?string $cluster = SystemCluster::class;
 
     protected static ?int $navigationSort = 10;
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'super_admin';
+        return in_array(auth()->user()?->role, ['super_admin', 'church_admin'], true);
     }
 
     public static function canCreate(): bool
@@ -47,43 +48,97 @@ class ChurchResource extends Resource
         return auth()->user()?->role === 'super_admin';
     }
 
-    public static function canUpdate(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canUpdate(Model $record): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'super_admin') {
+            return true;
+        }
+
+        return $user->role === 'church_admin' && (int) $user->church_id === (int) $record->id;
+    }
+
+    public static function canDelete(Model $record): bool
     {
         return auth()->user()?->role === 'super_admin';
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function getEloquentQuery(): Builder
     {
-        return auth()->user()?->role === 'super_admin';
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user && $user->role === 'church_admin') {
+            $query->where('id', $user->church_id);
+        }
+
+        return $query;
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
-                Section::make('Church Information')
+                Section::make('Identitas Resmi & Kop Dokumen')
                     ->schema([
-                        TextInput::make('code')
-                            ->label('Church Code')
-                            ->required()
-                            ->unique(table: 'churches', column: 'code', ignoreRecord: true)
-                            ->maxLength(50),
+                        FileUpload::make('logo_path')
+                            ->label('Logo Gereja')
+                            ->disk('public')
+                            ->directory('church-logos')
+                            ->visibility('public')
+                            ->image()
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'])
+                            ->helperText('Format PNG/JPG/SVG transparan. Digunakan untuk Kop Surat Resmi dokumen cetak dan PDF.')
+                            ->columnSpanFull(),
 
                         TextInput::make('name')
-                            ->label('Church Name')
+                            ->label('Nama Jemaat / Gereja')
                             ->required()
                             ->maxLength(255),
 
+                        TextInput::make('synod')
+                            ->label('Sinode / Klasis / Wilayah')
+                            ->placeholder('Contoh: Sinode GKSBS / Klasis Tulang Bawang')
+                            ->maxLength(255),
+
+                        TextInput::make('code')
+                            ->label('Kode Gereja')
+                            ->required()
+                            ->unique(table: 'churches', column: 'code', ignoreRecord: true)
+                            ->maxLength(50)
+                            ->disabled(fn () => auth()->user()?->role !== 'super_admin')
+                            ->dehydrated(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Kontak & Kesekretariatan')
+                    ->schema([
                         Textarea::make('address')
-                            ->label('Address')
+                            ->label('Alamat Lengkap Gereja')
                             ->maxLength(255)
                             ->columnSpanFull(),
 
                         TextInput::make('phone')
-                            ->label('Phone')
+                            ->label('No. Telepon Sekretariat')
                             ->tel()
                             ->maxLength(20),
-                    ]),
+
+                        TextInput::make('email')
+                            ->label('Email Resmi Gereja')
+                            ->email()
+                            ->maxLength(255),
+
+                        TextInput::make('website')
+                            ->label('Website Gereja')
+                            ->url()
+                            ->maxLength(255),
+                    ])
+                    ->columns(3),
             ]);
     }
 
@@ -92,28 +147,37 @@ class ChurchResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('code')
-                    ->label('Code')
+                    ->label('Kode')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('name')
-                    ->label('Name')
+                    ->label('Nama Gereja')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('synod')
+                    ->label('Sinode')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('phone')
-                    ->label('Phone')
+                    ->label('Telepon')
                     ->copyable()
                     ->copyableState(fn(string $state): string => $state),
+
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable(),
             ])
             ->filters([])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()->visible(fn () => auth()->user()?->role === 'super_admin'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->visible(fn () => auth()->user()?->role === 'super_admin'),
                 ]),
             ]);
     }
