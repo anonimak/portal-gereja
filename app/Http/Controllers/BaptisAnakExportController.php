@@ -66,6 +66,7 @@ class BaptisAnakExportController extends Controller
             ?->first(fn ($m) => $m->family_relation === 'istri');
 
         $data = [
+            'church' => $record->church,
             'churchName' => $record->church?->name,
             'churchAddress' => $record->church?->address,
             'churchLocation' => $record->church?->address,

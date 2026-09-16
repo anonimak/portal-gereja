@@ -32,7 +32,7 @@
         <table style="width:100%; border-collapse:collapse;">
             <tr><td style="width:160px;">Nama</td><td>: {{ $memberName ?? '-' }}</td></tr>
             <tr><td>Jenis Kelamin</td><td>: {{ $memberGender ?? '-' }}</td></tr>
-            <tr><td>Tempat, Tgl Lahir</td><td>: {{ $memberBirthPlace ?? '-' }}{{ $memberBirthPlace ? ', ' : '' }}{{ $memberBirthDate ?? '-' }}</td></tr>
+            <tr><td>Tempat, Tgl Lahir</td><td>: {{ $memberBirthPlace ?? '-' }}{{ !empty($memberBirthPlace) ? ', ' : '' }}{{ $memberBirthDate ?? '-' }}</td></tr>
             <tr><td>Alamat</td><td>: {{ $memberAddress ?? '-' }}</td></tr>
             <tr><td>Tanggal Meninggal</td><td>: {{ $deathDate ?? '-' }}</td></tr>
             <tr><td>Tanggal Pemakaman</td><td>: {{ $burialDate ?? '-' }}</td></tr>

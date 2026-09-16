@@ -58,6 +58,7 @@ class SidiExportController extends Controller
         $member = $record->member;
 
         $data = [
+            'church' => $record->church,
             'churchName' => $record->church?->name,
             'churchAddress' => $record->church?->address,
             'churchLocation' => $record->church?->address,

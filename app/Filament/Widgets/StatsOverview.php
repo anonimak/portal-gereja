@@ -46,8 +46,8 @@ class StatsOverview extends StatsOverviewWidget
         ];
     }
 
-    private function formatCurrency(int $amount): string
+    private function formatCurrency(int|float|string|null $amount): string
     {
-        return 'Rp'.number_format($amount, 0, ',', '.');
+        return 'Rp'.number_format((int) ($amount ?? 0), 0, ',', '.');
     }
 }

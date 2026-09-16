@@ -314,7 +314,7 @@ class MemberCsvController extends Controller
     private function csvLine(array $fields): string
     {
         $handle = fopen('php://temp', 'r+');
-        fputcsv($handle, $fields);
+        fputcsv($handle, $fields, ',', '"', "\\");
         rewind($handle);
         $line = (string) stream_get_contents($handle);
         fclose($handle);

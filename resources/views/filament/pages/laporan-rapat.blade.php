@@ -303,7 +303,13 @@
                         @if($minute->agenda)
                             <p class="mb-1 mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Agenda</p>
                             <ul class="mb-2 m-0 pl-4 text-[13px] text-gray-700 dark:text-gray-300">
-                                @foreach($minute->agenda as $item)<li>{{ $item }}</li>@endforeach
+                                @if(is_array($minute->agenda))
+                                    @foreach($minute->agenda as $item)<li>{{ $item }}</li>@endforeach
+                                @else
+                                    @foreach(explode("\n", (string) $minute->agenda) as $item)
+                                        @if(trim($item))<li>{{ trim($item) }}</li>@endif
+                                    @endforeach
+                                @endif
                             </ul>
                         @endif
                         @if($minute->notes)
@@ -313,7 +319,13 @@
                         @if($minute->decisions)
                             <p class="mb-1 mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Keputusan</p>
                             <ul class="m-0 pl-4 text-[13px] text-gray-700 dark:text-gray-300">
-                                @foreach($minute->decisions as $d)<li>{{ $d }}</li>@endforeach
+                                @if(is_array($minute->decisions))
+                                    @foreach($minute->decisions as $d)<li>{{ $d }}</li>@endforeach
+                                @else
+                                    @foreach(explode("\n", (string) $minute->decisions) as $d)
+                                        @if(trim($d))<li>{{ trim($d) }}</li>@endif
+                                    @endforeach
+                                @endif
                             </ul>
                         @endif
                     </div>

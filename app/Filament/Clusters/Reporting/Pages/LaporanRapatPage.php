@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\Reporting\Pages;
 
 use App\Filament\Clusters\Reporting\ReportingCluster;
+use App\Models\Church;
 use App\Models\MeetingMinutes;
 use App\Services\ReportExporter;
 use App\Support\ChurchContext;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -20,6 +22,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
 {
+    public ?Carbon $startDate = null;
+
+    public ?Carbon $endDate = null;
     protected static ?string $cluster = ReportingCluster::class;
 
     protected static ?string $navigationLabel = 'Laporan Rapat';
@@ -210,9 +215,12 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
         return ReportExporter::excel($this->reportTitle().'.xlsx', $this->exportBlocks());
     }
 
-    public function downloadPdf(): BinaryFileResponse
+    public function downloadPdf(): Response
     {
+        $activeChurchId = ChurchContext::activeChurchId();
+        $church = $activeChurchId ? Church::find($activeChurchId) : null;
         $data = [
+            'church' => $church,
             'churchName' => $this->getChurchName(),
             'title' => 'Laporan Rapat & Notulen',
             'period' => $this->data['periodLabel'] ?? '',

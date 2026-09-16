@@ -39,6 +39,7 @@ class DeathRecordExportController extends Controller
         }
 
         $data = [
+            'church' => $record->church,
             'churchName' => $record->church?->name,
             'churchAddress' => $record->church?->address,
             'certificateNumber' => $record->certificate_number,
