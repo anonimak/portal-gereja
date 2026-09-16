@@ -10,10 +10,13 @@ use App\Http\Controllers\PublicWartaController;
 use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
 use App\Http\Controllers\WartaPublishController;
+use App\Models\Church;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    $churches = Church::all();
+
+    return view('welcome', compact('churches'));
 });
 
 // Nama route 'login' untuk middleware auth — redirect ke halaman login Filament.
