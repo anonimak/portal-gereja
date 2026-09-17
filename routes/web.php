@@ -7,6 +7,7 @@ use App\Http\Controllers\DataMigrationController;
 use App\Http\Controllers\DeathRecordExportController;
 use App\Http\Controllers\MarriageExportController;
 use App\Http\Controllers\MemberCsvController;
+use App\Http\Controllers\PublicOfferingController;
 use App\Http\Controllers\PublicWartaController;
 use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
@@ -24,6 +25,10 @@ Route::get('/', function () {
 
 // Nama route 'login' untuk middleware auth — redirect ke halaman login Filament.
 Route::redirect('/login', '/admin/login')->name('login');
+
+// Persembahan & Donasi Digital Publik
+Route::get('/persembahan/{churchCode?}', [PublicOfferingController::class, 'index'])->name('public.offering.index');
+Route::post('/persembahan', [PublicOfferingController::class, 'store'])->name('public.offering.store');
 
 // Export routes — hanya user terautentikasi dengan role panel yang sah.
 Route::post('/admin/laporan-rapat/export-excel', function () {
@@ -134,5 +139,7 @@ Route::prefix('portal')->group(function () {
         Route::get('/events/{event}', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'showEvent'])->name('portal.events.show');
         Route::get('/warta', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'warta'])->name('portal.warta');
         Route::get('/warta/{publication}', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'showWarta'])->name('portal.warta.show');
+        Route::get('/persembahan', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'offerings'])->name('portal.offerings');
+        Route::post('/persembahan', [\App\Http\Controllers\Portal\MemberPortalWebController::class, 'storeOffering'])->name('portal.offerings.store');
     });
 });

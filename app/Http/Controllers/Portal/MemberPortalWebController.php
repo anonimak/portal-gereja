@@ -7,7 +7,10 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Models\Church;
 use App\Models\Event;
+use App\Models\FinancialCategory;
+use App\Models\Fund;
 use App\Models\Member;
+use App\Models\OnlineOffering;
 use App\Models\User;
 use App\Models\WartaPublication;
 use Illuminate\Http\RedirectResponse;
@@ -189,5 +192,70 @@ class MemberPortalWebController extends Controller
         );
 
         return view('portal.warta-detail', compact('user', 'publication'));
+    }
+
+    /**
+     * Halaman riwayat dan formulir persembahan jemaat.
+     */
+    public function offerings(Request $request): View
+    {
+        $user = $request->user();
+        $user->load(['church', 'member']);
+
+        $offerings = OnlineOffering::where('church_id', $user->church_id)
+            ->where('member_id', $user->member_id)
+            ->latest()
+            ->paginate(10);
+
+        $funds = Fund::where('church_id', $user->church_id)->get();
+        $categories = FinancialCategory::where('church_id', $user->church_id)
+            ->where('type', 'debit')
+            ->get();
+
+        return view('portal.offerings', compact('user', 'offerings', 'funds', 'categories'));
+    }
+
+    /**
+     * Simpan persembahan dari portal anggota.
+     */
+    public function storeOffering(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'fund_id' => ['required', 'exists:funds,id'],
+            'financial_category_id' => ['required', 'exists:financial_categories,id'],
+            'amount' => ['required', 'integer', 'min:10000'],
+            'payment_method' => ['required', 'in:qris,bank_transfer,va'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'prayer_notes' => ['nullable', 'string', 'max:1000'],
+            'proof' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $proofPath = null;
+        if ($request->hasFile('proof')) {
+            $proofPath = $request->file('proof')->store('offering-proofs', 'public');
+        }
+
+        $referenceCode = OnlineOffering::generateReferenceCode();
+
+        $offering = OnlineOffering::create([
+            'church_id' => $user->church_id,
+            'member_id' => $user->member_id,
+            'fund_id' => $validated['fund_id'],
+            'financial_category_id' => $validated['financial_category_id'],
+            'donor_name' => $user->member?->full_name ?? $user->name,
+            'donor_phone' => $user->member?->phone_number ?? null,
+            'donor_email' => $user->email,
+            'amount' => $validated['amount'],
+            'payment_method' => $validated['payment_method'],
+            'bank_name' => $validated['bank_name'] ?? null,
+            'reference_code' => $referenceCode,
+            'proof_path' => $proofPath,
+            'prayer_notes' => $validated['prayer_notes'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('portal.offerings')->with('success', "Persembahan {$referenceCode} berhasil dicatat dan sedang menunggu verifikasi majelis.");
     }
 }

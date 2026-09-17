@@ -27,6 +27,17 @@ final class Church extends Model
         'email',
         'logo_path',
         'website',
+        'qris_image_path',
+        'bank_accounts',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'bank_accounts' => 'array',
     ];
 
     /**
@@ -35,6 +46,26 @@ final class Church extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Persembahan digital / online gereja ini.
+     */
+    public function onlineOfferings(): HasMany
+    {
+        return $this->hasMany(OnlineOffering::class);
+    }
+
+    /**
+     * URL Barcode QRIS gereja untuk ditampilkan.
+     */
+    public function getQrisUrlAttribute(): ?string
+    {
+        if (! $this->qris_image_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->qris_image_path);
     }
 
     /**

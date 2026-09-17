@@ -59,10 +59,14 @@ Agenda PR #38 (Rombak Warta, Rombak Laporan Rapat, Laporan Jemaat/Kehadiran/Sakr
 - **[Jumat, 4 Sep] Slot Lanjutan — Task 6: Redesign Landing Page ala Sonship Bay Ridge (Maranatha Parallax, Font Caudex/Raleway, Palet Hijau-Biru Sinode GKSBS)** — ✅ **DONE di master (PR #49)**.
 - **[Jumat, 4 Sep] Setelah slot selesai:** ritual update `SCHEDULE.md` → **build preview web** dari master terbaru.
 
+### Senin, 7 September 2026 — 2 task (slot pagi 07:00)
+- **[Senin, 7 Sep] 07:00 — Task 1: Donasi & Persembahan Online (QRIS, Rekening Bank, Formulir Konfirmasi Jemaat, dan Otomasi Transaksi Kas)** — Owner: Byte (backend) + Pixel (frontend) — Branch: `byte/donasi-persembahan-online` — PR: baru — DoD: CI + Vera + merge.
+- **[Senin, 7 Sep] (setelah Task 1) 07:00+ — Task 2: Integrasi Portal Mandiri Jemaat & API Persembahan Digital** — Owner: Byte — Branch: `byte/donasi-persembahan-online` — PR: baru — DoD: CI + Vera + merge.
+- **[Senin, 7 Sep] Setelah slot 07:00 selesai:** ritual update `SCHEDULE.md` agenda 16:00 → merge hari yang sama + **build preview web** dari master terbaru.
+
 ---
 
-## Backlog Berikutnya (belum dijadwalkan — kandidat setelah Jumat tuntas)
-- Donasi/persembahan online (QRIS/VA).
+## Backlog Berikutnya (belum dijadwalkan — kandidat setelah Senin pagi tuntas)
 - Notifikasi WhatsApp.
 - Notifikasi/reminder lanjutan & backup-dokumentasi deployment.
 

@@ -38,6 +38,10 @@
                            class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('portal.warta*') ? 'bg-amber-50 text-amber-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                             Warta Jemaat
                         </a>
+                        <a href="{{ route('portal.offerings') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('portal.offerings*') ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                            Persembahan
+                        </a>
                     </nav>
 
                     <div class="flex items-center space-x-3">
@@ -67,6 +71,9 @@
                 </a>
                 <a href="{{ route('portal.warta') }}" class="py-1 px-3 rounded-lg font-semibold {{ request()->routeIs('portal.warta*') ? 'text-amber-600 bg-white shadow-sm' : 'text-slate-600' }}">
                     Warta Jemaat
+                </a>
+                <a href="{{ route('portal.offerings') }}" class="py-1 px-3 rounded-lg font-semibold {{ request()->routeIs('portal.offerings*') ? 'text-emerald-700 bg-white shadow-sm' : 'text-slate-600' }}">
+                    Persembahan
                 </a>
             </div>
         @endauth
