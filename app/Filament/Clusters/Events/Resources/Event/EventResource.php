@@ -29,6 +29,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 
 class EventResource extends Resource
@@ -99,7 +100,7 @@ class EventResource extends Resource
                             ->relationship(
                                 'recurringSchedule',
                                 'title',
-                                fn (Builder $query, ?Event $record): Builder => ChurchScope::forParentOrCreate(
+                                fn (Builder $query, ?Model $record): Builder => ChurchScope::forParentOrCreate(
                                     $query,
                                     $record?->church_id
                                 )
@@ -167,9 +168,9 @@ class EventResource extends Resource
                                         // AC-T3-13: opsi parent-derived (roster) mengikuti gereja
                                         // OWNER RECORD (event), bukan gereja aktor. Sertakan member
                                         // soft-deleted supaya roster historis tetap bisa diedit (M2).
-                                        fn (Builder $query, ?Event $record): Builder => ChurchScope::forParentOrCreate(
+                                        fn (Builder $query, ?Model $record, Get $get): Builder => ChurchScope::forParentOrCreate(
                                             $query->withTrashed(),
-                                            $record?->church_id
+                                            $record?->church_id ?? $get('../../church_id')
                                         )
                                     ),
                                 Select::make('official_id')
@@ -183,9 +184,9 @@ class EventResource extends Resource
                                     ->relationship(
                                         'official',
                                         'id',
-                                        fn (Builder $query, ?Event $record): Builder => ChurchScope::forParentOrCreate(
+                                        fn (Builder $query, ?Model $record, Get $get): Builder => ChurchScope::forParentOrCreate(
                                             $query,
-                                            $record?->church_id
+                                            $record?->church_id ?? $get('../../church_id')
                                         )
                                     )
                                     ->getOptionLabelFromRecordUsing(fn (Official $record): string => $record->display_name),
@@ -197,9 +198,9 @@ class EventResource extends Resource
                                     ->relationship(
                                         'role',
                                         'name',
-                                        fn (Builder $query, ?Event $record): Builder => ChurchScope::forParentOrCreate(
+                                        fn (Builder $query, ?Model $record, Get $get): Builder => ChurchScope::forParentOrCreate(
                                             $query,
-                                            $record?->church_id
+                                            $record?->church_id ?? $get('../../church_id')
                                         )
                                     ),
                             ])
