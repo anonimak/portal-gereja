@@ -75,4 +75,18 @@ class LandingSettingTest extends TestCase
         $response->assertDontSee('Pintu Layanan');
         $response->assertDontSee('Fitur & Modul');
     }
+
+    public function test_landing_setting_section_background_accessors(): void
+    {
+        $setting = LandingSetting::current(null);
+        $setting->update([
+            'warta_bg_path' => 'landing/parallax/custom-warta.jpg',
+            'branches_bg_path' => 'landing/parallax/custom-branches.jpg',
+        ]);
+
+        $this->assertNotNull($setting->warta_bg_url);
+        $this->assertStringContainsString('custom-warta.jpg', $setting->warta_bg_url);
+        $this->assertNotNull($setting->branches_bg_url);
+        $this->assertStringContainsString('custom-branches.jpg', $setting->branches_bg_url);
+    }
 }

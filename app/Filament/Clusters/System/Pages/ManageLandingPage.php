@@ -141,7 +141,60 @@ class ManageLandingPage extends Page implements HasForms
                     ])
                     ->columns(2),
 
-                Section::make('3. Profil, Visi & Misi')
+                Section::make('3. Foto Latar Belakang Parallax Setiap Seksi')
+                    ->description('Pengaturan gambar latar belakang parallax untuk masing-masing seksi halaman depan. Format JPG/PNG/WebP resolusi tinggi (1920px), maks 2MB per gambar.')
+                    ->schema([
+                        FileUpload::make('hero_banner_path')
+                            ->label('Latar Seksi 1: Beranda / Hero')
+                            ->disk('public')
+                            ->directory('landing/parallax')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Gambar latar utama beranda atas (default: interior gereja katedral).'),
+
+                        FileUpload::make('warta_bg_path')
+                            ->label('Latar Seksi 2: Warta Jemaat & Sabda Firman')
+                            ->disk('public')
+                            ->directory('landing/parallax')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Gambar latar warta & renungan (default: Alkitab terbuka di meja kayu).'),
+
+                        FileUpload::make('branches_bg_path')
+                            ->label('Latar Seksi 3: Pos Pelayanan & Kelompok Jemaat')
+                            ->disk('public')
+                            ->directory('landing/parallax')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Gambar latar pos pelayanan gereja (default: bangunan gereja Kristen / kapel).'),
+
+                        FileUpload::make('worship_bg_path')
+                            ->label('Latar Seksi 4: Jadwal Ibadah Raya')
+                            ->disk('public')
+                            ->directory('landing/parallax')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Gambar latar jadwal liturgi (default: lilin & altar doa gereja).'),
+
+                        FileUpload::make('profile_bg_path')
+                            ->label('Latar Seksi 5: Profil & Rumah Bersama')
+                            ->disk('public')
+                            ->directory('landing/parallax')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Gambar latar eklesiologi Rumah Bersama (default: sanctuary katedral batu).'),
+
+                        FileUpload::make('portal_bg_path')
+                            ->label('Latar Seksi 6: Layanan Mandiri Jemaat & Majelis')
+                            ->disk('public')
+                            ->directory('landing/parallax')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Gambar latar pintu akses portal (default: kaca patri gereja / stained glass).'),
+                    ])
+                    ->columns(2),
+
+                Section::make('4. Profil, Visi & Misi')
                     ->description('Ringkasan sejarah, visi, serta butir-butir misi pelayanan.')
                     ->schema([
                         Textarea::make('about_summary')
@@ -168,7 +221,7 @@ class ManageLandingPage extends Page implements HasForms
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('4. Jadwal Ibadah Induk')
+                Section::make('5. Jadwal Ibadah Induk')
                     ->description('Daftar jadwal ibadah rutin di gedung gereja utama.')
                     ->schema([
                         Repeater::make('worship_schedules')
@@ -198,7 +251,7 @@ class ManageLandingPage extends Page implements HasForms
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('5. Kontak & Media Sosial')
+                Section::make('6. Kontak & Media Sosial')
                     ->description('Informasi sekretariat gereja induk dan saluran media sosial resmi.')
                     ->schema([
                         TextInput::make('contact_email')
