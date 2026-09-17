@@ -76,6 +76,7 @@ class EventRoster extends Model
      */
     protected $fillable = [
         'church_id',
+        'event_id',
         'member_id',
         'role_id',
         'official_id',
