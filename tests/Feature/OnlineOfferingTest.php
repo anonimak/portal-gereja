@@ -99,7 +99,7 @@ class OnlineOfferingTest extends TestCase
         $response = $this->get('/persembahan/' . $this->churchA->code);
 
         $response->assertOk();
-        $response->assertSee('Persembahan & Donasi Jemaat');
+        $response->assertSee('Persembahan & Donasi Jemaat', false);
         $response->assertSee('1234567890');
         $response->assertSee('Kas Umum');
         $response->assertSee('Persembahan Ibadah Minggu');
@@ -248,15 +248,18 @@ class OnlineOfferingTest extends TestCase
             'status' => 'pending',
         ]);
 
+        // Buat user church_admin B sebagai superAdmin agar diizinkan oleh UserObserver
+        $this->actingAs($this->superAdmin);
+        $churchAdminB = User::factory()->create([
+            'church_id' => $this->churchB->id,
+            'role' => 'church_admin',
+        ]);
+
         // Menggunakan scope church_admin A
         $this->actingAs($this->churchAdminA);
         $this->assertEquals(1, OnlineOffering::count());
 
         // Menggunakan church_admin B
-        $churchAdminB = User::factory()->create([
-            'church_id' => $this->churchB->id,
-            'role' => 'church_admin',
-        ]);
         $this->actingAs($churchAdminB);
         $this->assertEquals(0, OnlineOffering::count());
     }
