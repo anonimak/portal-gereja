@@ -56,8 +56,8 @@ class EventEditRosterTest extends TestCase
 
         $official = Official::factory()->create([
             'church_id' => $this->church->id,
-            'name' => 'Pdt. Andreas',
-            'role' => 'pendeta',
+            'external_name' => 'Pdt. Andreas',
+            'type' => 'pelayan_tamu',
         ]);
 
         $role = MinistryRole::factory()->create([
