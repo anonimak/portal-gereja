@@ -22,6 +22,11 @@ final class LandingSetting extends Model
         'theme_verse',
         'theme_verse_ref',
         'hero_banner_path',
+        'warta_bg_path',
+        'branches_bg_path',
+        'worship_bg_path',
+        'profile_bg_path',
+        'portal_bg_path',
         'pastoral_greeting_title',
         'pastoral_greeting_author',
         'pastoral_greeting_author_role',
@@ -98,6 +103,31 @@ final class LandingSetting extends Model
     public function getHeroBannerUrlAttribute(): ?string
     {
         return $this->hero_banner_path ? Storage::disk('public')->url($this->hero_banner_path) : null;
+    }
+
+    public function getWartaBgUrlAttribute(): ?string
+    {
+        return $this->warta_bg_path ? Storage::disk('public')->url($this->warta_bg_path) : null;
+    }
+
+    public function getBranchesBgUrlAttribute(): ?string
+    {
+        return $this->branches_bg_path ? Storage::disk('public')->url($this->branches_bg_path) : null;
+    }
+
+    public function getWorshipBgUrlAttribute(): ?string
+    {
+        return $this->worship_bg_path ? Storage::disk('public')->url($this->worship_bg_path) : null;
+    }
+
+    public function getProfileBgUrlAttribute(): ?string
+    {
+        return $this->profile_bg_path ? Storage::disk('public')->url($this->profile_bg_path) : null;
+    }
+
+    public function getPortalBgUrlAttribute(): ?string
+    {
+        return $this->portal_bg_path ? Storage::disk('public')->url($this->portal_bg_path) : null;
     }
 
     public function getPastoralPhotoUrlAttribute(): ?string
