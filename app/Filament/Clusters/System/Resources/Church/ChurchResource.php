@@ -37,6 +37,8 @@ class ChurchResource extends Resource
 
     protected static ?string $cluster = SystemCluster::class;
 
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
+
     protected static ?int $navigationSort = 10;
 
     public static function canViewAny(): bool

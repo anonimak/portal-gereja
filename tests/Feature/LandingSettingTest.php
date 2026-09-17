@@ -89,4 +89,47 @@ class LandingSettingTest extends TestCase
         $this->assertNotNull($setting->branches_bg_url);
         $this->assertStringContainsString('custom-branches.jpg', $setting->branches_bg_url);
     }
+
+    public function test_landing_setting_branding_and_seo_accessors(): void
+    {
+        $setting = LandingSetting::current(null);
+        $setting->update([
+            'logo_path' => 'landing/branding/custom-logo.png',
+            'favicon_path' => 'landing/branding/custom-favicon.ico',
+            'og_image_path' => 'landing/seo/custom-og.jpg',
+            'meta_title' => 'GKSBS Filadelfia Candimas — Gereja Terbuka',
+            'meta_description' => 'Website Resmi Jemaat GKSBS Filadelfia Lampung Selatan.',
+            'meta_keywords' => 'gksbs, filadelfia, kristen, warta jemaat',
+        ]);
+
+        $this->assertNotNull($setting->logo_url);
+        $this->assertStringContainsString('custom-logo.png', $setting->logo_url);
+        $this->assertNotNull($setting->favicon_url);
+        $this->assertStringContainsString('custom-favicon.ico', $setting->favicon_url);
+        $this->assertNotNull($setting->og_image_url);
+        $this->assertStringContainsString('custom-og.jpg', $setting->og_image_url);
+    }
+
+    public function test_welcome_page_renders_custom_branding_and_seo_meta_tags(): void
+    {
+        $setting = LandingSetting::current(null);
+        $setting->update([
+            'logo_path' => 'landing/branding/logo-gksbs-test.png',
+            'favicon_path' => 'landing/branding/favicon-test.ico',
+            'meta_title' => 'Portal Resmi GKSBS Filadelfia Mandiri',
+            'meta_description' => 'Situs resmi jemaat dan pelayanan GKSBS Filadelfia.',
+            'meta_keywords' => 'gksbs, filadelfia, warta',
+            'og_image_path' => 'landing/seo/banner-share.jpg',
+        ]);
+
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertSee('<title>Portal Resmi GKSBS Filadelfia Mandiri</title>', false);
+        $response->assertSee('name="description" content="Situs resmi jemaat dan pelayanan GKSBS Filadelfia."', false);
+        $response->assertSee('name="keywords" content="gksbs, filadelfia, warta"', false);
+        $response->assertSee('property="og:image"', false);
+        $response->assertSee('logo-gksbs-test.png', false);
+        $response->assertSee('favicon-test.ico', false);
+    }
 }
