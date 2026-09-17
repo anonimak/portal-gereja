@@ -3,7 +3,7 @@
 @section('title', $event->title . ' — Detail Kegiatan')
 
 @section('content')
-<div class="space-y-6 max-w-3xl mx-auto">
+<div class="space-y-6 w-full">
     <!-- Top Back Navigation -->
     <div class="flex items-center justify-between">
         <a href="{{ route('portal.events') }}" class="text-xs font-bold uppercase tracking-wider text-gksbs-forest hover:text-gksbs-ocean flex items-center gap-1.5 transition">

@@ -3,7 +3,7 @@
 @section('title', $publication->title . ' — Warta Jemaat')
 
 @section('content')
-<div class="space-y-6 max-w-4xl mx-auto">
+<div class="space-y-6 w-full">
     <!-- Top Bar Navigation -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <a href="{{ route('portal.warta') }}" class="text-xs font-bold uppercase tracking-wider text-gksbs-forest hover:text-gksbs-ocean flex items-center gap-1.5 transition">

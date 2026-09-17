@@ -3,7 +3,7 @@
 @section('title', 'Warta Jemaat')
 
 @section('content')
-<div class="space-y-6 sm:space-y-8">
+<div class="space-y-6 sm:space-y-8 w-full">
     <!-- Header Page -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>

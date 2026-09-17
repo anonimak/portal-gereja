@@ -1,10 +1,14 @@
+@php
+    $setting = \App\Models\LandingSetting::current();
+    $cmsLogo = $setting?->logo_url ?: (auth()->user()?->church?->logo_url ?: null);
+@endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Portal Mandiri Jemaat') — {{ auth()->user()?->church?->name ?? 'Gereja Kristen Sumatera Bagian Selatan' }}</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>@yield('title', 'Portal Mandiri Jemaat') — {{ auth()->user()?->church?->name ?? ($setting?->hero_title ?? 'Gereja Kristen Sumatera Bagian Selatan') }}</title>
+    <link rel="icon" href="{{ $setting?->favicon_url ?: asset('favicon.ico') }}">
 
     <!-- Google Fonts: Playfair Display (Serif Elegan) & Plus Jakarta Sans (Modern & Bersih) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +66,8 @@
                 <!-- Left: Identity & Logo -->
                 <div class="flex items-center space-x-3.5">
                     <a href="{{ route('portal.profile') }}" class="flex items-center gap-3 group">
-                        @if(auth()->user()?->church?->logo_url)
-                            <img src="{{ auth()->user()->church->logo_url }}" alt="Logo Gereja" class="h-9 w-auto max-w-[120px] object-contain flex-shrink-0">
+                        @if($cmsLogo)
+                            <img src="{{ $cmsLogo }}" alt="Logo Gereja" class="h-9 sm:h-10 w-auto max-w-[120px] object-contain flex-shrink-0">
                         @else
                             <div class="h-10 w-10 flex-shrink-0 flex items-center justify-center p-1 rounded-full bg-black/30 border border-white/20 group-hover:border-gksbs-leaf-light transition">
                                 <svg viewBox="0 0 100 100" class="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -84,7 +88,7 @@
                         @endif
                         <div>
                             <span class="font-heading text-lg sm:text-xl font-semibold tracking-tight text-white block leading-tight group-hover:text-emerald-300 transition">
-                                {{ auth()->user()?->church?->name ?? 'Portal Jemaat GKSBS' }}
+                                {{ auth()->user()?->church?->name ?? ($setting?->hero_title ?? 'Portal Jemaat GKSBS') }}
                             </span>
                             <span class="text-[10px] text-white/70 uppercase tracking-widest font-medium block">
                                 Portal Pelayanan Jemaat

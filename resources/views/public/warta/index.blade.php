@@ -1,3 +1,7 @@
+@php
+    $setting = \App\Models\LandingSetting::current();
+    $logoUrl = $setting?->logo_url ?: ($church->logo_url ?? null);
+@endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
@@ -5,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Warta Jemaat — {{ $church->name }}</title>
     <meta name="description" content="Edisi resmi Warta Jemaat dan Buletin Pelayanan {{ $church->name }} — Sinode GKSBS">
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" href="{{ $setting?->favicon_url ?: asset('favicon.ico') }}">
 
     <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,22 +63,26 @@
     <header class="bg-gksbs-forest-deep text-white border-b border-white/10 sticky top-0 z-40 shadow-sm">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-3">
-                <div class="h-9 w-9 p-1 rounded-full bg-black/25 border border-white/20 flex items-center justify-center flex-shrink-0">
-                    <svg viewBox="0 0 100 100" class="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
-                        <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
-                        <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
-                        <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
-                        <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
-                        <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
-                        <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
-                        <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
-                        <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                @if ($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="{{ $church->name }}" class="h-9 w-auto max-w-[120px] object-contain flex-shrink-0">
+                @else
+                    <div class="h-9 w-9 p-1 rounded-full bg-black/25 border border-white/20 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 100 100" class="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
+                            <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
+                            <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
+                            <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                            <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                            <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
+                            <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
+                            <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                            <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                @endif
                 <div>
                     <span class="font-heading text-lg font-bold block leading-none text-white">{{ $church->name }}</span>
                     <span class="text-[10px] text-white/70 uppercase tracking-widest font-medium">Sinode GKSBS</span>
@@ -98,8 +106,8 @@
         <!-- Church Banner & Sacred Kop Header -->
         <header class="mb-10 sm:mb-12 text-center space-y-4">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gksbs-forest/10 border border-gksbs-forest/20 text-gksbs-forest shadow-xs">
-                @if ($church->logo_url)
-                    <img src="{{ $church->logo_url }}" alt="{{ $church->name }}" class="h-10 w-auto max-w-[50px] object-contain">
+                @if ($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="{{ $church->name }}" class="h-10 w-auto max-w-[50px] object-contain">
                 @else
                     <svg viewBox="0 0 100 100" class="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>

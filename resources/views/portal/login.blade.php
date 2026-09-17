@@ -1,10 +1,14 @@
+@php
+    $setting = \App\Models\LandingSetting::current();
+    $cmsLogo = $setting?->logo_url ?: null;
+@endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Masuk — Portal Mandiri Jemaat GKSBS</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>Masuk — Portal Mandiri Jemaat {{ $setting?->hero_title ?? 'GKSBS' }}</title>
+    <link rel="icon" href="{{ $setting?->favicon_url ?: asset('favicon.ico') }}">
 
     <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,24 +62,28 @@
     <header class="py-4 px-6 border-b border-slate-100 bg-white/80 backdrop-blur-md">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-2.5 text-gksbs-forest hover:text-gksbs-ocean transition">
-                <div class="h-8 w-8 flex-shrink-0 flex items-center justify-center p-1 rounded-full bg-gksbs-forest/10 border border-gksbs-forest/20">
-                    <svg viewBox="0 0 100 100" class="w-6 h-6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
-                        <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
-                        <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
-                        <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
-                        <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
-                        <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
-                        <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
-                        <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
-                        <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                @if($cmsLogo)
+                    <img src="{{ $cmsLogo }}" alt="Logo Gereja" class="h-8 w-auto max-w-[120px] object-contain flex-shrink-0">
+                @else
+                    <div class="h-8 w-8 flex-shrink-0 flex items-center justify-center p-1 rounded-full bg-gksbs-forest/10 border border-gksbs-forest/20">
+                        <svg viewBox="0 0 100 100" class="w-6 h-6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
+                            <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
+                            <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
+                            <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                            <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                            <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
+                            <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
+                            <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                            <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                @endif
                 <span class="font-heading text-lg font-semibold tracking-tight text-gksbs-forest-deep">
-                    GKSBS
+                    {{ $setting?->hero_title ?: 'GKSBS' }}
                 </span>
             </a>
             <a href="{{ url('/') }}" class="text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-gksbs-forest transition flex items-center gap-1">
@@ -93,19 +101,25 @@
                 <!-- Subtle background radial highlight -->
                 <div class="absolute inset-0 bg-radial from-white/10 via-transparent to-transparent pointer-events-none"></div>
 
-                <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xs border border-white/20 mb-3 shadow-inner">
-                    <svg viewBox="0 0 100 100" class="w-9 h-9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
-                        <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
-                        <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
-                        <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
-                        <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
-                        <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
-                        <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                @if($cmsLogo)
+                    <div class="inline-flex items-center justify-center mb-3">
+                        <img src="{{ $cmsLogo }}" alt="Logo" class="h-14 w-auto max-w-[140px] object-contain drop-shadow">
+                    </div>
+                @else
+                    <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xs border border-white/20 mb-3 shadow-inner">
+                        <svg viewBox="0 0 100 100" class="w-9 h-9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
+                            <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
+                            <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
+                            <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                            <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                            <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                            <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                @endif
                 <h1 class="font-heading text-2xl font-bold tracking-tight text-white">Portal Mandiri Jemaat</h1>
                 <p class="text-white/70 text-xs mt-1.5 font-light">Pelayanan Administrasi & Warta Jemaat Digital</p>
 

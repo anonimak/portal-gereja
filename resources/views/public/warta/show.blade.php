@@ -1,3 +1,6 @@
+@php
+    $setting = \App\Models\LandingSetting::current();
+@endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
@@ -5,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $publication->title }} — {{ $content['church_name'] ?? $church->name }}</title>
     <meta name="description" content="Edisi resmi Warta Jemaat {{ $content['church_name'] ?? $church->name }} — {{ $publication->title }}">
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" href="{{ $setting?->favicon_url ?: asset('favicon.ico') }}">
 
     <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,7 +87,8 @@
             
             @php
                 $churchInfo = $content['church'] ?? [];
-                $logoUrl = $churchInfo['logo_url'] ?? $church->logo_url ?? null;
+                $setting = \App\Models\LandingSetting::current();
+                $logoUrl = $setting?->logo_url ?: ($churchInfo['logo_url'] ?? ($church->logo_url ?? null));
                 $synodName = $churchInfo['synod'] ?? $church->synod ?? 'Sinode Gereja Kristen Sumatera Bagian Selatan (GKSBS)';
             @endphp
 

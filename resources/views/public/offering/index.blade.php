@@ -1,11 +1,15 @@
+@php
+    $setting = \App\Models\LandingSetting::current();
+    $offeringLogo = $setting?->logo_url ?: ($selectedChurch?->logo_url ?? null);
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Persembahan & Donasi Digital — {{ $selectedChurch?->name ?? 'GKSBS Filadelfia' }}</title>
-    <meta name="description" content="Kanal persembahan digital resmi (QRIS & Transfer Bank) jemaat {{ $selectedChurch?->name ?? 'GKSBS Filadelfia' }}">
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>Persembahan & Donasi Digital — {{ $selectedChurch?->name ?? ($setting?->hero_title ?? 'GKSBS Filadelfia') }}</title>
+    <meta name="description" content="Kanal persembahan digital resmi (QRIS & Transfer Bank) jemaat {{ $selectedChurch?->name ?? ($setting?->hero_title ?? 'GKSBS Filadelfia') }}">
+    <link rel="icon" href="{{ $setting?->favicon_url ?: asset('favicon.ico') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,19 +58,23 @@
     <header class="bg-gksbs-forest-deep text-white border-b border-white/10 sticky top-0 z-40 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-3">
-                <div class="h-9 w-9 p-1 rounded-full bg-black/25 border border-white/20 flex items-center justify-center">
-                    <svg viewBox="0 0 100 100" class="w-7 h-7" fill="none">
-                        <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#22c55e"/>
-                        <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#4ade80"/>
-                        <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#4ade80"/>
-                        <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
-                        <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
-                        <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
-                        <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-                        <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
-                        <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="3" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                @if ($offeringLogo)
+                    <img src="{{ $offeringLogo }}" alt="{{ $selectedChurch?->name ?? 'GKSBS' }}" class="h-9 w-auto max-w-[120px] object-contain flex-shrink-0">
+                @else
+                    <div class="h-9 w-9 p-1 rounded-full bg-black/25 border border-white/20 flex items-center justify-center">
+                        <svg viewBox="0 0 100 100" class="w-7 h-7" fill="none">
+                            <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#22c55e"/>
+                            <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#4ade80"/>
+                            <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#4ade80"/>
+                            <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                            <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                            <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                            <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                @endif
                 <div>
                     <span class="font-heading text-lg font-bold block leading-none">{{ $selectedChurch?->name ?? 'GKSBS Filadelfia' }}</span>
                     <span class="text-[10px] text-white/75 uppercase tracking-widest">Kanal Persembahan Digital</span>

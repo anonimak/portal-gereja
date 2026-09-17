@@ -3,7 +3,7 @@
 @section('title', 'Persembahan Jemaat')
 
 @section('content')
-<div class="space-y-6 sm:space-y-8">
+<div class="space-y-6 sm:space-y-8 w-full">
     <!-- Header Page -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
