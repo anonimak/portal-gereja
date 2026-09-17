@@ -14,8 +14,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -139,6 +140,38 @@ class ChurchResource extends Resource
                             ->maxLength(255),
                     ])
                     ->columns(3),
+
+                Section::make('Pengaturan Persembahan & Donasi Digital')
+                    ->description('Barcode QRIS dan nomor rekening bank resmi jemaat untuk persembahan digital.')
+                    ->schema([
+                        FileUpload::make('qris_image_path')
+                            ->label('Barcode QRIS Gereja')
+                            ->disk('public')
+                            ->directory('church-qris')
+                            ->visibility('public')
+                            ->image()
+                            ->maxSize(2048)
+                            ->helperText('Unggah gambar QRIS statis resmi gereja.'),
+
+                        Repeater::make('bank_accounts')
+                            ->label('Daftar Rekening Bank Jemaat')
+                            ->schema([
+                                TextInput::make('bank_name')
+                                    ->label('Nama Bank')
+                                    ->placeholder('BCA / Mandiri / BRI / Bank Lampung')
+                                    ->required(),
+                                TextInput::make('account_number')
+                                    ->label('Nomor Rekening')
+                                    ->required(),
+                                TextInput::make('account_holder')
+                                    ->label('Atas Nama Rekening')
+                                    ->required(),
+                            ])
+                            ->columns(3)
+                            ->defaultItems(1)
+                            ->collapsible()
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 

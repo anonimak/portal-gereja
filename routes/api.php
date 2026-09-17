@@ -27,5 +27,9 @@ Route::prefix('portal')->group(function (): void {
         // Warta Jemaat
         Route::get('/warta', [MemberPortalApiController::class, 'warta'])->name('api.portal.warta');
         Route::get('/warta/{publication}', [MemberPortalApiController::class, 'showWarta'])->name('api.portal.warta.show');
+
+        // Persembahan & Donasi
+        Route::get('/offerings', [MemberPortalApiController::class, 'offerings'])->name('api.portal.offerings');
+        Route::post('/offerings', [MemberPortalApiController::class, 'storeOffering'])->name('api.portal.offerings.store');
     });
 });
