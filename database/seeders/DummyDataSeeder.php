@@ -18,6 +18,7 @@ use App\Models\GuidanceProgram;
 use App\Models\GuidanceSession;
 use App\Models\GuidanceSessionMember;
 use App\Models\GuidanceTemplate;
+use App\Models\LandingSetting;
 use App\Models\Marriage;
 use App\Models\MeetingMinutes;
 use App\Models\Member;
@@ -41,6 +42,9 @@ class DummyDataSeeder extends Seeder
      */
     public function run(): void
     {
+        // 0. Pengaturan Landing Page Resmi CMS Default (GKSBS Filadelfia Pusat)
+        LandingSetting::createDefault(null);
+
         // 1. Pastikan gereja-gereja demo sudah ada
         $churchesData = [
             [

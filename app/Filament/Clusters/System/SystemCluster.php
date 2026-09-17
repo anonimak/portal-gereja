@@ -17,10 +17,11 @@ class SystemCluster extends Cluster
     protected static ?string $clusterBreadcrumb = 'System';
 
     /**
-     * Cluster System (Church, User, Official) HANYA untuk Super Admin.
+     * Cluster System (Church, User, Official, CMS, Migrasi Data).
+     * Super Admin memiliki akses penuh; Church Admin dapat mengakses halaman yang diizinkan (Migrasi Data).
      */
     public static function canAccess(): bool
     {
-        return auth()->check() && auth()->user()->role === 'super_admin';
+        return auth()->check() && in_array(auth()->user()->role, ['super_admin', 'church_admin'], true);
     }
 }

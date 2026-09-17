@@ -3,6 +3,7 @@
 use App\Filament\Pages\LaporanRapatPage;
 use App\Http\Controllers\BaptisAnakExportController;
 use App\Http\Controllers\BirthRecordExportController;
+use App\Http\Controllers\DataMigrationController;
 use App\Http\Controllers\DeathRecordExportController;
 use App\Http\Controllers\MarriageExportController;
 use App\Http\Controllers\MemberCsvController;
@@ -11,12 +12,14 @@ use App\Http\Controllers\SidiExportController;
 use App\Http\Controllers\WartaJemaatExportController;
 use App\Http\Controllers\WartaPublishController;
 use App\Models\Church;
+use App\Models\LandingSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $churches = Church::all();
+    $setting = LandingSetting::current();
 
-    return view('welcome', compact('churches'));
+    return view('welcome', compact('churches', 'setting'));
 });
 
 // Nama route 'login' untuk middleware auth — redirect ke halaman login Filament.
@@ -105,6 +108,17 @@ Route::middleware(['auth', 'verified'])
         Route::get('/export', [MemberCsvController::class, 'export'])->name('csv-jemaat.export');
         Route::post('/import', [MemberCsvController::class, 'import'])->name('csv-jemaat.import');
     });
+
+// Rute Terproteksi Panel: Unduh Template & Eksekusi Import Excel (SPEC §6.1)
+Route::middleware(['auth', 'verified'])->prefix('admin/migrasi-data')->group(function () {
+    Route::get('/template/{module}', [DataMigrationController::class, 'downloadTemplate'])
+        ->where('module', 'jemaat|keuangan|pelayan|acara')
+        ->name('data-migration.template');
+
+    Route::post('/import/{module}', [DataMigrationController::class, 'import'])
+        ->where('module', 'jemaat|keuangan|pelayan|acara')
+        ->name('data-migration.import');
+});
 
 // Task 4: Portal Mandiri Anggota (Web Interface)
 Route::prefix('portal')->group(function () {

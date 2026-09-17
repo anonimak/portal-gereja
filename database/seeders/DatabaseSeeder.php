@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Church;
+use App\Models\LandingSetting;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -100,6 +101,9 @@ class DatabaseSeeder extends Seeder
                 'role' => 'super_admin',
             ]
         );
+
+        // Seed default landing page CMS setting (GKSBS Filadelfia Pusat)
+        LandingSetting::createDefault(null);
 
         // Seed dummy demo data
         $this->call(DummyDataSeeder::class);
