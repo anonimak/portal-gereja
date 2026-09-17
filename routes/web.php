@@ -16,8 +16,8 @@ use App\Models\LandingSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    $churches = Church::all();
-    $setting = LandingSetting::current();
+    $churches = \Illuminate\Support\Facades\Schema::hasTable('churches') ? Church::all() : collect();
+    $setting = \Illuminate\Support\Facades\Schema::hasTable('landing_settings') ? LandingSetting::current() : null;
 
     return view('welcome', compact('churches', 'setting'));
 });
