@@ -56,7 +56,7 @@ Agenda PR #38 (Rombak Warta, Rombak Laporan Rapat, Laporan Jemaat/Kehadiran/Sakr
 - **[Jumat, 4 Sep] 16:00 — Task 3: Kalender ibadah + event berulang (recurring schedule)** — ✅ **DONE di master (PR #45)**.
 - **[Jumat, 4 Sep] (setelah Task 3) 16:00+ — Task 4: Portal mandiri anggota / API (baca data diri, jadwal, warta)** — ✅ **DONE di master (PR #46)**.
 - **[Jumat, 4 Sep] Slot Lanjutan — Task 5: Laporan Keuangan Warta per Kantong (Cash Flow Tunai) & Standarisasi Kop Header Dokumen Gereja** — ✅ **DONE di master (PR #47)**.
-- **[Jumat, 4 Sep] Slot Lanjutan — Task 6: Redesign Landing Page ala Sonship Bay Ridge (Maranatha Parallax, Font Caudex/Raleway, Palet Hijau-Biru Sinode GKSBS)** — Owner: Pixel (UI/UX) — Branch: `byte/landing-page-sonship-style` — PR: baru — DoD: CI + Vera + merge.
+- **[Jumat, 4 Sep] Slot Lanjutan — Task 6: Redesign Landing Page ala Sonship Bay Ridge (Maranatha Parallax, Font Caudex/Raleway, Palet Hijau-Biru Sinode GKSBS)** — ✅ **DONE di master (PR #49)**.
 - **[Jumat, 4 Sep] Setelah slot selesai:** ritual update `SCHEDULE.md` → **build preview web** dari master terbaru.
 
 ---
