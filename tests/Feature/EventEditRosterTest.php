@@ -66,17 +66,15 @@ class EventEditRosterTest extends TestCase
         ]);
 
         // Roster 1: Member
-        EventRoster::create([
+        $this->event->rosters()->create([
             'church_id' => $this->church->id,
-            'event_id' => $this->event->id,
             'member_id' => $member->id,
             'role_id' => $role->id,
         ]);
 
         // Roster 2: Official
-        EventRoster::create([
+        $this->event->rosters()->create([
             'church_id' => $this->church->id,
-            'event_id' => $this->event->id,
             'official_id' => $official->id,
             'role_id' => $role->id,
         ]);
