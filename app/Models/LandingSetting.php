@@ -18,6 +18,8 @@ final class LandingSetting extends Model
         'church_id',
         'hero_title',
         'hero_subtitle',
+        'logo_path',
+        'favicon_path',
         'hero_tagline',
         'theme_verse',
         'theme_verse_ref',
@@ -41,6 +43,10 @@ final class LandingSetting extends Model
         'contact_address',
         'contact_maps_url',
         'social_links',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'og_image_path',
         'is_active',
     ];
 
@@ -128,6 +134,21 @@ final class LandingSetting extends Model
     public function getPortalBgUrlAttribute(): ?string
     {
         return $this->portal_bg_path ? Storage::disk('public')->url($this->portal_bg_path) : null;
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+    }
+
+    public function getFaviconUrlAttribute(): ?string
+    {
+        return $this->favicon_path ? Storage::disk('public')->url($this->favicon_path) : null;
+    }
+
+    public function getOgImageUrlAttribute(): ?string
+    {
+        return $this->og_image_path ? Storage::disk('public')->url($this->og_image_path) : null;
     }
 
     public function getPastoralPhotoUrlAttribute(): ?string

@@ -70,8 +70,8 @@ class ManageLandingPage extends Page implements HasForms
 
         return $form
             ->schema([
-                Section::make('1. Hero Banner & Tema Tahunan')
-                    ->description('Identitas utama gereja pada bagian header dan hero banner.')
+                Section::make('1. Identitas Utama & Logo/Favicon')
+                    ->description('Identitas gereja, logo resmi, favicon tab browser, dan tema tahunan.')
                     ->schema([
                         TextInput::make('hero_title')
                             ->label('Nama Utama Gereja')
@@ -82,10 +82,27 @@ class ManageLandingPage extends Page implements HasForms
                             ->label('Subjudul / Sinode')
                             ->maxLength(255),
 
+                        FileUpload::make('logo_path')
+                            ->label('Logo Resmi Gereja (Header & Footer)')
+                            ->disk('public')
+                            ->directory('landing/branding')
+                            ->image()
+                            ->maxSize(1024)
+                            ->helperText('Format PNG transparan atau SVG/JPG, maks 1MB. Jika kosong, sistem menggunakan lambang resmi Sinode GKSBS.'),
+
+                        FileUpload::make('favicon_path')
+                            ->label('Favicon Tab Browser')
+                            ->disk('public')
+                            ->directory('landing/branding')
+                            ->image()
+                            ->maxSize(512)
+                            ->helperText('Format ICO/PNG/SVG rasio 1:1 (32x32 atau 64x64 px), maks 512KB.'),
+
                         TextInput::make('hero_tagline')
                             ->label('Tagline / Slogan Gereja')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->columnSpanFull(),
 
                         Textarea::make('theme_verse')
                             ->label('Ayat Tema Tahunan')
@@ -96,14 +113,6 @@ class ManageLandingPage extends Page implements HasForms
                             ->label('Referensi Ayat Tema')
                             ->placeholder('Roma 12:10')
                             ->maxLength(100),
-
-                        FileUpload::make('hero_banner_path')
-                            ->label('Banner Hero (Latar Belakang)')
-                            ->disk('public')
-                            ->directory('landing/banners')
-                            ->image()
-                            ->maxSize(2048)
-                            ->helperText('Format JPG/PNG/WebP, maks 2MB. Dianjurkan resolusi lebar (1920x800).'),
                     ])
                     ->columns(2),
 
@@ -283,6 +292,39 @@ class ManageLandingPage extends Page implements HasForms
                         Toggle::make('is_active')
                             ->label('Status Aktif Landing Page')
                             ->default(true),
+                    ])
+                    ->columns(2),
+
+                Section::make('7. Pengaturan SEO & Metadata Sosial Media (Open Graph)')
+                    ->description('Optimalisasi mesin pencari (Google SEO) dan tampilan pratinjau saat tautan website dibagikan di media sosial / chat (WhatsApp, Telegram, dll).')
+                    ->schema([
+                        TextInput::make('meta_title')
+                            ->label('Judul SEO (Meta Title)')
+                            ->placeholder('GKSBS Filadelfia — Gereja Kristen Sumatera Bagian Selatan')
+                            ->maxLength(255)
+                            ->helperText('Judul yang tampil di tab browser dan hasil pencarian Google.'),
+
+                        TextInput::make('meta_keywords')
+                            ->label('Kata Kunci SEO (Meta Keywords)')
+                            ->placeholder('GKSBS, gereja, kristen, warta jemaat, sumbagsel, lampung')
+                            ->maxLength(255)
+                            ->helperText('Pisahkan dengan tanda koma (,).'),
+
+                        Textarea::make('meta_description')
+                            ->label('Deskripsi SEO (Meta Description)')
+                            ->rows(3)
+                            ->maxLength(500)
+                            ->columnSpanFull()
+                            ->helperText('Ringkasan deskripsi website untuk hasil pencarian Google (150-160 karakter direkomendasikan).'),
+
+                        FileUpload::make('og_image_path')
+                            ->label('Gambar Pratinjau Sosial (Open Graph / Thumbnail)')
+                            ->disk('public')
+                            ->directory('landing/seo')
+                            ->image()
+                            ->maxSize(2048)
+                            ->columnSpanFull()
+                            ->helperText('Gambar thumbnail yang tampil saat tautan website dibagikan di WhatsApp, Telegram, Facebook, dan Twitter. Dianjurkan ukuran 1200x630 px, maks 2MB.'),
                     ])
                     ->columns(2),
             ])

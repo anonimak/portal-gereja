@@ -16,9 +16,31 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $churchName }} — Gereja Kristen Sumatera Bagian Selatan</title>
-    <meta name="description" content="Website Resmi {{ $churchName }}. {{ $setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus' }}">
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>{{ $setting->meta_title ?: ($churchName . ' — Gereja Kristen Sumatera Bagian Selatan') }}</title>
+    <meta name="description" content="{{ $setting->meta_description ?: ('Website Resmi ' . $churchName . '. ' . ($setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus')) }}">
+    @if(!empty($setting->meta_keywords))
+        <meta name="keywords" content="{{ $setting->meta_keywords }}">
+    @endif
+    <meta name="author" content="{{ $churchName }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $setting->meta_title ?: ($churchName . ' — Gereja Kristen Sumatera Bagian Selatan') }}">
+    <meta property="og:description" content="{{ $setting->meta_description ?: ($setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus') }}">
+    <meta property="og:image" content="{{ $setting->og_image_url ?: ($setting->hero_banner_url ?: $heroBg) }}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url()->current() }}">
+    <meta name="twitter:title" content="{{ $setting->meta_title ?: ($churchName . ' — Gereja Kristen Sumatera Bagian Selatan') }}">
+    <meta name="twitter:description" content="{{ $setting->meta_description ?: ($setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus') }}">
+    <meta name="twitter:image" content="{{ $setting->og_image_url ?: ($setting->hero_banner_url ?: $heroBg) }}">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{{ $setting->favicon_url ?: asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ $setting->favicon_url ?: asset('favicon.ico') }}">
 
     <!-- Google Fonts: Playfair Display (Serif Elegan & Luwes) & Plus Jakarta Sans (Modern & Human) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -216,22 +238,26 @@
                 
                 <!-- Left: GKSBS Logo & Simple Clean Title (Single Line) -->
                 <a href="#beranda" class="flex items-center gap-3 group text-white flex-shrink-0">
-                    <div class="h-10 w-10 flex-shrink-0 flex items-center justify-center p-1 rounded-full bg-black/30 backdrop-blur-xs border border-white/20 group-hover:border-gksbs-leaf-light transition">
-                        <svg viewBox="0 0 100 100" class="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
-                            <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
-                            <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
-                            <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
-                            <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
-                            <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
-                            <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
-                            <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
-                            <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-                            <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
-                            <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
-                            <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
+                    @if($setting->logo_url)
+                        <img src="{{ $setting->logo_url }}" alt="{{ $churchName }}" class="h-10 w-auto max-w-[160px] object-contain flex-shrink-0 drop-shadow-sm">
+                    @else
+                        <div class="h-10 w-10 flex-shrink-0 flex items-center justify-center p-1 rounded-full bg-black/30 backdrop-blur-xs border border-white/20 group-hover:border-gksbs-leaf-light transition">
+                            <svg viewBox="0 0 100 100" class="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
+                                <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
+                                <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
+                                <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                                <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                                <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
+                                <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
+                                <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                                <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    @endif
                     <span class="font-heading text-xl sm:text-2xl font-semibold tracking-tight text-white leading-none whitespace-nowrap">
                         {{ $churchName }}
                     </span>
