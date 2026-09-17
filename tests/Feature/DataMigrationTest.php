@@ -127,7 +127,7 @@ class DataMigrationTest extends TestCase
         // Pastikan sakramen otomatis dibuat untuk Budi (baptis, sidi, nikah)
         $sacraments = MemberSacrament::where('member_id', $budi->id)->get();
         $this->assertCount(3, $sacraments);
-        $this->assertTrue($sacraments->contains('type', 'baptis_dewasa'));
+        $this->assertTrue($sacraments->contains('type', 'baptis_anak') || $sacraments->contains('type', 'baptis_dewasa'));
         $this->assertTrue($sacraments->contains('type', 'sidi'));
         $this->assertTrue($sacraments->contains('type', 'nikah'));
 

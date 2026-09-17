@@ -1,20 +1,22 @@
 @php
     $setting = $setting ?? \App\Models\LandingSetting::current();
     $churches = $churches ?? \App\Models\Church::all();
+    $churchName = $setting->hero_title ?? 'GKSBS Filadelfia';
+    $heroBg = $setting->hero_banner_url ?: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=1920&auto=format&fit=crop';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $setting->hero_title ?? 'GKSBS Filadelfia' }} — Website Resmi Gereja</title>
-    <meta name="description" content="Website Resmi {{ $setting->hero_title ?? 'GKSBS Filadelfia' }}. {{ $setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus' }}">
+    <title>{{ $churchName }} — Gereja Kristen Sumatera Bagian Selatan</title>
+    <meta name="description" content="Website Resmi {{ $churchName }}. {{ $setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus' }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <!-- Google Fonts: Plus Jakarta Sans & Cormorant Garamond / Serif for sacred scriptures -->
+    <!-- Google Fonts: Caudex (Headings) & Raleway (Body/UI) ala sonshipbayridge.church -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caudex:ital,wght@0,400;0,700;1,400&family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,47 +25,23 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-                        cinzel: ['"Cinzel"', 'serif'],
+                        heading: ['"Caudex"', 'Georgia', 'serif'],
+                        sans: ['"Raleway"', 'system-ui', 'sans-serif'],
                     },
                     colors: {
-                        sacred: {
-                            50: '#fdfbf7',
-                            100: '#f7f4ed',
-                            200: '#eee7d8',
-                            300: '#dfd2b9',
-                            400: '#cdb694',
-                            500: '#b89970',
-                            600: '#9d7c54',
-                            700: '#7e6141',
-                            800: '#644e36',
-                            900: '#52402e',
-                        },
-                        amber: {
-                            50: '#fffbeb',
-                            100: '#fef3c7',
-                            200: '#fde68a',
-                            300: '#fcd34d',
-                            400: '#fbbf24',
-                            500: '#f59e0b',
-                            600: '#d97706',
-                            700: '#b45309',
-                            800: '#92400e',
-                            900: '#78350f',
-                            950: '#451a03',
-                        },
-                        emerald: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            200: '#bbf7d0',
-                            300: '#86efac',
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
+                        gksbs: {
+                            forest: '#0f3d2e',
+                            'forest-deep': '#09251c',
+                            'forest-dark': '#061a13',
+                            leaf: '#16a34a',
+                            'leaf-light': '#22c55e',
+                            ocean: '#0369a1',
+                            'ocean-deep': '#0c4a6e',
+                            sky: '#0284c7',
+                            'sky-light': '#38bdf8',
+                            teal: '#0d5d54',
+                            sand: '#fbfcfd',
+                            cream: '#f4f6f5',
                         }
                     }
                 }
@@ -72,116 +50,224 @@
     </script>
     <style>
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Raleway', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+            background-color: #fbfcfd;
+            margin: 0;
+            padding: 0;
         }
-        .font-serif-sacred {
-            font-family: 'Playfair Display', Georgia, serif;
+        .font-heading {
+            font-family: 'Caudex', Georgia, 'Times New Roman', serif;
         }
-        .font-cinzel {
-            font-family: 'Cinzel', serif;
+        
+        /* Sonship Bay Ridge Parallax Sections */
+        .parallax-window {
+            position: relative;
+            background-attachment: fixed;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .pattern-crosses {
-            background-image: radial-gradient(rgba(180, 83, 9, 0.07) 1px, transparent 1px);
-            background-size: 28px 28px;
+        .parallax-window.viewport-height {
+            min-height: 100vh;
         }
-        .glass-header {
-            background: rgba(255, 255, 255, 0.94);
+        
+        /* Mobile fallback for background-attachment */
+        @media (max-width: 1024px) {
+            .parallax-window {
+                background-attachment: scroll !important;
+            }
+        }
+
+        /* Fixed Header scroll transitions */
+        #church-navbar {
+            transition: background-color 0.35s ease, padding 0.35s ease, box-shadow 0.35s ease, backdrop-filter 0.35s ease;
+        }
+        #church-navbar.scrolled {
+            background-color: rgba(9, 37, 28, 0.95);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        #church-navbar.not-scrolled {
+            background-color: transparent;
+            padding-top: 1.75rem;
+            padding-bottom: 1.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Classic Sonship Outline Button */
+        .sonship-btn-outline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            border-radius: 9999px;
+            border: 1.5px solid rgba(255, 255, 255, 0.7);
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            transition: all 0.25s ease;
+        }
+        .sonship-btn-outline:hover {
+            border-color: #22c55e;
+            background-color: #16a34a;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3);
+        }
+
+        .sonship-btn-solid-blue {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            border-radius: 9999px;
+            border: 1.5px solid #0284c7;
+            background-color: #0369a1;
+            color: #ffffff;
+            transition: all 0.25s ease;
+        }
+        .sonship-btn-solid-blue:hover {
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);
+        }
+
+        .sonship-btn-dark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            border-radius: 9999px;
+            border: 1.5px solid #0f3d2e;
+            background-color: #0f3d2e;
+            color: #ffffff;
+            transition: all 0.25s ease;
+        }
+        .sonship-btn-dark:hover {
+            background-color: #16a34a;
+            border-color: #16a34a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.25);
+        }
+
+        /* Subtle scroll pulse */
+        @keyframes scrollBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(8px); }
+            60% { transform: translateY(4px); }
+        }
+        .scroll-indicator {
+            animation: scrollBounce 2.5s infinite;
         }
     </style>
 </head>
-<body class="bg-[#faf8f5] text-slate-800 antialiased selection:bg-amber-600 selection:text-white min-h-screen flex flex-col">
+<body class="antialiased selection:bg-gksbs-ocean selection:text-white">
 
     <!-- ================================================================= -->
-    <!-- 1. HEADER & STICKY NAVBAR -->
+    <!-- 1. FIXED HEADER & NAVIGATION (Maranatha Theme Style) -->
     <!-- ================================================================= -->
-    <header class="sticky top-0 z-50 glass-header border-b border-amber-900/10 transition-all duration-200 shadow-sm">
+    <header id="church-navbar" class="fixed top-0 left-0 right-0 z-50 not-scrolled">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
+            <div class="flex items-center justify-between">
                 
-                <!-- Logo & Church Brand -->
-                <a href="#beranda" class="flex items-center gap-3.5 group">
-                    <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-700 via-amber-600 to-amber-800 flex items-center justify-center text-white shadow-md shadow-amber-900/20 group-hover:scale-105 transition-transform duration-200 ring-2 ring-amber-500/30">
-                        <!-- Cross Icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-amber-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="2" x2="12" y2="22"></line>
-                            <line x1="6" y1="8" x2="18" y2="8"></line>
+                <!-- GKSBS Authentic Logo & Church Identity -->
+                <a href="#beranda" class="flex items-center gap-3.5 group text-white">
+                    <!-- Vector Logo Sinode GKSBS: 7 Daun Cengkeh Hijau + 4 Garis Biru Sumbagsel -->
+                    <div class="h-12 w-12 flex-shrink-0 flex items-center justify-center p-1 rounded-xl bg-black/25 backdrop-blur-xs border border-white/20 group-hover:border-gksbs-leaf-light transition">
+                        <svg viewBox="0 0 100 100" class="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- 7 Daun Cengkeh (Warna Hijau Tua & Hijau Muda) -->
+                            <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
+                            <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
+                            <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
+                            <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                            <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                            <path d="M18 44 C8 54 14 65 31 60 C26 48 22 44 18 44Z" fill="#166534"/>
+                            <path d="M82 44 C92 54 86 65 69 60 C74 48 78 44 82 44Z" fill="#166534"/>
+                            <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                            <!-- 4 Garis Biru Identitas 4 Propinsi Sumbagsel (Lampung, Sumsel, Bengkulu, Jambi) -->
+                            <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round"/>
+                            <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                                {{ $setting->hero_title ?? 'GKSBS Filadelfia' }}
-                            </span>
-                            <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-100 text-amber-900 border border-amber-200">
-                                Gereja Induk
-                            </span>
-                        </div>
-                        <p class="text-[11px] sm:text-xs text-amber-800/80 font-medium tracking-normal line-clamp-1">
-                            {{ $setting->hero_subtitle ?? 'Gereja Kristen Sumatera Bagian Selatan' }}
-                        </p>
+                        <span class="block font-heading text-xl sm:text-2xl font-bold tracking-tight text-white leading-none">
+                            {{ $churchName }}
+                        </span>
+                        <span class="block text-[10px] sm:text-[11px] text-white/80 uppercase tracking-[0.2em] font-semibold mt-1">
+                            {{ $setting->hero_subtitle ?? 'Sinode GKSBS — Klasis Tulang Bawang' }}
+                        </span>
                     </div>
                 </a>
 
-                <!-- Desktop Nav Anchor Links -->
-                <nav class="hidden xl:flex items-center space-x-1 font-medium text-sm">
-                    <a href="#beranda" class="px-3 py-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50/80 rounded-xl transition">
+                <!-- Desktop Navigation Links (Uppercase, letter-spaced ala sonshipbayridge.church) -->
+                <nav class="hidden lg:flex items-center space-x-7 text-xs font-semibold uppercase tracking-[0.18em]">
+                    <a href="#beranda" class="text-white/90 hover:text-white hover:underline underline-offset-8 transition">
                         Beranda
                     </a>
-                    <a href="#sambutan" class="px-3 py-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50/80 rounded-xl transition">
+                    <a href="#sambutan" class="text-white/90 hover:text-white hover:underline underline-offset-8 transition">
                         Sambutan
                     </a>
-                    <a href="#profil" class="px-3 py-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50/80 rounded-xl transition">
-                        Profil & Visi
-                    </a>
-                    <a href="#pos-pelayanan" class="px-3 py-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50/80 rounded-xl transition">
+                    <a href="#pos-pelayanan" class="text-white/90 hover:text-white hover:underline underline-offset-8 transition">
                         Pos Pelayanan
                     </a>
-                    <a href="#jadwal" class="px-3 py-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50/80 rounded-xl transition">
+                    <a href="#jadwal" class="text-white/90 hover:text-white hover:underline underline-offset-8 transition">
                         Jadwal Ibadah
                     </a>
-                    <a href="#kontak" class="px-3 py-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50/80 rounded-xl transition">
+                    <a href="#profil" class="text-white/90 hover:text-white hover:underline underline-offset-8 transition">
+                        Profil & Visi
+                    </a>
+                    <a href="#kontak" class="text-white/90 hover:text-white hover:underline underline-offset-8 transition">
                         Kontak
                     </a>
                 </nav>
 
-                <!-- Two Dedicated Access Doors: Portal Jemaat & Area Majelis -->
-                <div class="hidden sm:flex items-center gap-2.5">
-                    <!-- 1. Pintu Portal Jemaat -->
+                <!-- Access Door Buttons -->
+                <div class="hidden sm:flex items-center gap-3">
+                    <!-- Portal Jemaat -->
                     <a href="{{ route('portal.login') }}" 
-                       title="Bagi warga jemaat untuk akses data diri, keluarga, dan sakramen"
-                       class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-amber-600 bg-white hover:bg-amber-50/50 text-slate-800 hover:text-amber-900 font-semibold text-xs sm:text-sm shadow-xs transition duration-150 group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-700 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
+                       class="inline-flex items-center justify-center px-4 py-2 rounded-full border border-white/70 hover:border-gksbs-leaf-light bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold uppercase tracking-[0.15em] backdrop-blur-xs transition">
                         <span>Portal Jemaat</span>
                     </a>
 
-                    <!-- 2. Pintu Area Majelis -->
+                    <!-- Area Majelis -->
                     <a href="{{ url('/admin/login') }}" 
-                       title="Bagi majelis dan admin untuk mengelola administrasi & pelayanan"
-                       class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-100 font-semibold text-xs sm:text-sm shadow-sm transition duration-150 group border border-slate-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400 group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
+                       class="inline-flex items-center justify-center px-4 py-2 rounded-full border border-gksbs-sky bg-gksbs-ocean hover:bg-gksbs-sky text-white text-[11px] font-bold uppercase tracking-[0.15em] transition shadow-sm">
                         <span>Area Majelis</span>
                     </a>
                 </div>
 
                 <!-- Mobile Hamburger Button -->
-                <div class="flex items-center gap-2 xl:hidden">
-                    <a href="{{ route('portal.login') }}" class="sm:hidden inline-flex items-center px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800">
-                        Jemaat
-                    </a>
-                    <button type="button" id="mobile-menu-button" aria-label="Buka Menu Navigasi" class="p-2.5 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none transition">
-                        <svg id="icon-menu-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-2 lg:hidden">
+                    <button type="button" id="mobile-toggle" aria-label="Buka Menu" class="p-2 text-white hover:text-gksbs-sky focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                        <svg id="icon-menu-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -189,113 +275,85 @@
             </div>
         </div>
 
-        <!-- Mobile Navigation Menu -->
-        <div id="mobile-menu" class="hidden xl:hidden border-t border-slate-200 bg-white/98 px-4 pt-3 pb-6 space-y-3 shadow-lg">
-            <div class="flex flex-col space-y-1 text-sm font-medium">
-                <a href="#beranda" class="mobile-nav-link px-3 py-2.5 rounded-lg text-slate-700 hover:bg-amber-50 hover:text-amber-800">Beranda</a>
-                <a href="#sambutan" class="mobile-nav-link px-3 py-2.5 rounded-lg text-slate-700 hover:bg-amber-50 hover:text-amber-800">Sambutan Gembala</a>
-                <a href="#profil" class="mobile-nav-link px-3 py-2.5 rounded-lg text-slate-700 hover:bg-amber-50 hover:text-amber-800">Profil & Visi Misi</a>
-                <a href="#pos-pelayanan" class="mobile-nav-link px-3 py-2.5 rounded-lg text-slate-700 hover:bg-amber-50 hover:text-amber-800">Pos Pelayanan & Cabang</a>
-                <a href="#jadwal" class="mobile-nav-link px-3 py-2.5 rounded-lg text-slate-700 hover:bg-amber-50 hover:text-amber-800">Jadwal Ibadah Induk</a>
-                <a href="#kontak" class="mobile-nav-link px-3 py-2.5 rounded-lg text-slate-700 hover:bg-amber-50 hover:text-amber-800">Kontak & Lokasi</a>
-            </div>
-
-            <div class="pt-3 border-t border-slate-200 grid grid-cols-1 gap-2">
-                <a href="{{ route('portal.login') }}" class="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border border-slate-300 bg-amber-50/50 text-amber-950 font-semibold text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    Portal Jemaat (Warga Gereja)
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-gksbs-forest-deep/98 border-t border-white/10 px-6 py-6 space-y-4 text-xs uppercase tracking-[0.18em] font-semibold text-white">
+            <a href="#beranda" class="block py-2 hover:text-gksbs-leaf-light">Beranda</a>
+            <a href="#sambutan" class="block py-2 hover:text-gksbs-leaf-light">Sambutan Gembala</a>
+            <a href="#pos-pelayanan" class="block py-2 hover:text-gksbs-leaf-light">Pos Pelayanan</a>
+            <a href="#jadwal" class="block py-2 hover:text-gksbs-leaf-light">Jadwal Ibadah</a>
+            <a href="#profil" class="block py-2 hover:text-gksbs-leaf-light">Profil & Visi Misi</a>
+            <a href="#kontak" class="block py-2 hover:text-gksbs-leaf-light">Kontak & Lokasi</a>
+            <div class="pt-4 border-t border-white/10 flex flex-col gap-2.5">
+                <a href="{{ route('portal.login') }}" class="w-full text-center py-2.5 rounded-full border border-white/60 text-white font-bold">
+                    Portal Jemaat
                 </a>
-                <a href="{{ url('/admin/login') }}" class="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-slate-900 text-amber-200 font-semibold text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    Area Majelis & Presbiter
+                <a href="{{ url('/admin/login') }}" class="w-full text-center py-2.5 rounded-full bg-gksbs-ocean text-white font-bold">
+                    Area Majelis
                 </a>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow">
+    <main>
 
         <!-- ================================================================= -->
-        <!-- 2. HERO & AYAT TEMA TAHUNAN -->
+        <!-- 2. HERO PARALLAX SECTION (Viewport Height with Dark Overlay) -->
         <!-- ================================================================= -->
-        <section id="beranda" class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-stone-900 text-white pt-16 pb-24 lg:pt-24 lg:pb-32">
-            
-            @if($setting->hero_banner_url)
-                <div class="absolute inset-0 z-0 opacity-25 mix-blend-overlay bg-cover bg-center" style="background-image: url('{{ $setting->hero_banner_url }}');"></div>
-            @endif
+        <section id="beranda" class="parallax-window viewport-height" style="background-image: url('{{ $heroBg }}');">
+            <!-- Atmospheric GKSBS Forest-Blue Vignette Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-b from-[#061812]/80 via-[#09251c]/70 to-[#071d2b]/85 pointer-events-none"></div>
 
-            <!-- Decorative Light Glows -->
-            <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute bottom-0 right-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-24 pb-16">
                 
-                <!-- Badge Tema Tahunan -->
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-950/80 border border-amber-600/40 text-amber-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-inner">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                    <span>Tema Pelayanan & Ayat Perenungan</span>
+                <!-- Sinodal Badge -->
+                <div class="inline-block mb-6">
+                    <span class="text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-gksbs-leaf-light/95 border-b border-gksbs-leaf-light/40 pb-1">
+                        Gereja Kristen Sumatera Bagian Selatan
+                    </span>
                 </div>
 
-                <!-- Scripture Verse (Sacred Display) -->
-                <div class="max-w-4xl mx-auto mb-8">
-                    <div class="relative inline-block px-4 sm:px-8">
-                        <span class="absolute -top-8 -left-2 sm:-left-6 text-6xl sm:text-7xl text-amber-500/30 font-serif select-none">“</span>
-                        <blockquote class="font-serif-sacred text-2xl sm:text-3xl md:text-4xl text-amber-50/95 leading-relaxed sm:leading-relaxed font-normal tracking-tight italic">
-                            {{ $setting->theme_verse ?? 'Hendaklah kamu saling mengasihi sebagai saudara dan saling mendahului dalam memberi hormat.' }}
-                        </blockquote>
-                        <span class="absolute -bottom-10 -right-2 sm:-right-6 text-6xl sm:text-7xl text-amber-500/30 font-serif select-none">”</span>
-                    </div>
-
+                <!-- Sacred Scripture Quote (Caudex Serif) -->
+                <div class="max-w-3xl mx-auto mb-8 sm:mb-10">
+                    <blockquote class="font-heading text-2xl sm:text-4xl md:text-5xl font-light leading-snug tracking-tight text-white/95 italic">
+                        “{{ $setting->theme_verse ?? 'Hendaklah kamu saling mengasihi sebagai saudara dan saling mendahului dalam memberi hormat.' }}”
+                    </blockquote>
                     @if($setting->theme_verse_ref)
                         <div class="mt-4">
-                            <span class="inline-block px-4 py-1 rounded-md bg-amber-900/40 text-amber-400 font-medium text-sm tracking-wider uppercase border border-amber-800/40">
-                                {{ $setting->theme_verse_ref }}
+                            <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-sky-light/90">
+                                — {{ $setting->theme_verse_ref }} —
                             </span>
                         </div>
                     @endif
                 </div>
 
-                <!-- Church Identity & Tagline -->
-                <div class="pt-4 border-t border-slate-800/80 max-w-3xl mx-auto">
-                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
-                        {{ $setting->hero_title ?? 'GKSBS Filadelfia' }}
+                <!-- Church Title -->
+                <div class="mb-10 max-w-2xl mx-auto">
+                    <h1 class="font-heading text-3xl sm:text-5xl md:text-6xl font-normal tracking-wide text-white mb-3">
+                        {{ $churchName }}
                     </h1>
-                    <p class="text-sm sm:text-base text-amber-200/90 font-medium mb-3">
-                        {{ $setting->hero_subtitle ?? 'Gereja Kristen Sumatera Bagian Selatan — Klasis Tulang Bawang' }}
-                    </p>
-                    <p class="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                    <p class="text-sm sm:text-base text-white/80 font-normal tracking-wide max-w-xl mx-auto">
                         {{ $setting->hero_tagline ?? 'Gereja yang Terbuka, Oikumenis, dan Berakar dalam Kasih Kristus' }}
                     </p>
                 </div>
 
-                <!-- Hero Action Buttons -->
-                <div class="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-                    <a href="#jadwal" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm shadow-lg shadow-amber-600/30 transition transform hover:-translate-y-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                        <span>Jadwal Ibadah Induk</span>
+                <!-- Action Buttons (Sonship Bay Ridge circular/pill style) -->
+                <div class="flex flex-wrap items-center justify-center gap-4">
+                    <a href="#jadwal" class="sonship-btn-outline">
+                        <span>Jadwal Ibadah</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </a>
-
-                    <a href="#pos-pelayanan" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur-sm border border-white/20 transition transform hover:-translate-y-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
+                    <a href="#pos-pelayanan" class="sonship-btn-solid-blue">
                         <span>Pos Pelayanan & Warta</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </a>
+                </div>
 
-                    <a href="{{ route('portal.login') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-700/80 hover:bg-emerald-700 text-emerald-50 font-semibold text-sm border border-emerald-500/30 transition transform hover:-translate-y-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <!-- Scroll Down Arrow -->
+                <div class="mt-14 sm:mt-16 flex justify-center">
+                    <a href="#lokasi-ringkas" aria-label="Gulir ke bawah" class="scroll-indicator inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white/70 hover:text-white hover:border-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7-7-7"></path>
                         </svg>
-                        <span>Portal Jemaat</span>
                     </a>
                 </div>
 
@@ -303,285 +361,187 @@
         </section>
 
         <!-- ================================================================= -->
-        <!-- 3. SAMBUTAN GEMBALA / MAJELIS JEMAAT -->
+        <!-- 3. LOCATION & SERVICE HOURS DETAILS BAR (Sonship Map/Location Bar) -->
         <!-- ================================================================= -->
-        <section id="sambutan" class="py-20 lg:py-24 bg-white border-b border-amber-900/5 pattern-crosses">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                <div class="max-w-3xl mx-auto text-center mb-12">
-                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-100/70 px-3 py-1 rounded-full mb-3">
-                        Warta Gembala
-                    </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                        {{ $setting->pastoral_greeting_title ?? 'Salam Kasih & Damai Sejahtera Kristus' }}
-                    </h2>
-                    <div class="w-20 h-1 bg-amber-600 mx-auto mt-4 rounded-full"></div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center max-w-6xl mx-auto bg-[#fdfbf7] p-6 sm:p-10 lg:p-12 rounded-3xl border border-amber-900/10 shadow-sm">
+        <section id="lokasi-ringkas" class="bg-gksbs-forest-deep text-white border-y border-white/10 relative z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
                     
-                    <!-- Pastoral Photo & Profile Card -->
-                    <div class="lg:col-span-5 flex flex-col items-center text-center">
-                        <div class="relative group">
-                            <!-- Golden Frame Ring -->
-                            <div class="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-700 opacity-30 blur-sm group-hover:opacity-50 transition duration-300"></div>
-                            
-                            <div class="relative w-56 h-64 sm:w-64 sm:h-72 rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-white flex items-center justify-center">
-                                @if($setting->pastoral_photo_url)
-                                    <img src="{{ $setting->pastoral_photo_url }}" alt="{{ $setting->pastoral_greeting_author }}" class="w-full h-full object-cover">
-                                @else
-                                    <!-- Fallback Pastoral Illustration / Reverent Icon -->
-                                    <div class="w-full h-full bg-gradient-to-br from-slate-900 via-amber-950 to-slate-950 flex flex-col items-center justify-center p-6 text-amber-200">
-                                        <div class="w-20 h-20 rounded-full bg-amber-900/50 border border-amber-500/40 flex items-center justify-center mb-3 text-amber-300">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                <line x1="12" y1="2" x2="12" y2="22"></line>
-                                                <line x1="6" y1="8" x2="18" y2="8"></line>
-                                            </svg>
-                                        </div>
-                                        <span class="text-xs font-semibold text-amber-300/80 uppercase tracking-widest">Pelayanan Pastoral</span>
-                                        <span class="text-[11px] text-amber-400/60 mt-1">Majelis Jemaat</span>
-                                    </div>
-                                @endif
+                    <!-- Location Column -->
+                    <div class="md:col-span-5 space-y-2 border-b md:border-b-0 md:border-r border-white/10 pb-6 md:pb-0 md:pr-8">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-gksbs-leaf-light block">
+                            Lokasi & Alamat Gedung Gereja
+                        </span>
+                        <h2 class="font-heading text-2xl font-light text-white leading-snug">
+                            {{ $churchName }}
+                        </h2>
+                        <p class="text-xs sm:text-sm text-white/70 leading-relaxed">
+                            {{ $setting->contact_address ?? 'Jl. Gereja Filadelfia No. 01, Kel. Candimas, Kec. Natar, Lampung Selatan' }}
+                        </p>
+                        <div class="pt-2">
+                            <a href="{{ $setting->contact_maps_url ?: 'https://maps.google.com/?q=' . urlencode($churchName) }}" 
+                               target="_blank" rel="noopener noreferrer" 
+                               class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gksbs-sky-light hover:text-white transition">
+                                <span>Petunjuk Arah (Google Maps)</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Worship Times Column -->
+                    <div class="md:col-span-4 space-y-2 border-b md:border-b-0 md:border-r border-white/10 pb-6 md:pb-0 md:pr-8">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-gksbs-sky-light block">
+                            Waktu Ibadah Minggu
+                        </span>
+                        <div class="space-y-1 text-sm text-white/90">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">Ibadah Raya Minggu</span>
+                                <span class="font-bold text-white">08:30 WIB</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-white/70">
+                                <span>Sekolah Minggu & Tunas</span>
+                                <span>08:30 WIB</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-white/70">
+                                <span>Ibadah Pemuda / Remaja</span>
+                                <span>Sabtu 17:00 WIB</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="mt-6">
-                            <h3 class="text-xl font-bold text-slate-900">
+                    <!-- Contact & Bulletins Column -->
+                    <div class="md:col-span-3 space-y-3">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-white/60 block">
+                            Sekretariat & Hubungan
+                        </span>
+                        <p class="text-xs text-white/80">
+                            Telepon/WA: <span class="font-semibold text-white">{{ $setting->contact_phone ?? '0812-7200-1234' }}</span>
+                        </p>
+                        <p class="text-xs text-white/80 truncate">
+                            Email: <span class="text-white">{{ $setting->contact_email ?? 'sekretariat@gksbs-filadelfia.org' }}</span>
+                        </p>
+                        <div class="pt-1">
+                            <a href="#pos-pelayanan" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-[11px] uppercase tracking-wider font-semibold text-white transition">
+                                <span>Warta Jemaat Terbaru &rarr;</span>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- 4. SAMBUTAN GEMBALA (Dark Parallax Section 2 - Bible & Pulpit) -->
+        <!-- ================================================================= -->
+        <section id="sambutan" class="parallax-window" style="background-image: url('https://images.unsplash.com/photo-1504052434569-70ad5836ab65?q=80&w=1920&auto=format&fit=crop');">
+            <!-- Dark Forest-Blue Overlay -->
+            <div class="absolute inset-0 bg-[#061a13]/85 pointer-events-none"></div>
+
+            <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 text-center text-white">
+                
+                <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-leaf-light block mb-3">
+                    Warta & Salam Penggembalaan
+                </span>
+
+                <h2 class="font-heading text-3xl sm:text-5xl font-light text-white mb-6">
+                    {{ $setting->pastoral_greeting_title ?? 'Salam Kasih & Damai Sejahtera Kristus' }}
+                </h2>
+
+                <div class="w-16 h-0.5 bg-gksbs-leaf mx-auto mb-10"></div>
+
+                <!-- Pastoral Message Box -->
+                <div class="max-w-3xl mx-auto text-left bg-black/40 backdrop-blur-md p-8 sm:p-12 rounded-3xl border border-white/15 shadow-2xl">
+                    <div class="font-heading text-lg sm:text-xl text-white/90 leading-relaxed italic font-light space-y-4">
+                        {!! nl2br(e($setting->pastoral_greeting_content ?? "Selamat datang di Website Resmi GKSBS Filadelfia. Kami bersyukur atas kasih karunia Tuhan yang terus memelihara persekutuan jemaat induk dan seluruh jemaat kelompok (Candimas, Trimulyo, Margomulyo). Mari bersama kita terus berakar di dalam Kristus, bertumbuh dalam iman, dan berbuah lebat bagi masyarakat sekitar.")) !!}
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-heading text-lg font-bold text-white">
                                 {{ $setting->pastoral_greeting_author ?? 'Pdt. Samuel Kriswanto, M.Th.' }}
                             </h3>
-                            <p class="text-sm font-semibold text-amber-800 mt-0.5">
+                            <p class="text-xs uppercase tracking-widest text-gksbs-leaf-light font-semibold mt-0.5">
                                 {{ $setting->pastoral_greeting_author_role ?? 'Ketua Majelis Jemaat GKSBS Filadelfia' }}
                             </p>
-                            <span class="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-medium bg-amber-100/80 text-amber-900 border border-amber-200/80">
-                                <span class="w-2 h-2 rounded-full bg-amber-600"></span>
-                                Gereja Induk & Pos Pelayanan
-                            </span>
+                        </div>
+                        <div class="font-heading text-lg font-normal tracking-wider text-white/50 italic">
+                            Soli Deo Gloria
                         </div>
                     </div>
-
-                    <!-- Pastoral Greeting Message -->
-                    <div class="lg:col-span-7 space-y-5 text-slate-700 leading-relaxed text-base sm:text-lg">
-                        <div class="relative pl-6 border-l-4 border-amber-600">
-                            <div class="prose prose-slate max-w-none text-slate-700 leading-relaxed font-normal">
-                                {!! nl2br(e($setting->pastoral_greeting_content ?? "Selamat datang di Website Resmi GKSBS Filadelfia. Kami bersyukur atas kasih karunia Tuhan yang terus memelihara persekutuan jemaat induk dan seluruh jemaat kelompok (Candimas, Trimulyo, Margomulyo). Mari bersama kita terus berakar di dalam Kristus, bertumbuh dalam iman, dan berbuah lebat bagi masyarakat sekitar.")) !!}
-                            </div>
-                        </div>
-
-                        <div class="pt-4 border-t border-amber-900/10 flex items-center justify-between">
-                            <p class="text-xs sm:text-sm text-slate-500 italic">
-                                "Tuhan memberkati dan melindungi persekutuan kita senantiasa."
-                            </p>
-                            <div class="font-serif-sacred text-amber-900 font-bold text-lg opacity-80">
-                                Soli Deo Gloria
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
             </div>
         </section>
 
         <!-- ================================================================= -->
-        <!-- 4. PROFIL, VISI & MISI GEREJA -->
+        <!-- 5. POS PELAYANAN & WARTA JEMAAT (Light Parallax Section 3) -->
         <!-- ================================================================= -->
-        <section id="profil" class="py-20 lg:py-24 bg-[#faf8f5] border-b border-amber-900/5">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="pos-pelayanan" class="parallax-window" style="background-image: url('https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=1920&auto=format&fit=crop');">
+            <!-- Frosted Light Overlay -->
+            <div class="absolute inset-0 bg-[#f8faf9]/94 backdrop-blur-xs pointer-events-none"></div>
+
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
                 
                 <div class="max-w-3xl mx-auto text-center mb-16">
-                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-100/70 px-3 py-1 rounded-full mb-3">
-                        Identitas & Panggilan
+                    <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-teal block mb-3">
+                        Persekutuan Cabang & Wilayah
                     </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                        Profil, Visi, dan Misi Gereja
-                    </h2>
-                    <p class="mt-3 text-slate-600 text-sm sm:text-base">
-                        Mengenal perjalanan persekutuan dan arah panggilan pelayanan gereja di tengah jemaat dan masyarakat luas.
-                    </p>
-                    <div class="w-20 h-1 bg-amber-600 mx-auto mt-4 rounded-full"></div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    
-                    <!-- Kartu 1: Profil & Sejarah Singkat -->
-                    <div class="bg-white p-7 sm:p-8 rounded-2xl border border-amber-900/10 shadow-sm hover:shadow-md transition duration-200 flex flex-col">
-                        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-6 ring-4 ring-amber-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 21h18"></path>
-                                <path d="M5 21V7l7-4 7 4v14"></path>
-                                <path d="M9 10a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v11H9V10z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-900 mb-3">Tentang Gereja</h3>
-                        <p class="text-slate-600 text-sm sm:text-base leading-relaxed flex-grow">
-                            {{ $setting->about_summary ?? 'GKSBS Filadelfia adalah persekutuan jemaat yang berpusat pada Kristus, melayani warga jemaat di wilayah Lampung Tengah dan sekitarnya melalui jemaat induk dan pos-pos pelayanan kelompok jemaat secara terpadu dan guyub.' }}
-                        </p>
-                        <div class="mt-6 pt-4 border-t border-slate-100 text-xs font-semibold text-amber-800">
-                            Klasis Tulang Bawang — Sinode GKSBS
-                        </div>
-                    </div>
-
-                    <!-- Kartu 2: Visi Gereja -->
-                    <div class="bg-white p-7 sm:p-8 rounded-2xl border border-amber-900/10 shadow-sm hover:shadow-md transition duration-200 flex flex-col relative overflow-hidden">
-                        <div class="absolute -right-8 -top-8 w-28 h-28 bg-amber-50 rounded-full blur-xl pointer-events-none"></div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center mb-6 ring-4 ring-emerald-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="m12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
-                                <path d="M2 12h20"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-900 mb-3">Visi Pelayanan</h3>
-                        <blockquote class="text-slate-700 text-sm sm:text-base leading-relaxed italic font-serif-sacred border-l-2 border-emerald-600 pl-4 py-1 flex-grow">
-                            “{{ $setting->vision ?? 'Terwujudnya jemaat yang mandiri, misioner, berwawasan oikumenis, serta menjadi berkat nyata bagi sesama ciptaan Tuhan.' }}”
-                        </blockquote>
-                        <div class="mt-6 pt-4 border-t border-slate-100 text-xs font-semibold text-emerald-800">
-                            Arah Strategis & Panggilan Iman
-                        </div>
-                    </div>
-
-                    <!-- Kartu 3: Misi Gereja -->
-                    <div class="bg-white p-7 sm:p-8 rounded-2xl border border-amber-900/10 shadow-sm hover:shadow-md transition duration-200 flex flex-col">
-                        <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center mb-6 ring-4 ring-slate-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m9 11 3 3L22 4"></path>
-                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-900 mb-3">Misi Pelayanan</h3>
-                        
-                        <ul class="space-y-3 text-sm text-slate-600 flex-grow">
-                            @if(!empty($setting->missions) && is_array($setting->missions))
-                                @foreach($setting->missions as $mission)
-                                    @php
-                                        $missionText = is_array($mission) ? ($mission['item'] ?? '') : $mission;
-                                    @endphp
-                                    @if(filled($missionText))
-                                        <li class="flex items-start gap-2.5">
-                                            <span class="mt-1 w-4 h-4 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 text-[10px] font-bold">
-                                                ✓
-                                            </span>
-                                            <span class="leading-normal">{{ $missionText }}</span>
-                                        </li>
-                                    @endif
-                                @endforeach
-                            @else
-                                <li class="flex items-start gap-2.5">
-                                    <span class="mt-1 w-4 h-4 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 text-[10px] font-bold">✓</span>
-                                    <span>Menyelenggarakan peribadahan dan pembinaan rohani yang berakar pada Firman Allah.</span>
-                                </li>
-                                <li class="flex items-start gap-2.5">
-                                    <span class="mt-1 w-4 h-4 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 text-[10px] font-bold">✓</span>
-                                    <span>Mempererat persaudaraan dan solidaritas antar jemaat kelompok secara guyub dan inklusif.</span>
-                                </li>
-                                <li class="flex items-start gap-2.5">
-                                    <span class="mt-1 w-4 h-4 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 text-[10px] font-bold">✓</span>
-                                    <span>Mengembangkan karya pelayanan diakonia holistik bagi jemaat dan masyarakat luas.</span>
-                                </li>
-                            @endif
-                        </ul>
-
-                        <div class="mt-6 pt-4 border-t border-slate-100 text-xs font-semibold text-slate-700">
-                            Komitmen Nyata Persekutuan
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-        </section>
-
-        <!-- ================================================================= -->
-        <!-- 5. POS PELAYANAN & JEMAAT KELOMPOK CABANG -->
-        <!-- ================================================================= -->
-        <section id="pos-pelayanan" class="py-20 lg:py-24 bg-white border-b border-amber-900/5">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                <div class="max-w-3xl mx-auto text-center mb-16">
-                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full mb-3">
-                        Persekutuan Cabang
-                    </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                    <h2 class="font-heading text-3xl sm:text-5xl font-light text-slate-900 tracking-tight">
                         Pos Pelayanan & Kelompok Jemaat
                     </h2>
-                    <p class="mt-3 text-slate-600 text-sm sm:text-base">
-                        GKSBS Filadelfia melayani jemaat induk dan pos-pos pelayanan kelompok: Candimas, Trimulyo, dan Margomulyo. Akses warta mingguan publik untuk setiap cabang di bawah ini.
+                    <div class="w-16 h-0.5 bg-gksbs-teal mx-auto my-5"></div>
+                    <p class="text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+                        GKSBS Filadelfia menaungi jemaat induk serta pos-pos pelayanan kelompok yang tersebar. Warga jemaat dapat langsung mengakses edisi warta mingguan terpublikasi di bawah ini.
                     </p>
-                    <div class="w-20 h-1 bg-emerald-700 mx-auto mt-4 rounded-full"></div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     @forelse($churches as $church)
-                        <div class="bg-[#fdfbf7] rounded-2xl border border-amber-900/10 p-6 sm:p-7 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+                        <div class="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/80 p-7 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
                             <div>
-                                <!-- Church Header & Code -->
-                                <div class="flex items-start justify-between gap-3 mb-4">
-                                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"></path>
-                                            <path d="M2 20h20"></path>
-                                            <path d="M14 12v.01"></path>
-                                            <path d="M10 12v.01"></path>
-                                        </svg>
-                                    </div>
-                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                                <div class="flex items-center justify-between gap-3 mb-5">
+                                    <span class="inline-block px-3 py-1 rounded-full text-[10px] font-extrabold tracking-widest uppercase bg-gksbs-forest/10 text-gksbs-forest border border-gksbs-forest/20">
                                         {{ $church->code }}
+                                    </span>
+                                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                        Wilayah Pelayanan
                                     </span>
                                 </div>
 
-                                <h3 class="text-lg sm:text-xl font-bold text-slate-900 mb-2 group-hover:text-amber-800 transition-colors">
+                                <h3 class="font-heading text-xl sm:text-2xl font-bold text-slate-900 mb-3 group-hover:text-gksbs-ocean transition-colors">
                                     {{ $church->name }}
                                 </h3>
 
-                                <!-- Contact Info -->
-                                <div class="space-y-2 text-xs sm:text-sm text-slate-600 mt-4 mb-6">
+                                <div class="space-y-2 text-xs sm:text-sm text-slate-600 mt-4 mb-6 leading-relaxed">
                                     @if($church->address)
-                                        <div class="flex items-start gap-2.5">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                                                <circle cx="12" cy="10" r="3"></circle>
-                                            </svg>
-                                            <span class="line-clamp-2 leading-relaxed">{{ $church->address }}</span>
-                                        </div>
+                                        <p class="line-clamp-2">
+                                            <strong class="text-slate-700">Alamat:</strong> {{ $church->address }}
+                                        </p>
                                     @endif
-
                                     @if($church->phone)
-                                        <div class="flex items-center gap-2.5">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-700 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                            </svg>
-                                            <span>{{ $church->phone }}</span>
-                                        </div>
+                                        <p>
+                                            <strong class="text-slate-700">Telepon:</strong> {{ $church->phone }}
+                                        </p>
                                     @endif
-
                                     @if($church->email)
-                                        <div class="flex items-center gap-2.5">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-700 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-                                            </svg>
-                                            <span class="truncate">{{ $church->email }}</span>
-                                        </div>
+                                        <p class="truncate">
+                                            <strong class="text-slate-700">Email:</strong> {{ $church->email }}
+                                        </p>
                                     @endif
                                 </div>
                             </div>
 
-                            <!-- Dedicated Button: Baca Warta Jemaat -->
-                            <div class="pt-4 border-t border-amber-900/10">
+                            <div class="pt-5 border-t border-slate-100">
                                 <a href="{{ route('public.warta.index', $church->code) }}" 
-                                   class="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm shadow-xs transition duration-150">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
-                                        <path d="M6 6h10"></path>
-                                        <path d="M6 10h10"></path>
-                                        <path d="M6 14h7"></path>
-                                    </svg>
+                                   class="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-full bg-gksbs-forest hover:bg-gksbs-leaf text-white font-bold text-xs uppercase tracking-[0.16em] shadow-sm transition">
                                     <span>Baca Warta Jemaat</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                 </a>
                             </div>
                         </div>
                     @empty
-                        <div class="col-span-3 text-center py-12 bg-slate-50 rounded-2xl border border-slate-200">
+                        <div class="col-span-3 text-center py-12 bg-white/70 rounded-2xl border border-slate-200">
                             <p class="text-slate-500">Belum ada data kelompok cabang yang terdaftar.</p>
                         </div>
                     @endforelse
@@ -591,308 +551,303 @@
         </section>
 
         <!-- ================================================================= -->
-        <!-- 6. JADWAL IBADAH RUTIN INDUK -->
+        <!-- 6. JADWAL IBADAH (Dark Parallax Section 4 - Altar & Candles) -->
         <!-- ================================================================= -->
-        <section id="jadwal" class="py-20 lg:py-24 bg-[#faf8f5] border-b border-amber-900/5">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="jadwal" class="parallax-window" style="background-image: url('https://images.unsplash.com/photo-1478147427282-58a87a120781?q=80&w=1920&auto=format&fit=crop');">
+            <!-- Deep Ocean-Forest Overlay -->
+            <div class="absolute inset-0 bg-[#071922]/88 pointer-events-none"></div>
+
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 text-white">
                 
                 <div class="max-w-3xl mx-auto text-center mb-16">
-                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-100/70 px-3 py-1 rounded-full mb-3">
+                    <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-sky-light block mb-3">
                         Liturgi & Peribadahan
                     </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                        Jadwal Ibadah Rutin Gereja Induk
+                    <h2 class="font-heading text-3xl sm:text-5xl font-light text-white tracking-tight">
+                        Jadwal Ibadah Rutin Gereja
                     </h2>
-                    <p class="mt-3 text-slate-600 text-sm sm:text-base">
-                        Mari bersekutu bersama memuji dan memuliakan nama Tuhan dalam ibadah raya minggu dan ibadah kategorial.
+                    <div class="w-16 h-0.5 bg-gksbs-sky mx-auto my-5"></div>
+                    <p class="text-sm sm:text-base text-white/80 font-normal leading-relaxed">
+                        Kami menyambut hangat kehadiran setiap saudara seiman dan tamu untuk bersekutu bersama dalam kehangatan kasih Kristus.
                     </p>
-                    <div class="w-20 h-1 bg-amber-600 mx-auto mt-4 rounded-full"></div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     @if(!empty($setting->worship_schedules) && is_array($setting->worship_schedules))
                         @foreach($setting->worship_schedules as $schedule)
-                            <div class="bg-white rounded-2xl p-6 border border-amber-900/10 shadow-sm hover:shadow-md transition duration-150 flex flex-col justify-between">
+                            <div class="bg-black/45 backdrop-blur-md rounded-2xl p-7 border border-white/15 hover:border-gksbs-sky/50 transition duration-200 flex flex-col justify-between">
                                 <div>
                                     <div class="flex items-center justify-between gap-2 mb-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                        <span class="text-xs font-bold uppercase tracking-widest text-gksbs-sky-light">
                                             {{ $schedule['day'] ?? 'Minggu' }}
                                         </span>
-                                        <span class="text-xs font-semibold text-slate-500">
+                                        <span class="text-xs text-white/60 font-semibold">
                                             {{ $schedule['time'] ?? '08:30 WIB' }}
                                         </span>
                                     </div>
-                                    <h3 class="text-lg font-bold text-slate-900 mb-2">
+                                    <h3 class="font-heading text-xl font-bold text-white mb-2">
                                         {{ $schedule['name'] ?? 'Ibadah Raya' }}
                                     </h3>
                                 </div>
-
-                                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-700 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                    <span class="truncate">{{ $schedule['location'] ?? 'Gedung Gereja Utama' }}</span>
+                                <div class="mt-6 pt-4 border-t border-white/10 text-xs text-white/70">
+                                    {{ $schedule['location'] ?? 'Gedung Gereja Utama' }}
                                 </div>
                             </div>
                         @endforeach
                     @else
                         <!-- Default Fallback Schedules -->
-                        <div class="bg-white rounded-2xl p-6 border border-amber-900/10 shadow-sm">
-                            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 mb-4">Minggu</span>
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Ibadah Raya Minggu Induk</h3>
-                            <p class="text-xs text-slate-500 font-semibold mb-3">08:30 WIB</p>
-                            <p class="text-xs text-slate-600">Gedung Gereja Utama</p>
+                        <div class="bg-black/45 backdrop-blur-md rounded-2xl p-7 border border-white/15">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gksbs-sky-light block mb-1">Minggu · 08:30 WIB</span>
+                            <h3 class="font-heading text-xl font-bold text-white mb-2">Ibadah Raya Minggu Induk</h3>
+                            <p class="text-xs text-white/70">Gedung Gereja Utama</p>
                         </div>
-                        <div class="bg-white rounded-2xl p-6 border border-amber-900/10 shadow-sm">
-                            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 mb-4">Minggu</span>
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Kebaktian Anak / Sekolah Minggu</h3>
-                            <p class="text-xs text-slate-500 font-semibold mb-3">08:30 WIB</p>
-                            <p class="text-xs text-slate-600">Gedung Serbaguna</p>
+                        <div class="bg-black/45 backdrop-blur-md rounded-2xl p-7 border border-white/15">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gksbs-sky-light block mb-1">Minggu · 08:30 WIB</span>
+                            <h3 class="font-heading text-xl font-bold text-white mb-2">Sekolah Minggu Anak</h3>
+                            <p class="text-xs text-white/70">Gedung Serbaguna</p>
                         </div>
-                        <div class="bg-white rounded-2xl p-6 border border-amber-900/10 shadow-sm">
-                            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 mb-4">Sabtu</span>
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Ibadah Pemuda & Remaja</h3>
-                            <p class="text-xs text-slate-500 font-semibold mb-3">17:00 WIB</p>
-                            <p class="text-xs text-slate-600">Ruang Pemuda</p>
+                        <div class="bg-black/45 backdrop-blur-md rounded-2xl p-7 border border-white/15">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gksbs-sky-light block mb-1">Sabtu · 17:00 WIB</span>
+                            <h3 class="font-heading text-xl font-bold text-white mb-2">Ibadah Pemuda & Remaja</h3>
+                            <p class="text-xs text-white/70">Ruang Persekutuan Pemuda</p>
                         </div>
-                        <div class="bg-white rounded-2xl p-6 border border-amber-900/10 shadow-sm">
-                            <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 mb-4">Rabu</span>
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Persekutuan Doa & PA</h3>
-                            <p class="text-xs text-slate-500 font-semibold mb-3">18:30 WIB</p>
-                            <p class="text-xs text-slate-600">Gedung Gereja</p>
+                        <div class="bg-black/45 backdrop-blur-md rounded-2xl p-7 border border-white/15">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gksbs-sky-light block mb-1">Rabu · 18:30 WIB</span>
+                            <h3 class="font-heading text-xl font-bold text-white mb-2">Persekutuan Doa & PA</h3>
+                            <p class="text-xs text-white/70">Ruang Konsistori</p>
                         </div>
                     @endif
                 </div>
 
-                <!-- Callout Ibadah -->
-                <div class="mt-12 bg-amber-900/5 rounded-2xl p-6 border border-amber-900/10 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
-                    <div class="flex items-center gap-3 text-left">
-                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-900">Persekutuan Terbuka untuk Seluruh Warga</h4>
-                            <p class="text-xs text-slate-600">Ibadah diselenggarakan secara langsung dengan sukacita dan kehangatan persaudaraan sejati.</p>
-                        </div>
-                    </div>
-                    <a href="#kontak" class="text-xs font-semibold text-amber-800 hover:text-amber-900 hover:underline flex items-center gap-1 flex-shrink-0">
-                        Hubungi Sekretariat Ibadah &rarr;
-                    </a>
-                </div>
-
             </div>
         </section>
 
         <!-- ================================================================= -->
-        <!-- 7. DUA PINTU AKSES PORTAL (CALL TO ACTION) -->
+        <!-- 7. PROFIL, VISI & MISI GEREJA (Light Parallax Section 5) -->
         <!-- ================================================================= -->
-        <section class="py-16 bg-slate-900 text-white relative overflow-hidden">
-            <div class="absolute inset-0 bg-radial from-amber-950/30 to-slate-950 pointer-events-none"></div>
-            
-            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="max-w-3xl mx-auto text-center mb-12">
-                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                        Layanan Terpadu Warga Jemaat & Tata Kelola Majelis
-                    </h2>
-                    <p class="mt-2 text-slate-400 text-sm sm:text-base">
-                        Pilih pintu akses sesuai peruntukan untuk masuk ke sistem informasi gereja.
-                    </p>
-                </div>
+        <section id="profil" class="parallax-window" style="background-image: url('https://images.unsplash.com/photo-1519491050282-cf00c82424b4?q=80&w=1920&auto=format&fit=crop');">
+            <!-- Light Altar Linen Overlay -->
+            <div class="absolute inset-0 bg-[#fbfcfd]/95 backdrop-blur-xs pointer-events-none"></div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                    
-                    <!-- Pintu 1: Portal Jemaat -->
-                    <div class="bg-slate-800/80 rounded-2xl p-7 sm:p-8 border border-slate-700 shadow-xl flex flex-col justify-between hover:border-amber-500/50 transition">
-                        <div>
-                            <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center mb-5 border border-amber-500/30">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-2">Portal Mandiri Jemaat</h3>
-                            <p class="text-slate-300 text-sm leading-relaxed mb-6">
-                                Dikhususkan bagi seluruh warga jemaat terdaftar untuk memeriksa profil data keluarga, riwayat sakramen (baptis, sidi, perkawinan), jadwal keterlibatan pelayanan, serta membaca warta gereja secara personal.
-                            </p>
-                        </div>
-                        <a href="{{ route('portal.login') }}" class="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm transition">
-                            <span>Masuk ke Portal Jemaat</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                        </a>
-                    </div>
-
-                    <!-- Pintu 2: Area Majelis & Pengurus -->
-                    <div class="bg-slate-800/80 rounded-2xl p-7 sm:p-8 border border-slate-700 shadow-xl flex flex-col justify-between hover:border-amber-500/50 transition">
-                        <div>
-                            <div class="w-12 h-12 rounded-xl bg-slate-700 text-amber-300 flex items-center justify-center mb-5 border border-slate-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-2">Area Majelis & Administrasi</h3>
-                            <p class="text-slate-300 text-sm leading-relaxed mb-6">
-                                Pintu masuk resmi bagi Pendeta, Penatua, Diaken, Badan Pengurus Kelompok, dan Staf Sekretariat/Keuangan untuk tata kelola data jemaat, perbendaharaan, penerbitan warta jemaat, dan CMS website.
-                            </p>
-                        </div>
-                        <a href="{{ url('/admin/login') }}" class="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition">
-                            <span>Masuk Area Majelis</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                        </a>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- ================================================================= -->
-        <!-- 8. KONTAK SEKRETARIAT & PETA LOKASI -->
-        <!-- ================================================================= -->
-        <section id="kontak" class="py-20 lg:py-24 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
                 
                 <div class="max-w-3xl mx-auto text-center mb-16">
-                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-100/70 px-3 py-1 rounded-full mb-3">
-                        Layanan Sekretariat
+                    <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-forest block mb-3">
+                        Identitas & Panggilan Pelayanan
                     </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                        Kontak & Lokasi Gereja
+                    <h2 class="font-heading text-3xl sm:text-5xl font-light text-slate-900 tracking-tight">
+                        Profil, Visi, dan Misi Gereja
                     </h2>
-                    <p class="mt-3 text-slate-600 text-sm sm:text-base">
-                        Sekretariat Majelis Jemaat siap melayani kebutuhan informasi peribadahan, pastoral, dan administrasi jemaat.
+                    <div class="w-16 h-0.5 bg-gksbs-forest mx-auto my-5"></div>
+                    <p class="text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+                        Mengenal perjalanan persekutuan dan arah panggilan iman GKSBS di tengah masyarakat.
                     </p>
-                    <div class="w-20 h-1 bg-amber-600 mx-auto mt-4 rounded-full"></div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     
-                    <!-- Informasi Kontak Resmi -->
-                    <div class="lg:col-span-6 bg-[#fdfbf7] p-8 rounded-2xl border border-amber-900/10 space-y-6">
-                        <h3 class="text-xl font-bold text-slate-900 border-b border-amber-900/10 pb-4">
-                            Sekretariat Majelis Jemaat Induk
-                        </h3>
-
-                        <div class="space-y-4 text-sm sm:text-base text-slate-700">
-                            <!-- Alamat -->
-                            <div class="flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Alamat Gereja</span>
-                                    <p class="mt-0.5 font-medium leading-relaxed">
-                                        {{ $setting->contact_address ?? 'Jl. Gereja Filadelfia No. 01, Kel. Candimas, Kec. Natar, Lampung Selatan' }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Telepon -->
-                            <div class="flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Telepon & WhatsApp</span>
-                                    <p class="mt-0.5 font-medium">
-                                        {{ $setting->contact_phone ?? '0812-7200-1234' }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Email -->
-                            <div class="flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Email Resmi</span>
-                                    <p class="mt-0.5 font-medium">
-                                        {{ $setting->contact_email ?? 'sekretariat@gksbs-filadelfia.org' }}
-                                    </p>
-                                </div>
-                            </div>
+                    <!-- Tentang Gereja -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs uppercase tracking-widest font-bold text-gksbs-forest block mb-2">Sejarah & Profil</span>
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-4">Tentang Gereja</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">
+                                {{ $setting->about_summary ?? 'GKSBS Filadelfia adalah persekutuan jemaat yang berpusat pada Kristus, melayani warga jemaat di wilayah Lampung Tengah dan sekitarnya melalui jemaat induk dan pos-pos pelayanan kelompok jemaat secara terpadu dan guyub.' }}
+                            </p>
                         </div>
-
-                        <!-- Media Sosial Resmi -->
-                        @if(!empty($setting->social_links) && is_array($setting->social_links))
-                            <div class="pt-4 border-t border-amber-900/10">
-                                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Saluran Informasi Resmi</span>
-                                <div class="flex flex-wrap gap-2.5">
-                                    @foreach($setting->social_links as $platform => $link)
-                                        @if(filled($link))
-                                            <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" 
-                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:text-amber-800 hover:border-amber-400 shadow-2xs transition">
-                                                <span class="capitalize">{{ $platform }}</span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                            </a>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
+                        <div class="mt-8 pt-4 border-t border-slate-100 text-xs font-semibold text-gksbs-forest">
+                            Sinode GKSBS — Klasis Tulang Bawang
+                        </div>
                     </div>
 
-                    <!-- Peta Lokasi & Panduan Kedatangan -->
-                    <div class="lg:col-span-6 bg-[#fdfbf7] p-8 rounded-2xl border border-amber-900/10 flex flex-col justify-between">
+                    <!-- Visi Pelayanan -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm flex flex-col justify-between">
                         <div>
-                            <h3 class="text-xl font-bold text-slate-900 border-b border-amber-900/10 pb-4 mb-5">
-                                Panduan Kedatangan & Peta Lokasi
+                            <span class="text-xs uppercase tracking-widest font-bold text-gksbs-ocean block mb-2">Arah Panggilan</span>
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-4">Visi Pelayanan</h3>
+                            <blockquote class="font-heading text-lg sm:text-xl text-slate-800 leading-relaxed italic border-l-2 border-gksbs-ocean pl-4 py-1">
+                                “{{ $setting->vision ?? 'Terwujudnya jemaat yang mandiri, misioner, berwawasan oikumenis, serta menjadi berkat nyata bagi sesama ciptaan Tuhan.' }}”
+                            </blockquote>
+                        </div>
+                        <div class="mt-8 pt-4 border-t border-slate-100 text-xs font-semibold text-gksbs-ocean">
+                            Persekutuan Rumah Bersama
+                        </div>
+                    </div>
+
+                    <!-- Misi Pelayanan -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs uppercase tracking-widest font-bold text-gksbs-leaf block mb-2">Tindakan Nyata</span>
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-4">Misi Pelayanan</h3>
+                            <ul class="space-y-3 text-xs sm:text-sm text-slate-600">
+                                @if(!empty($setting->missions) && is_array($setting->missions))
+                                    @foreach($setting->missions as $mission)
+                                        @php
+                                            $missionText = is_array($mission) ? ($mission['item'] ?? '') : $mission;
+                                        @endphp
+                                        @if(filled($missionText))
+                                            <li class="flex items-start gap-2.5">
+                                                <span class="text-gksbs-leaf font-bold">•</span>
+                                                <span>{{ $missionText }}</span>
+                                            </li>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <li class="flex items-start gap-2.5"><span class="text-gksbs-leaf font-bold">•</span><span>Menyelenggarakan peribadahan dan pembinaan rohani yang berakar pada Firman Allah.</span></li>
+                                    <li class="flex items-start gap-2.5"><span class="text-gksbs-leaf font-bold">•</span><span>Mempererat persaudaraan dan solidaritas antar jemaat kelompok secara guyub dan inklusif.</span></li>
+                                    <li class="flex items-start gap-2.5"><span class="text-gksbs-leaf font-bold">•</span><span>Mengembangkan karya pelayanan diakonia holistik bagi jemaat dan masyarakat luas.</span></li>
+                                @endif
+                            </ul>
+                        </div>
+                        <div class="mt-8 pt-4 border-t border-slate-100 text-xs font-semibold text-gksbs-leaf">
+                            Kemandirian & Keterbukaan
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- 8. DUA PINTU AKSES LAYANAN MANDIRI (Sonship Callout Section) -->
+        <!-- ================================================================= -->
+        <section class="bg-gksbs-forest-dark text-white border-t border-white/10 py-20 sm:py-24">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-leaf-light block mb-2">
+                        Sistem Informasi Gereja
+                    </span>
+                    <h2 class="font-heading text-3xl sm:text-4xl font-light text-white">
+                        Layanan Jemaat & Tata Kelola
+                    </h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Pintu Portal Jemaat -->
+                    <div class="bg-black/30 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-white/10 flex flex-col justify-between hover:border-gksbs-leaf/50 transition">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-gksbs-leaf-light block mb-2">
+                                Warga Jemaat Terdaftar
+                            </span>
+                            <h3 class="font-heading text-2xl sm:text-3xl font-normal text-white mb-3">
+                                Portal Jemaat
                             </h3>
-                            <p class="text-slate-600 text-sm leading-relaxed mb-6">
-                                Gedung gereja terletak di lokasi strategis yang mudah dijangkau oleh warga jemaat maupun simpatisan. Tersedia area parkir kendaraan serta fasilitas ibadah yang ramah bagi anak dan lansia.
+                            <p class="text-sm text-white/70 leading-relaxed mb-8">
+                                Akses mandiri untuk memeriksa data keluarga jemaat, riwayat sakramen (baptis, sidi, perkawinan), jadwal keterlibatan pelayanan, serta edisi warta jemaat personal.
                             </p>
-                            
-                            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-2xs mb-6">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <polyline points="12 6 12 12 14 14"></polyline>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-sm font-bold text-slate-900">Jam Layanan Kantor Gereja</h4>
-                                        <p class="text-xs text-slate-500 mt-0.5">Selasa — Sabtu: 08.00 — 15.00 WIB | Minggu: Selesai Ibadah</p>
-                                    </div>
-                                </div>
+                        </div>
+                        <a href="{{ route('portal.login') }}" class="sonship-btn-outline w-full text-center">
+                            <span>Masuk ke Portal Jemaat</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+
+                    <!-- Pintu Area Majelis -->
+                    <div class="bg-black/30 backdrop-blur-sm rounded-3xl p-8 sm:p-10 border border-white/10 flex flex-col justify-between hover:border-gksbs-sky/50 transition">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-gksbs-sky-light block mb-2">
+                                Presbiter & Administrasi
+                            </span>
+                            <h3 class="font-heading text-2xl sm:text-3xl font-normal text-white mb-3">
+                                Area Majelis
+                            </h3>
+                            <p class="text-sm text-white/70 leading-relaxed mb-8">
+                                Pintu masuk resmi bagi Pendeta, Penatua, Diaken, Badan Pengurus Kelompok, dan Staf Keuangan untuk tata kelola data jemaat, perbendaharaan, dan publikasi warta.
+                            </p>
+                        </div>
+                        <a href="{{ url('/admin/login') }}" class="sonship-btn-solid-blue w-full text-center">
+                            <span>Masuk Area Majelis</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- 9. KONTAK, LOKASI & INFO SINODAL GKSBS -->
+        <!-- ================================================================= -->
+        <section id="kontak" class="bg-white py-20 sm:py-24 border-t border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                    
+                    <div class="lg:col-span-6 space-y-6">
+                        <span class="text-xs uppercase tracking-[0.25em] font-semibold text-gksbs-ocean block">
+                            Layanan Sekretariat
+                        </span>
+                        <h2 class="font-heading text-3xl sm:text-4xl font-light text-slate-900 leading-snug">
+                            Kontak & Informasi Gereja
+                        </h2>
+                        <div class="w-12 h-0.5 bg-gksbs-ocean"></div>
+
+                        <div class="space-y-4 text-sm text-slate-700 pt-2">
+                            <div>
+                                <strong class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">Alamat Resmi</strong>
+                                <p class="leading-relaxed">{{ $setting->contact_address ?? 'Jl. Gereja Filadelfia No. 01, Kel. Candimas, Kec. Natar, Lampung Selatan' }}</p>
+                            </div>
+
+                            <div>
+                                <strong class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">Telepon & WhatsApp</strong>
+                                <p>{{ $setting->contact_phone ?? '0812-7200-1234' }}</p>
+                            </div>
+
+                            <div>
+                                <strong class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">Email Resmi</strong>
+                                <p>{{ $setting->contact_email ?? 'sekretariat@gksbs-filadelfia.org' }}</p>
                             </div>
                         </div>
 
-                        <div>
-                            @if($setting->contact_maps_url)
-                                <a href="{{ $setting->contact_maps_url }}" target="_blank" rel="noopener noreferrer" 
-                                   class="inline-flex items-center justify-center gap-2 w-full py-3.5 px-5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-sm transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-                                        <line x1="9" y1="3" x2="9" y2="18"></line>
-                                        <line x1="15" y1="6" x2="15" y2="21"></line>
-                                    </svg>
-                                    <span>Buka Petunjuk Arah di Google Maps</span>
-                                </a>
-                            @else
-                                <a href="https://maps.google.com/?q=GKSBS+Filadelfia" target="_blank" rel="noopener noreferrer" 
-                                   class="inline-flex items-center justify-center gap-2 w-full py-3.5 px-5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-sm transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-                                        <line x1="9" y1="3" x2="9" y2="18"></line>
-                                        <line x1="15" y1="6" x2="15" y2="21"></line>
-                                    </svg>
-                                    <span>Buka Petunjuk Arah di Google Maps</span>
-                                </a>
-                            @endif
+                        <div class="pt-4">
+                            <a href="{{ $setting->contact_maps_url ?: 'https://maps.google.com/?q=' . urlencode($churchName) }}" 
+                               target="_blank" rel="noopener noreferrer" 
+                               class="sonship-btn-dark">
+                                <span>Buka Peta Petunjuk Arah</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Sinode GKSBS Identity Box -->
+                    <div class="lg:col-span-6 bg-[#f4f7f6] p-8 sm:p-10 rounded-3xl border border-slate-200">
+                        <div class="flex items-center gap-3.5 mb-5">
+                            <!-- Logo GKSBS Mini -->
+                            <div class="h-10 w-10 p-1 rounded-lg bg-gksbs-forest flex items-center justify-center flex-shrink-0">
+                                <svg viewBox="0 0 100 100" class="w-8 h-8" fill="none">
+                                    <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#22c55e"/>
+                                    <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#4ade80"/>
+                                    <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#4ade80"/>
+                                    <path d="M26 28 C16 38 20 50 36 52 C34 38 31 31 26 28Z" fill="#15803d"/>
+                                    <path d="M74 28 C84 38 80 50 64 52 C66 38 69 31 74 28Z" fill="#15803d"/>
+                                    <circle cx="50" cy="50" r="3.5" fill="#ffffff"/>
+                                    <path d="M20 68 Q50 64 80 68" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                                    <path d="M16 75 Q50 71 84 75" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
+                                    <path d="M20 82 Q50 78 80 82" stroke="#0369a1" stroke-width="3" stroke-linecap="round"/>
+                                    <path d="M24 89 Q50 85 76 89" stroke="#0c4a6e" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-heading text-lg font-bold text-slate-900">
+                                    Sinode Gereja Kristen Sumatera Bagian Selatan
+                                </h3>
+                                <p class="text-xs uppercase tracking-wider text-gksbs-forest font-semibold">
+                                    Anggota Persekutuan Gereja-gereja di Indonesia (PGI)
+                                </p>
+                            </div>
+                        </div>
+
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+                            Lambang Sinode GKSBS tersusun atas <strong>tujuh lembar daun cengkeh warna hijau</strong> yang melambangkan tujuh klasis pendiri pada tahun 1987, serta <strong>empat garis warna biru</strong> yang melambangkan keberadaan pelayanan di empat provinsi Sumatera Bagian Selatan (Lampung, Sumatera Selatan, Bengkulu, dan Jambi).
+                        </p>
+
+                        <div class="pt-4 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                            <span>Tata Gereja GKSBS — Eklesiologi Rumah Bersama</span>
+                            <span class="font-semibold text-gksbs-forest">Sumbagsel</span>
                         </div>
                     </div>
 
@@ -904,121 +859,62 @@
     </main>
 
     <!-- ================================================================= -->
-    <!-- 9. FOOTER RESMI -->
+    <!-- 10. FOOTER (Maranatha Dark Footer) -->
     <!-- ================================================================= -->
-    <footer class="bg-slate-950 text-slate-400 text-sm border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+    <footer class="bg-gksbs-forest-dark text-white/70 text-xs border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
                 
-                <!-- Identitas Sinodal & Gereja -->
-                <div class="md:col-span-6 space-y-4">
-                    <div class="flex items-center gap-3">
-                        <div class="h-10 w-10 rounded-xl bg-amber-700 flex items-center justify-center text-white font-bold">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <line x1="12" y1="2" x2="12" y2="22"></line>
-                                <line x1="6" y1="8" x2="18" y2="8"></line>
-                            </svg>
-                        </div>
-                        <div>
-                            <span class="text-base font-bold text-white block leading-tight">
-                                {{ $setting->hero_title ?? 'GKSBS Filadelfia' }}
-                            </span>
-                            <span class="text-xs text-amber-400 font-medium">
-                                {{ $setting->hero_subtitle ?? 'Gereja Kristen Sumatera Bagian Selatan' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <p class="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed">
-                        Anggota Persekutuan Gereja-gereja di Indonesia (PGI) — Sinode Gereja Kristen Sumatera Bagian Selatan (GKSBS). Terpanggil mewujudkan persekutuan yang mandiri, misioner, dan berakar dalam kasih Kristus.
+                <div>
+                    <span class="font-heading text-lg text-white font-bold block mb-1">
+                        {{ $churchName }}
+                    </span>
+                    <p class="text-white/50">
+                        &copy; {{ date('Y') }} {{ $churchName }}. Pelayanan untuk kemuliaan nama Tuhan Yesus Kristus.
                     </p>
-
-                    <div class="text-xs text-slate-400 flex items-center gap-2 pt-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span>Klasis Tulang Bawang — Wilayah Pelayanan Terpadu</span>
-                    </div>
                 </div>
 
-                <!-- Tautan Pintas Halaman -->
-                <div class="md:col-span-3 space-y-3">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Navigasi Halaman</h4>
-                    <ul class="space-y-2 text-xs">
-                        <li><a href="#beranda" class="hover:text-amber-400 transition">Beranda Utama</a></li>
-                        <li><a href="#sambutan" class="hover:text-amber-400 transition">Sambutan Majelis</a></li>
-                        <li><a href="#profil" class="hover:text-amber-400 transition">Profil, Visi & Misi</a></li>
-                        <li><a href="#pos-pelayanan" class="hover:text-amber-400 transition">Pos Pelayanan Cabang</a></li>
-                        <li><a href="#jadwal" class="hover:text-amber-400 transition">Jadwal Ibadah Induk</a></li>
-                        <li><a href="#kontak" class="hover:text-amber-400 transition">Kontak Sekretariat</a></li>
-                    </ul>
+                <div class="flex items-center space-x-6 font-semibold uppercase tracking-widest text-[11px]">
+                    <a href="#beranda" class="text-white/70 hover:text-white transition">Beranda</a>
+                    <a href="#pos-pelayanan" class="text-white/70 hover:text-white transition">Pos Pelayanan</a>
+                    <a href="{{ route('portal.login') }}" class="text-gksbs-sky-light hover:text-white transition">Portal Jemaat</a>
+                    <a href="{{ url('/admin/login') }}" class="text-gksbs-leaf-light hover:text-white transition">Area Majelis</a>
                 </div>
 
-                <!-- Akses Sistem -->
-                <div class="md:col-span-3 space-y-3">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Pintu Masuk Sistem</h4>
-                    <ul class="space-y-2.5 text-xs">
-                        <li>
-                            <a href="{{ route('portal.login') }}" class="inline-flex items-center gap-1.5 text-slate-300 hover:text-amber-400 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                <span>Portal Mandiri Jemaat</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url('/admin/login') }}" class="inline-flex items-center gap-1.5 text-slate-300 hover:text-amber-400 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>Area Majelis & Presbiter</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('public.warta.index') }}" class="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                <span>Warta Jemaat Publik</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-            </div>
-
-            <div class="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-                <p>
-                    &copy; {{ date('Y') }} {{ $setting->hero_title ?? 'GKSBS Filadelfia' }}. Pelayanan sukarela untuk kemuliaan nama Tuhan Yesus Kristus.
-                </p>
-                <p class="text-slate-400">
+                <div class="font-heading text-sm text-white/40 italic">
                     Soli Deo Gloria
-                </p>
+                </div>
+
             </div>
         </div>
     </footer>
 
-    <!-- JavaScript for Interactive Mobile Navigation -->
+    <!-- JavaScript for Navbar Transition on Scroll & Mobile Menu Toggle -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const menuButton = document.getElementById('mobile-menu-button');
+            const navbar = document.getElementById('church-navbar');
+            const toggle = document.getElementById('mobile-toggle');
             const mobileMenu = document.getElementById('mobile-menu');
-            const iconOpen = document.getElementById('icon-menu-open');
-            const iconClose = document.getElementById('icon-menu-close');
-            const navLinks = document.querySelectorAll('.mobile-nav-link');
 
-            if (menuButton && mobileMenu) {
-                menuButton.addEventListener('click', function () {
-                    const isExpanded = !mobileMenu.classList.contains('hidden');
-                    if (isExpanded) {
-                        mobileMenu.classList.add('hidden');
-                        iconOpen.classList.remove('hidden');
-                        iconClose.classList.add('hidden');
-                    } else {
-                        mobileMenu.classList.remove('hidden');
-                        iconOpen.classList.add('hidden');
-                        iconClose.classList.remove('hidden');
-                    }
+            function handleScroll() {
+                if (window.pageYOffset > 50) {
+                    navbar.classList.add('scrolled');
+                    navbar.classList.remove('not-scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                    navbar.classList.add('not-scrolled');
+                }
+            }
+
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            handleScroll();
+
+            if (toggle && mobileMenu) {
+                toggle.addEventListener('click', function () {
+                    mobileMenu.classList.toggle('hidden');
                 });
-
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function () {
-                        mobileMenu.classList.add('hidden');
-                        iconOpen.classList.remove('hidden');
-                        iconClose.classList.add('hidden');
-                    });
+                mobileMenu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
                 });
             }
         });
