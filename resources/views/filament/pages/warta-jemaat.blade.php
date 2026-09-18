@@ -206,24 +206,48 @@
                     </div>
 
                     @if ($canPublish)
-                        <button type="button"
-                            wire:click="publishWarta"
-                            wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <span wire:loading wire:target="publishWarta" class="inline-flex items-center gap-1.5">
-                                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                </svg>
-                                <span>Menyimpan...</span>
-                            </span>
-                            <span wire:loading.remove wire:target="publishWarta" class="inline-flex items-center gap-1.5">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                                </svg>
-                                <span>{{ $isPublished ? 'Perbarui Publikasi' : 'Publikasikan ke Portal Jemaat & Publik' }}</span>
-                            </span>
-                        </button>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if ($isPublished)
+                                <button type="button"
+                                    wire:click="rollbackWarta"
+                                    wire:confirm="Apakah Anda yakin ingin menarik/membatalkan publikasi warta periode ini? Warta tidak akan lagi dapat diakses di portal publik maupun portal jemaat."
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 px-3.5 py-2 text-sm font-semibold shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span wire:loading wire:target="rollbackWarta" class="inline-flex items-center gap-1.5">
+                                        <svg class="animate-spin h-4 w-4 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span>Menarik...</span>
+                                    </span>
+                                    <span wire:loading.remove wire:target="rollbackWarta" class="inline-flex items-center gap-1.5">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                                        </svg>
+                                        <span>Tarik / Rollback Publikasi</span>
+                                    </span>
+                                </button>
+                            @endif
+
+                            <button type="button"
+                                wire:click="publishWarta"
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span wire:loading wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>Menyimpan...</span>
+                                </span>
+                                <span wire:loading.remove wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                                    </svg>
+                                    <span>{{ $isPublished ? 'Perbarui Publikasi' : 'Publikasikan ke Portal Jemaat & Publik' }}</span>
+                                </span>
+                            </button>
+                        </div>
                     @endif
                 </div>
             </div>

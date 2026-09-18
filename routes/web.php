@@ -92,6 +92,7 @@ Route::middleware(['auth', 'verified'])
     ->prefix('admin/warta')
     ->group(function () {
         Route::post('/publish', WartaPublishController::class)->name('warta.publish');
+        Route::post('/rollback', [WartaPublishController::class, 'rollback'])->name('warta.rollback');
     });
 
 // Portal publik Warta Jemaat — TANPA login; satu gereja per halaman (route by code).

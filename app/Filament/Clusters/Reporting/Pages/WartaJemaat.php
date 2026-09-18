@@ -138,6 +138,8 @@ class WartaJemaat extends BaseReportPage
 
         return WartaPublication::query()
             ->withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('status', 'published')
             ->with('church')
             ->where('church_id', $churchId)
             ->whereDate('period_start', $startDateStr)
@@ -218,7 +220,7 @@ class WartaJemaat extends BaseReportPage
         $snapshot = $this->buildSnapshot($data, $targetChurch);
         $title = $data['periodLabel'] ?? ('Warta '.$startDate->format('d-m-Y'));
 
-        WartaPublication::withoutGlobalScopes()->updateOrCreate(
+        $publication = WartaPublication::withoutGlobalScopes()->updateOrCreate(
             [
                 'church_id' => $churchId,
                 'period_start' => $startDate->toDateString(),
@@ -233,10 +235,49 @@ class WartaJemaat extends BaseReportPage
             ]
         );
 
+        if ($publication->trashed()) {
+            $publication->restore();
+        }
+
         Notification::make()
             ->title('Warta Jemaat & Renungan Berhasil Dipublikasikan')
             ->success()
             ->send();
+    }
+
+    /**
+     * Batalkan / tarik publikasi warta untuk periode dan gereja terpilih.
+     */
+    public function rollbackWarta(): void
+    {
+        abort_unless($this->canPublishWarta(), 403, 'Tidak diizinkan menarik publikasi warta.');
+
+        $publication = $this->getActivePublication();
+
+        if (! $publication) {
+            Notification::make()
+                ->title('Warta Tidak Ditemukan')
+                ->body('Tidak ada warta aktif yang dapat ditarik untuk periode ini.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $publication->update([
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        $publication->delete();
+
+        Notification::make()
+            ->title('Publikasi Warta Berhasil Ditarik (Rollback)')
+            ->body('Warta untuk periode ini telah dikembalikan ke status draft dan tidak lagi tampil di portal jemaat maupun publik.')
+            ->success()
+            ->send();
+
+        $this->loadExistingReflection();
     }
 
     /**

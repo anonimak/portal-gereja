@@ -274,4 +274,196 @@ class WartaPublicationTest extends TestCase
         $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
         $page->publishWarta();
     }
+
+    // ---------- Rollback / Tarik Publikasi ----------
+
+    public function test_admin_dapat_rollback_warta_publikasi_via_endpoint(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $startDate = now()->startOfWeek()->toDateString();
+        $endDate = now()->endOfWeek()->toDateString();
+
+        $pub = WartaPublication::factory()->create([
+            'church_id' => $this->churchA->id,
+            'title' => 'Warta Siap Rollback',
+            'period_start' => $startDate,
+            'period_end' => $endDate,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->post(route('warta.rollback'), [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertSoftDeleted('warta_publications', [
+            'id' => $pub->id,
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        // Tidak lagi dapat diakses di portal publik
+        $this->get(route('public.warta.show', ['church' => $this->churchA->code, 'publication' => $pub->id]))
+            ->assertNotFound();
+        $this->get(route('public.warta.index', ['church' => $this->churchA->code]))
+            ->assertDontSee('Warta Siap Rollback');
+    }
+
+    public function test_admin_dapat_rollback_warta_via_endpoint_json(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $startDate = now()->startOfWeek()->toDateString();
+        $endDate = now()->endOfWeek()->toDateString();
+
+        $pub = WartaPublication::factory()->create([
+            'church_id' => $this->churchA->id,
+            'title' => 'Warta JSON Rollback',
+            'period_start' => $startDate,
+            'period_end' => $endDate,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->postJson(route('warta.rollback'), [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'message' => 'Publikasi warta berhasil ditarik (rollback).',
+            'publication' => [
+                'id' => $pub->id,
+                'status' => 'draft',
+                'church_id' => $this->churchA->id,
+            ],
+        ]);
+
+        $this->assertSoftDeleted('warta_publications', ['id' => $pub->id]);
+    }
+
+    public function test_role_tanpa_izin_ditolak_rollback_endpoint(): void
+    {
+        $finance = User::factory()->create([
+            'church_id' => $this->churchA->id,
+            'role' => 'finance_admin',
+        ]);
+
+        $this->actingAs($finance);
+
+        $this->post(route('warta.rollback'), [
+            'start_date' => now()->startOfWeek()->toDateString(),
+            'end_date' => now()->endOfWeek()->toDateString(),
+        ])->assertForbidden();
+    }
+
+    public function test_unauthenticated_tidak_bisa_rollback_endpoint(): void
+    {
+        $this->post(route('warta.rollback'), [
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ])->assertRedirect(route('login'));
+    }
+
+    public function test_church_admin_tidak_bisa_rollback_untuk_gereja_lain(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $this->post(route('warta.rollback'), [
+            'start_date' => now()->startOfWeek()->toDateString(),
+            'end_date' => now()->endOfWeek()->toDateString(),
+            'church_id' => $this->churchB->id,
+        ])->assertForbidden();
+    }
+
+    public function test_warta_jemaat_livewire_page_rollback(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $page = new \App\Filament\Clusters\Reporting\Pages\WartaJemaat();
+        $page->mount();
+        $page->reflection = 'Firman Hidup';
+        $page->publishWarta();
+
+        $pub = $page->getActivePublication();
+        $this->assertNotNull($pub);
+        $this->assertSame('published', $pub->status);
+
+        // Lakukan rollback
+        $page->rollbackWarta();
+
+        // State & publikasi aktif harus null
+        $this->assertNull($page->getActivePublication());
+        $this->assertNull($page->reflection);
+
+        // Record di database sudah berstatus draft dan soft-deleted
+        $this->assertSoftDeleted('warta_publications', [
+            'id' => $pub->id,
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        // Halaman publik 404
+        $this->get(route('public.warta.show', ['church' => $this->churchA->code, 'publication' => $pub->id]))
+            ->assertNotFound();
+    }
+
+    public function test_warta_jemaat_rollback_ditolak_untuk_role_tanpa_izin(): void
+    {
+        $finance = User::factory()->create([
+            'church_id' => $this->churchA->id,
+            'role' => 'finance_admin',
+        ]);
+
+        $this->actingAs($finance);
+
+        $page = new \App\Filament\Clusters\Reporting\Pages\WartaJemaat();
+        $page->mount();
+
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $page->rollbackWarta();
+    }
+
+    public function test_alur_publish_rollback_dan_republish(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $page = new \App\Filament\Clusters\Reporting\Pages\WartaJemaat();
+        $page->mount();
+        $page->reflection = 'Versi 1';
+        $page->publishWarta();
+
+        $pub = $page->getActivePublication();
+        $this->assertNotNull($pub);
+        $pubId = $pub->id;
+
+        $this->get(route('public.warta.show', ['church' => $this->churchA->code, 'publication' => $pubId]))
+            ->assertOk();
+
+        // Rollback
+        $page->rollbackWarta();
+        $this->assertNull($page->getActivePublication());
+
+        $this->get(route('public.warta.show', ['church' => $this->churchA->code, 'publication' => $pubId]))
+            ->assertNotFound();
+
+        // Publikasikan kembali (re-publish)
+        $page->reflection = 'Versi 2';
+        $page->publishWarta();
+
+        $repub = $page->getActivePublication();
+        $this->assertNotNull($repub);
+        $this->assertSame($pubId, $repub->id);
+        $this->assertFalse($repub->trashed());
+        $this->assertSame('published', $repub->status);
+        $this->assertSame('Versi 2', $repub->content['reflection'] ?? null);
+
+        $this->get(route('public.warta.show', ['church' => $this->churchA->code, 'publication' => $pubId]))
+            ->assertOk();
+    }
 }

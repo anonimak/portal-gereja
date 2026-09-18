@@ -86,6 +86,10 @@ class WartaPublishController extends Controller
             ]
         );
 
+        if ($publication->trashed()) {
+            $publication->restore();
+        }
+
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => 'Warta berhasil dipublikasikan.',
@@ -103,6 +107,74 @@ class WartaPublishController extends Controller
         }
 
         return redirect()->back()->with('success', 'Warta berhasil dipublikasikan ke portal.');
+    }
+
+    public function publish(Request $request)
+    {
+        return $this->__invoke($request);
+    }
+
+    /**
+     * Endpoint untuk membatalkan / menarik publikasi warta (rollback).
+     */
+    public function rollback(Request $request)
+    {
+        $user = $request->user();
+
+        // RBAC: hanya super_admin/church_admin/warta_editor (Gate allows delete on WartaPublication)
+        abort_unless(Gate::forUser($user)->allows('delete', WartaPublication::class), 403);
+
+        $validated = $request->validate([
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'church_id' => ['nullable', 'integer', 'exists:churches,id'],
+        ]);
+
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
+
+        $churchId = (int) ($validated['church_id'] ?? $user->church_id);
+        if ($user->role !== 'super_admin' && (int) $user->church_id !== $churchId) {
+            abort(403, 'Tidak diizinkan menarik publikasi untuk gereja lain.');
+        }
+
+        $publication = WartaPublication::withoutGlobalScopes()
+            ->where('church_id', $churchId)
+            ->whereDate('period_start', $startDate->toDateString())
+            ->whereDate('period_end', $endDate->toDateString())
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (! $publication) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Publikasi warta tidak ditemukan atau sudah ditarik.',
+                ], 404);
+            }
+
+            return redirect()->back()->with('warning', 'Publikasi warta tidak ditemukan atau sudah ditarik.');
+        }
+
+        abort_unless(Gate::forUser($user)->allows('delete', $publication), 403);
+
+        $publication->update([
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+        $publication->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Publikasi warta berhasil ditarik (rollback).',
+                'publication' => [
+                    'id' => $publication->id,
+                    'status' => $publication->status,
+                    'church_id' => $publication->church_id,
+                ],
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Publikasi warta berhasil ditarik (rollback).');
     }
 
     /**

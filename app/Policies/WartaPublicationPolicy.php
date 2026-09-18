@@ -58,9 +58,13 @@ class WartaPublicationPolicy
         return $this->canManage($user) && $this->canAccessChurch($user, $publication);
     }
 
-    public function delete(User $user, WartaPublication $publication): bool
+    public function delete(User $user, ?WartaPublication $publication = null): bool
     {
-        return $this->canManage($user) && $this->canAccessChurch($user, $publication);
+        if ($publication instanceof WartaPublication) {
+            return $this->canManage($user) && $this->canAccessChurch($user, $publication);
+        }
+
+        return $this->canManage($user);
     }
 
     public function deleteAny(User $user): bool
