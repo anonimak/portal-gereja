@@ -67,6 +67,7 @@ Agenda PR #38 (Rombak Warta, Rombak Laporan Rapat, Laporan Jemaat/Kehadiran/Sakr
 ---
 
 ## Backlog Berikutnya (belum dijadwalkan — kandidat setelah Senin pagi tuntas)
+- Task 8: Notulen Rapat sebagai Resource CRUD mandiri + sub-navigasi grup Laporan — ✅ **DONE di master (PR #55)**.
 - Notifikasi WhatsApp.
 - Notifikasi/reminder lanjutan & backup-dokumentasi deployment.
 
