@@ -27,6 +27,7 @@ class LaporanRapatPage extends \App\Filament\Pages\LaporanRapatPage
     public ?Carbon $endDate = null;
     protected static ?string $cluster = ReportingCluster::class;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Rapat & Notulen';
     protected static ?string $navigationLabel = 'Laporan Rapat';
 
     protected static ?string $title = 'Laporan Rapat & Notulen';
