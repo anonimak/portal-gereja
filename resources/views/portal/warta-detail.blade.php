@@ -89,6 +89,50 @@
                     </section>
                 @endif
 
+                <!-- Pelayanan & Kegiatan yang Telah Terlaksana (Minggu Lalu) -->
+                @if (!empty($content['past_events']) && is_array($content['past_events']))
+                    <section class="space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                            <h2 class="font-heading text-base sm:text-lg font-bold text-slate-900">
+                                Pelayanan &amp; Kegiatan yang Telah Terlaksana
+                            </h2>
+                            <span class="text-xs text-slate-400">Minggu Lalu</span>
+                        </div>
+
+                        <div class="divide-y divide-slate-100 border border-slate-100 rounded-2xl overflow-hidden text-xs">
+                            @foreach ($content['past_events'] as $past)
+                                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition">
+                                    <div class="space-y-1 min-w-0">
+                                        <p class="font-bold text-slate-900 text-sm">{{ $past['name'] ?? $past['title'] ?? 'Kegiatan' }}</p>
+                                        <p class="text-[11px] text-slate-500 flex flex-wrap items-center gap-2">
+                                            <span class="font-medium text-slate-700">{{ $past['start'] ?? '' }}</span>
+                                            <span class="text-slate-300">&bull;</span>
+                                            <span>{{ $past['location'] ?? 'Gedung Gereja' }}</span>
+                                            @if (!empty($past['officials']))
+                                                <span class="text-slate-300">&bull;</span>
+                                                <span class="text-slate-600">Pelayan: {{ $past['officials'] }}</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div class="shrink-0">
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-bold text-emerald-800">
+                                            <svg width="14" height="14" style="width: 14px; height: 14px; min-width: 14px;" class="h-3.5 w-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            </svg>
+                                            {{ (int) ($past['total_attendance'] ?? 0) }} Jiwa
+                                            @if (!empty($past['attendance_male']) || !empty($past['attendance_female']))
+                                                <span class="text-[10px] text-emerald-600 font-normal">
+                                                    (L: {{ $past['attendance_male'] ?? 0 }}, P: {{ $past['attendance_female'] ?? 0 }})
+                                                </span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
                 <!-- Warta & Pengumuman Jemaat -->
                 @if (!empty($content['announcements']) && is_array($content['announcements']))
                     <section class="space-y-3">
@@ -218,7 +262,7 @@
                 @endif
 
                 <!-- Fallback JSON viewer -->
-                @if (empty($content['events']) && empty($content['announcements']) && empty($content['reflection']) && empty($content['renungan']) && empty($content['finance']))
+                @if (empty($content['events']) && empty($content['past_events']) && empty($content['announcements']) && empty($content['reflection']) && empty($content['renungan']) && empty($content['finance']))
                     <div class="p-4 rounded-2xl bg-[#fbfcfd] border border-slate-200">
                         <pre class="text-xs text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">{{ is_string($content) ? $content : json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                     </div>

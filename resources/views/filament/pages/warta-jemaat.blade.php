@@ -416,6 +416,104 @@
             @endif
         </div>
 
+        {{-- Seksi Pelayanan & Kegiatan yang Telah Terlaksana (Minggu Lalu) --}}
+        <div class="px-8 pt-10 print:pt-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                    <svg width="20" height="20" style="width: 20px; height: 20px; min-width: 20px;" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Pelayanan &amp; Kegiatan yang Telah Terlaksana (Minggu Lalu)</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Kilas balik ibadah, persekutuan, dan kehadiran jemaat minggu lalu
+                        @if (!empty($reportData['prevWeekStart']) && !empty($reportData['prevWeekEnd']))
+                            ({{ $reportData['prevWeekStart']->locale('id')->isoFormat('D MMM') }} – {{ $reportData['prevWeekEnd']->locale('id')->isoFormat('D MMM YYYY') }})
+                        @endif
+                    </p>
+                </div>
+            </div>
+
+            @if (isset($reportData['pastEvents']) && $reportData['pastEvents']->count() > 0)
+                <div class="space-y-4">
+                    @foreach ($reportData['pastEvents'] as $pastEvent)
+                        <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 print:border-gray-400">
+                            <div class="flex items-center gap-4 border-l-4 border-emerald-500 bg-emerald-50/70 dark:bg-emerald-900/20 px-5 py-4 print:bg-white print:border-l-2">
+                                <div class="text-center shrink-0">
+                                    <div class="text-lg font-black leading-none text-emerald-700 dark:text-emerald-300">
+                                        {{ $pastEvent->start_datetime?->format('d') }}
+                                    </div>
+                                    <div class="text-xs font-semibold uppercase text-emerald-600/80 dark:text-emerald-400/80">
+                                        {{ $pastEvent->start_datetime?->locale('id')->translatedFormat('M') }}
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h3 class="font-bold text-gray-900 dark:text-white">{{ $pastEvent->title ?? $pastEvent->name }}</h3>
+                                        <span class="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                                            {{ $pastEvent->category->name ?? 'Kegiatan' }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 text-xs font-bold">
+                                            <svg width="14" height="14" style="width: 14px; height: 14px; min-width: 14px;" class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            </svg>
+                                            {{ $pastEvent->total_attendance }} Jiwa
+                                            @if (($pastEvent->attendance_male ?? 0) > 0 || ($pastEvent->attendance_female ?? 0) > 0)
+                                                <span class="text-[11px] font-normal text-emerald-600 dark:text-emerald-400">
+                                                    (L: {{ (int) $pastEvent->attendance_male }}, P: {{ (int) $pastEvent->attendance_female }})
+                                                </span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                        <span class="inline-flex items-center gap-1">
+                                            <svg width="14" height="14" style="width: 14px; height: 14px; min-width: 14px;" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            {{ $pastEvent->start_datetime?->format('H:i') }}
+                                            @if ($pastEvent->end_datetime)
+                                                – {{ $pastEvent->end_datetime->format('H:i') }}
+                                            @endif
+                                        </span>
+                                        <span class="mx-2 text-gray-300 dark:text-gray-600">•</span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <svg width="14" height="14" style="width: 14px; height: 14px; min-width: 14px;" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            {{ $pastEvent->location ?? 'Gedung Gereja' }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            @if ($pastEvent->rosters && $pastEvent->rosters->count() > 0)
+                                <div class="bg-white dark:bg-gray-800 px-5 py-3">
+                                    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                        Petugas Pelayanan
+                                    </p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($pastEvent->rosters as $roster)
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                                {{ $roster->member?->full_name ?? $roster->official?->display_name ?? 'Petugas' }}
+                                                <span class="text-gray-400 dark:text-gray-500">({{ $roster->role->name ?? 'Pelayan' }})</span>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Tidak ada catatan kegiatan atau persekutuan yang terlaksana pada minggu lalu.
+                </div>
+            @endif
+        </div>
+
         {{-- 4. Ulang Tahun Jemaat --}}
         <div class="px-8 pt-10 print:pt-8">
             <div class="flex items-center gap-3 mb-5">

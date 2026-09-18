@@ -198,6 +198,33 @@ class WartaPublishController extends Controller
                 ->implode(', '),
         ])->all();
 
+        $pastEvents = collect($data['pastEvents'] ?? $data['past_events'] ?? [])->map(function ($event) {
+            if (is_array($event)) {
+                return [
+                    'name' => $event['name'] ?? $event['title'] ?? 'Kegiatan',
+                    'start' => $event['start'] ?? '',
+                    'location' => $event['location'] ?? '',
+                    'officials' => $event['officials'] ?? '',
+                    'total_attendance' => (int) ($event['total_attendance'] ?? 0),
+                    'attendance_male' => (int) ($event['attendance_male'] ?? 0),
+                    'attendance_female' => (int) ($event['attendance_female'] ?? 0),
+                ];
+            }
+
+            return [
+                'name' => $event->name ?? $event->title ?? 'Kegiatan',
+                'start' => optional($event->start_datetime)->format('d/m/Y H:i'),
+                'location' => $event->location ?? '',
+                'officials' => collect($event->rosters ?? [])
+                    ->map(fn ($r) => $r->member?->full_name ?? $r->official?->display_name)
+                    ->filter()
+                    ->implode(', '),
+                'total_attendance' => (int) ($event->total_attendance ?? 0),
+                'attendance_male' => (int) ($event->attendance_male ?? 0),
+                'attendance_female' => (int) ($event->attendance_female ?? 0),
+            ];
+        })->all();
+
         $birthdays = collect($data['birthdays'] ?? [])->map(fn ($m) => [
             'name' => $m->full_name ?? $m->name,
             'date' => optional($m->birth_date)->format('d/m/Y'),
@@ -226,6 +253,7 @@ class WartaPublishController extends Controller
             'reflection' => $data['reflection'] ?? null,
             'renungan' => $data['reflection'] ?? null,
             'events' => $events,
+            'past_events' => $pastEvents,
             'birthdays' => $birthdays,
             'sacraments' => $sacraments,
             'finance' => [

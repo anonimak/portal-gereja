@@ -341,6 +341,33 @@ class WartaJemaat extends BaseReportPage
             'date' => optional($m->birth_date)->format('d/m/Y'),
         ])->all();
 
+        $pastEvents = collect($data['pastEvents'] ?? $data['past_events'] ?? [])->map(function ($event) {
+            if (is_array($event)) {
+                return [
+                    'name' => $event['name'] ?? $event['title'] ?? 'Kegiatan',
+                    'start' => $event['start'] ?? '',
+                    'location' => $event['location'] ?? '',
+                    'officials' => $event['officials'] ?? '',
+                    'total_attendance' => (int) ($event['total_attendance'] ?? 0),
+                    'attendance_male' => (int) ($event['attendance_male'] ?? 0),
+                    'attendance_female' => (int) ($event['attendance_female'] ?? 0),
+                ];
+            }
+
+            return [
+                'name' => $event->name ?? $event->title ?? 'Kegiatan',
+                'start' => optional($event->start_datetime)->format('d/m/Y H:i'),
+                'location' => $event->location ?? '',
+                'officials' => collect($event->rosters ?? [])
+                    ->map(fn ($r) => $r->member?->full_name ?? $r->official?->display_name)
+                    ->filter()
+                    ->implode(', '),
+                'total_attendance' => (int) ($event->total_attendance ?? 0),
+                'attendance_male' => (int) ($event->attendance_male ?? 0),
+                'attendance_female' => (int) ($event->attendance_female ?? 0),
+            ];
+        })->all();
+
         $sacraments = collect($data['sacraments'] ?? [])->map(fn ($s) => [
             'date' => optional($s->sacrament_date)->format('d/m/Y'),
             'type' => $s->type,
@@ -364,6 +391,7 @@ class WartaJemaat extends BaseReportPage
             'reflection' => $this->reflection,
             'renungan' => $this->reflection,
             'events' => $events,
+            'past_events' => $pastEvents,
             'birthdays' => $birthdays,
             'sacraments' => $sacraments,
             'finance' => [
@@ -434,6 +462,25 @@ class WartaJemaat extends BaseReportPage
             },
         ]))
             ->whereBetween('start_datetime', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->orderBy('start_datetime')
+            ->get();
+
+        // Hitung rentang periode minggu lalu
+        $prevWeekStart = $startDate->copy()->subWeek();
+        if ($startDate->dayOfWeek !== Carbon::SUNDAY) {
+            $prevWeekStart = $prevWeekStart->startOfWeek(Carbon::SUNDAY);
+        }
+        $prevWeekEnd = $startDate->copy()->subDay()->endOfDay();
+
+        // Ambil event-event yang telah terlaksana pada minggu lalu
+        $pastEvents = $this->scopeToActiveChurch(Event::with([
+            'category',
+            'attendances',
+            'rosters' => function ($query) {
+                $query->with(['member', 'official', 'role']);
+            },
+        ]))
+            ->whereBetween('start_datetime', [$prevWeekStart->startOfDay(), $prevWeekEnd])
             ->orderBy('start_datetime')
             ->get();
 
@@ -598,6 +645,9 @@ class WartaJemaat extends BaseReportPage
 
         return [
             'events' => $events,
+            'pastEvents' => $pastEvents,
+            'prevWeekStart' => $prevWeekStart,
+            'prevWeekEnd' => $prevWeekEnd,
             'birthdays' => $birthdays,
             'transactions' => $transactions,
             'sacraments' => $sacraments,
@@ -639,6 +689,21 @@ class WartaJemaat extends BaseReportPage
             'title' => 'Jadwal Ibadah & Pelayanan',
             'headers' => ['Waktu', 'Acara', 'Lokasi', 'Petugas', 'Kehadiran'],
             'rows' => $rows,
+        ];
+
+        // Kegiatan & Pelayanan Minggu Lalu
+        $pastRows = collect($data['pastEvents'] ?? [])->map(fn (Event $event) => [
+            $event->start_datetime?->format('d/m/Y H:i'),
+            $event->name ?? $event->title ?? 'Kegiatan',
+            $event->location ?? '',
+            collect($event->rosters ?? [])->map(fn ($r) => $r->member?->full_name ?? $r->official?->display_name)->filter()->implode(', '),
+            (string) ((int) ($event->total_attendance ?? 0)),
+        ])->all();
+
+        $blocks[] = [
+            'title' => 'Kegiatan & Pelayanan Minggu Lalu',
+            'headers' => ['Waktu', 'Acara', 'Lokasi', 'Petugas', 'Kehadiran'],
+            'rows' => $pastRows,
         ];
 
         // Ulang Tahun

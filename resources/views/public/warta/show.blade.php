@@ -226,6 +226,51 @@
                     </section>
                 @endif
 
+                <!-- Pelayanan & Kegiatan yang Telah Terlaksana (Minggu Lalu) -->
+                @if (!empty($content['past_events']))
+                    <section class="space-y-3">
+                        <div class="flex items-baseline justify-between border-b border-slate-200 pb-2">
+                            <h3 class="font-heading text-base sm:text-lg font-bold text-slate-900">
+                                Pelayanan &amp; Kegiatan yang Telah Terlaksana
+                            </h3>
+                            <span class="text-[11px] text-slate-500 font-medium tracking-wide">Minggu Lalu</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-left text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                                        <th class="py-2.5 pr-4">Waktu</th>
+                                        <th class="py-2.5 pr-4">Kegiatan</th>
+                                        <th class="py-2.5 pr-4">Lokasi</th>
+                                        <th class="py-2.5 pr-4">Pelayan / Petugas</th>
+                                        <th class="py-2.5 text-right">Kehadiran</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach ($content['past_events'] as $past)
+                                        <tr class="hover:bg-slate-50/50">
+                                            <td class="py-2.5 pr-4 whitespace-nowrap font-medium text-slate-600">{{ $past['start'] ?? '' }}</td>
+                                            <td class="py-2.5 pr-4 font-bold text-slate-900 font-heading">{{ $past['name'] ?? 'Kegiatan' }}</td>
+                                            <td class="py-2.5 pr-4 text-slate-600">{{ $past['location'] ?? '-' }}</td>
+                                            <td class="py-2.5 pr-4 text-slate-600">{{ $past['officials'] ?? '-' }}</td>
+                                            <td class="py-2.5 text-right whitespace-nowrap">
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs px-2.5 py-0.5 border border-emerald-200/80">
+                                                    {{ (int) ($past['total_attendance'] ?? 0) }} Jiwa
+                                                    @if (!empty($past['attendance_male']) || !empty($past['attendance_female']))
+                                                        <span class="text-[10px] text-emerald-600 font-normal">
+                                                            (L:{{ $past['attendance_male'] ?? 0 }}, P:{{ $past['attendance_female'] ?? 0 }})
+                                                        </span>
+                                                    @endif
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                @endif
+
                 <!-- Ulang Tahun Jemaat -->
                 @if (!empty($content['birthdays']))
                     <section class="space-y-3">
