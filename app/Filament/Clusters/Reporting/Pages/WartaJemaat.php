@@ -111,11 +111,40 @@ class WartaJemaat extends BaseReportPage
      */
     public function loadExistingReflection(): void
     {
-        $publication = $this->getActivePublication();
+        $publication = $this->getActivePublication() ?? $this->getPublication();
 
         $this->reflection = $publication
             ? ($publication->content['reflection'] ?? $publication->content['renungan'] ?? null)
             : null;
+    }
+
+    /**
+     * Mengambil publikasi untuk periode dan gereja saat ini (baik draft maupun published).
+     */
+    public function getPublication(): ?WartaPublication
+    {
+        $churchId = $this->activeChurchId() ?? auth()->user()?->church_id;
+        if (! $churchId || ! $this->startDate || ! $this->endDate) {
+            return null;
+        }
+
+        $startDateStr = $this->startDate instanceof Carbon
+            ? $this->startDate->toDateString()
+            : Carbon::parse((string) $this->startDate)->toDateString();
+
+        $endDateStr = $this->endDate instanceof Carbon
+            ? $this->endDate->toDateString()
+            : Carbon::parse((string) $this->endDate)->toDateString();
+
+        return WartaPublication::query()
+            ->withoutGlobalScopes()
+            ->withTrashed()
+            ->with('church')
+            ->where('church_id', $churchId)
+            ->whereDate('period_start', $startDateStr)
+            ->whereDate('period_end', $endDateStr)
+            ->latest('updated_at')
+            ->first();
     }
 
     /**
@@ -220,7 +249,7 @@ class WartaJemaat extends BaseReportPage
         $snapshot = $this->buildSnapshot($data, $targetChurch);
         $title = $data['periodLabel'] ?? ('Warta '.$startDate->format('d-m-Y'));
 
-        $publication = WartaPublication::withoutGlobalScopes()->updateOrCreate(
+        $publication = WartaPublication::withoutGlobalScopes()->withTrashed()->updateOrCreate(
             [
                 'church_id' => $churchId,
                 'period_start' => $startDate->toDateString(),
@@ -252,7 +281,7 @@ class WartaJemaat extends BaseReportPage
     {
         abort_unless($this->canPublishWarta(), 403, 'Tidak diizinkan menarik publikasi warta.');
 
-        $publication = $this->getActivePublication();
+        $publication = $this->getActivePublication() ?? $this->getPublication();
 
         if (! $publication) {
             Notification::make()
@@ -264,20 +293,27 @@ class WartaJemaat extends BaseReportPage
             return;
         }
 
+        $currentReflection = $this->reflection ?: ($publication->content['reflection'] ?? $publication->content['renungan'] ?? null);
+
+        $content = $publication->content ?? [];
+        if (is_array($content)) {
+            $content['reflection'] = $currentReflection;
+            $content['renungan'] = $currentReflection;
+        }
+
         $publication->update([
             'status' => 'draft',
             'published_at' => null,
+            'content' => $content,
         ]);
 
-        $publication->delete();
+        $this->reflection = $currentReflection;
 
         Notification::make()
-            ->title('Publikasi Warta Berhasil Ditarik (Rollback)')
-            ->body('Warta untuk periode ini telah dikembalikan ke status draft dan tidak lagi tampil di portal jemaat maupun publik.')
+            ->title('Publikasi Warta Dibatalkan')
+            ->body('Warta telah ditarik dari portal publik & jemaat. Anda dapat mengedit renungan atau data warta, lalu mempublikasikannya kembali.')
             ->success()
             ->send();
-
-        $this->loadExistingReflection();
     }
 
     /**

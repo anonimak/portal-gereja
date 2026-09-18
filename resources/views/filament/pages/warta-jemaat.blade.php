@@ -165,7 +165,7 @@
                             <a href="{{ $pubUrl }}" target="_blank" rel="noopener noreferrer"
                                 class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors">
                                 <span>Lihat Warta Publik</span>
-                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg width="14" height="14" style="width: 14px; height: 14px; min-width: 14px;" class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                                 </svg>
                             </a>
@@ -173,7 +173,7 @@
                     @else
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20">
                             <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                            Belum Dipublikasikan
+                            Draf / Belum Dipublikasikan
                         </span>
                     @endif
                 </div>
@@ -208,45 +208,67 @@
                     @if ($canPublish)
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($isPublished)
+                                {{-- Tombol Batal Publikasi / Tarik Draf --}}
                                 <button type="button"
                                     wire:click="rollbackWarta"
-                                    wire:confirm="Apakah Anda yakin ingin menarik/membatalkan publikasi warta periode ini? Warta tidak akan lagi dapat diakses di portal publik maupun portal jemaat."
+                                    wire:confirm="Apakah Anda yakin ingin membatalkan publikasi warta ini? Warta akan ditarik dari portal jemaat dan publik agar bisa diedit dan diterbitkan kembali."
                                     wire:loading.attr="disabled"
                                     class="inline-flex items-center gap-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 px-3.5 py-2 text-sm font-semibold shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <span wire:loading wire:target="rollbackWarta" class="inline-flex items-center gap-1.5">
-                                        <svg class="animate-spin h-4 w-4 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24">
+                                        <svg width="16" height="16" style="width: 16px; height: 16px; min-width: 16px;" class="animate-spin h-4 w-4 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                         </svg>
                                         <span>Menarik...</span>
                                     </span>
                                     <span wire:loading.remove wire:target="rollbackWarta" class="inline-flex items-center gap-1.5">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                                        <svg width="16" height="16" style="width: 16px; height: 16px; min-width: 16px;" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4" />
                                         </svg>
-                                        <span>Tarik / Rollback Publikasi</span>
+                                        <span>Batal Publikasi (Tarik Draf)</span>
+                                    </span>
+                                </button>
+
+                                {{-- Tombol Perbarui Publikasi --}}
+                                <button type="button"
+                                    wire:click="publishWarta"
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span wire:loading wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                        <svg width="16" height="16" style="width: 16px; height: 16px; min-width: 16px;" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span>Memperbarui...</span>
+                                    </span>
+                                    <span wire:loading.remove wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                        <svg width="16" height="16" style="width: 16px; height: 16px; min-width: 16px;" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span>Perbarui Publikasi</span>
+                                    </span>
+                                </button>
+                            @else
+                                {{-- Tombol Publikasikan ke Portal Jemaat & Publik --}}
+                                <button type="button"
+                                    wire:click="publishWarta"
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span wire:loading wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                        <svg width="16" height="16" style="width: 16px; height: 16px; min-width: 16px;" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span>Mempublikasikan...</span>
+                                    </span>
+                                    <span wire:loading.remove wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                        <svg width="16" height="16" style="width: 16px; height: 16px; min-width: 16px;" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                                        </svg>
+                                        <span>Publikasikan ke Portal Jemaat &amp; Publik</span>
                                     </span>
                                 </button>
                             @endif
-
-                            <button type="button"
-                                wire:click="publishWarta"
-                                wire:loading.attr="disabled"
-                                class="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span wire:loading wire:target="publishWarta" class="inline-flex items-center gap-1.5">
-                                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                    </svg>
-                                    <span>Menyimpan...</span>
-                                </span>
-                                <span wire:loading.remove wire:target="publishWarta" class="inline-flex items-center gap-1.5">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                                    </svg>
-                                    <span>{{ $isPublished ? 'Perbarui Publikasi' : 'Publikasikan ke Portal Jemaat & Publik' }}</span>
-                                </span>
-                            </button>
                         </div>
                     @endif
                 </div>

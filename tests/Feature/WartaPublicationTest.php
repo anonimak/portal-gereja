@@ -397,12 +397,12 @@ class WartaPublicationTest extends TestCase
         // Lakukan rollback
         $page->rollbackWarta();
 
-        // State & publikasi aktif harus null
+        // Publikasi aktif harus null, tapi teks renungan tetap tersimpan agar bisa diedit
         $this->assertNull($page->getActivePublication());
-        $this->assertNull($page->reflection);
+        $this->assertSame('Firman Hidup', $page->reflection);
 
-        // Record di database sudah berstatus draft dan soft-deleted
-        $this->assertSoftDeleted('warta_publications', [
+        // Record di database sudah berstatus draft
+        $this->assertDatabaseHas('warta_publications', [
             'id' => $pub->id,
             'status' => 'draft',
             'published_at' => null,
