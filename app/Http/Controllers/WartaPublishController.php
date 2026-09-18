@@ -32,6 +32,7 @@ class WartaPublishController extends Controller
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'church_id' => ['nullable', 'integer', 'exists:churches,id'],
+            'reflection' => ['nullable', 'string'],
         ]);
 
         $startDate = Carbon::parse($validated['start_date']);
@@ -55,7 +56,13 @@ class WartaPublishController extends Controller
             $page->churchSelect = $churchId;
             $page->startDate = $startDate;
             $page->endDate = $endDate;
+            if (array_key_exists('reflection', $validated)) {
+                $page->reflection = $validated['reflection'];
+            }
             $data = $page->getReportData();
+            if (array_key_exists('reflection', $validated)) {
+                $data['reflection'] = $validated['reflection'];
+            }
         } finally {
             if ($user->role === 'super_admin') {
                 ChurchContext::setActiveChurch(null, $user);
@@ -64,16 +71,20 @@ class WartaPublishController extends Controller
 
         $targetChurch = Church::query()->withoutGlobalScopes()->find($churchId);
 
-        $publication = WartaPublication::create([
-            'church_id' => $churchId,
-            'title' => $data['periodLabel'] ?? ('Warta '.$startDate->format('d-m-Y')),
-            'period_start' => $startDate->toDateString(),
-            'period_end' => $endDate->toDateString(),
-            'content' => $this->snapshot($data, $targetChurch),
-            'status' => 'published',
-            'published_at' => now(),
-            'created_by' => $user->id,
-        ]);
+        $publication = WartaPublication::withoutGlobalScopes()->updateOrCreate(
+            [
+                'church_id' => $churchId,
+                'period_start' => $startDate->toDateString(),
+                'period_end' => $endDate->toDateString(),
+            ],
+            [
+                'title' => $data['periodLabel'] ?? ('Warta '.$startDate->format('d-m-Y')),
+                'content' => $this->snapshot($data, $targetChurch),
+                'status' => 'published',
+                'published_at' => now(),
+                'created_by' => $user->id,
+            ]
+        );
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -140,6 +151,8 @@ class WartaPublishController extends Controller
             'church_address' => $church?->address ?? $data['churchAddress'] ?? '',
             'period_label' => $data['periodLabel'] ?? null,
             'edition_label' => $data['editionLabel'] ?? null,
+            'reflection' => $data['reflection'] ?? null,
+            'renungan' => $data['reflection'] ?? null,
             'events' => $events,
             'birthdays' => $birthdays,
             'sacraments' => $sacraments,

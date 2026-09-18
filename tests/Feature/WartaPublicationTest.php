@@ -213,4 +213,65 @@ class WartaPublicationTest extends TestCase
         $a->restore();
         $this->assertNotSoftDeleted('warta_publications', ['id' => $a->id]);
     }
+
+    public function test_publish_controller_menerima_dan_menyimpan_renungan_opsional(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $reflectionText = 'Segala perkara dapat kutanggung di dalam Dia yang memberi kekuatan kepadaku. (Filipi 4:13)';
+
+        $response = $this->post(route('warta.publish'), [
+            'start_date' => now()->startOfWeek()->toDateString(),
+            'end_date' => now()->endOfWeek()->toDateString(),
+            'reflection' => $reflectionText,
+        ]);
+
+        $response->assertRedirect();
+
+        $publication = WartaPublication::where('church_id', $this->churchA->id)->latest('id')->first();
+        $this->assertNotNull($publication);
+        $this->assertSame($reflectionText, $publication->content['reflection'] ?? null);
+    }
+
+    public function test_warta_jemaat_livewire_page_publish_dan_load_reflection(): void
+    {
+        $this->actingAs($this->adminA);
+
+        $reflectionText = 'Tuhan adalah gembalaku, takkan kekurangan aku. (Mazmur 23:1)';
+
+        $page = new \App\Filament\Clusters\Reporting\Pages\WartaJemaat();
+        $page->mount();
+        $page->reflection = $reflectionText;
+        $page->publishWarta();
+
+        $pub = $page->getActivePublication();
+        $this->assertNotNull($pub);
+        $this->assertSame($this->churchA->id, $pub->church_id);
+        $this->assertSame($reflectionText, $pub->content['reflection'] ?? null);
+
+        $url = $page->getActivePublicationUrl();
+        $this->assertNotNull($url);
+        $this->assertStringContainsString('/warta/' . $this->churchA->code . '/' . $pub->id, $url);
+
+        // Mount ulang halaman baru pada periode yang sama: reflection harus otomatis termuat
+        $page2 = new \App\Filament\Clusters\Reporting\Pages\WartaJemaat();
+        $page2->mount();
+        $this->assertSame($reflectionText, $page2->reflection);
+    }
+
+    public function test_warta_jemaat_publish_ditolak_untuk_role_tanpa_izin(): void
+    {
+        $finance = User::factory()->create([
+            'church_id' => $this->churchA->id,
+            'role' => 'finance_admin',
+        ]);
+
+        $this->actingAs($finance);
+
+        $page = new \App\Filament\Clusters\Reporting\Pages\WartaJemaat();
+        $page->mount();
+
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $page->publishWarta();
+    }
 }

@@ -9,6 +9,10 @@
         $churchAddress = $reportData['churchAddress'];
         $periodLabel = $reportData['periodLabel'];
         $editionLabel = $reportData['editionLabel'];
+        $activePub = $this->getActivePublication();
+        $isPublished = $activePub !== null && $activePub->status === 'published';
+        $pubUrl = $this->getActivePublicationUrl();
+        $canPublish = $this->canPublishWarta();
     @endphp
 
     {{-- ══════════════════ TOOLBAR FILTER (hidden saat print) ══════════════════ --}}
@@ -130,6 +134,102 @@
         </div>
     </div>
 
+    {{-- ══════════════════ CARD PUBLIKASI & RENUNGAN (hidden saat print) ══════════════════ --}}
+    <div class="print:hidden">
+        <div class="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-4 mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shadow-xs">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-gray-900 dark:text-white">
+                            Publikasi Warta &amp; Renungan Mingguan
+                        </h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Tuliskan firman penguat dan terbitkan warta jemaat edisi ini ke portal publik jemaat
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Status Publikasi Badge & Link --}}
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($isPublished && $activePub?->published_at)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-600/20">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Telah Dipublikasikan: {{ $activePub->published_at->locale('id')->isoFormat('D MMMM YYYY HH:mm') }}
+                        </span>
+                        @if ($pubUrl)
+                            <a href="{{ $pubUrl }}" target="_blank" rel="noopener noreferrer"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors">
+                                <span>Lihat Warta Publik</span>
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                            </a>
+                        @endif
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20">
+                            <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                            Belum Dipublikasikan
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Form Input Renungan --}}
+            <div class="space-y-4">
+                <div>
+                    <label for="warta-reflection" class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
+                        Renungan &amp; Firman Penguat
+                    </label>
+                    <textarea id="warta-reflection"
+                        wire:model="reflection"
+                        rows="3"
+                        placeholder="Tuliskan ayat emas, firman penguat, atau renungan pastoral untuk edisi minggu ini... (contoh: Filipi 4:13)"
+                        class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-amber-500 focus:ring-amber-500 shadow-xs transition"></textarea>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Isi renungan akan otomatis tercetak di dokumen warta di bawah dan dapat dibaca oleh seluruh jemaat.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Periode:</span>
+                        <span>{{ $periodLabel }}</span>
+                        @if ($churchName)
+                            <span class="text-gray-300 dark:text-gray-600">•</span>
+                            <span>{{ $churchName }}</span>
+                        @endif
+                    </div>
+
+                    @if ($canPublish)
+                        <button type="button"
+                            wire:click="publishWarta"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span wire:loading wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Menyimpan...</span>
+                            </span>
+                            <span wire:loading.remove wire:target="publishWarta" class="inline-flex items-center gap-1.5">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                                </svg>
+                                <span>{{ $isPublished ? 'Perbarui Publikasi' : 'Publikasikan ke Portal Jemaat & Publik' }}</span>
+                            </span>
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ══════════════════ DOKUMEN WARTA ══════════════════ --}}
     <div class="fi-warta-wrap mx-auto max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden print:shadow-none print:ring-0 print:rounded-none">
 
@@ -155,15 +255,31 @@
             </div>
         </div>
 
-        {{-- 2. Salam / Renungan --}}
+        {{-- 2. Salam & Renungan / Firman Penguat --}}
         <div class="px-8 pt-8 print:pt-6">
-            <div class="rounded-xl bg-gray-50 dark:bg-gray-700/40 p-6 ring-1 ring-gray-100 dark:ring-gray-600/50">
-                <p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                    <span class="font-bold text-amber-700 dark:text-amber-400">Salam Damai Sejahtera,</span><br>
-                    Selamat datang dalam Warta Jemaat minggu ini. Kiranya damai sejahtera Kristus senantiasa menyertai
-                    kita sekalian. Selamat beribadah dan Tuhan Yesus memberkati.
-                </p>
-            </div>
+            @if ($reflection)
+                <div class="rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 p-6 border border-amber-200 dark:border-amber-700/50 ring-1 ring-amber-300/30">
+                    <div class="flex items-center gap-2 mb-2 text-amber-800 dark:text-amber-300 font-bold text-sm sm:text-base">
+                        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Renungan &amp; Firman Penguat</span>
+                    </div>
+                    <p class="text-sm leading-relaxed text-gray-800 dark:text-gray-200 whitespace-pre-line italic font-serif">
+                        {{ $reflection }}
+                    </p>
+                </div>
+            @else
+                <div class="rounded-xl bg-gray-50 dark:bg-gray-700/40 p-6 ring-1 ring-gray-100 dark:ring-gray-600/50">
+                    <p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                        <span class="font-bold text-amber-700 dark:text-amber-400">Salam Damai Sejahtera,</span><br>
+                        Selamat datang dalam Warta Jemaat minggu ini. Kiranya damai sejahtera Kristus senantiasa menyertai kita sekalian. Selamat beribadah dan Tuhan Yesus memberkati.
+                    </p>
+                    <p class="mt-2 text-xs text-gray-400 dark:text-gray-500 italic print:hidden">
+                        (Renungan pastoral belum diisi untuk edisi ini. Tuliskan melalui form publikasi di atas.)
+                    </p>
+                </div>
+            @endif
         </div>
 
         {{-- 3. Agenda / Jadwal Ibadah & Pelayanan --}}

@@ -10,7 +10,9 @@ use App\Models\Fund;
 use App\Models\Member;
 use App\Models\MemberSacrament;
 use App\Models\Transaction;
+use App\Models\WartaPublication;
 use BackedEnum;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +38,8 @@ class WartaJemaat extends BaseReportPage
 
     public ?Carbon $endDate = null;
 
+    public ?string $reflection = null;
+
     public function mount(): void
     {
         parent::mount();
@@ -45,6 +49,33 @@ class WartaJemaat extends BaseReportPage
         $now = Carbon::now();
         $this->startDate = $now->copy()->startOfWeek(Carbon::SUNDAY);
         $this->endDate = $now->copy()->endOfWeek(Carbon::SATURDAY);
+
+        $this->loadExistingReflection();
+    }
+
+    public function updatedStartDate(mixed $value = null): void
+    {
+        if (is_string($value) && ! empty($value)) {
+            $this->startDate = Carbon::parse($value);
+        }
+
+        $this->loadExistingReflection();
+    }
+
+    public function updatedEndDate(mixed $value = null): void
+    {
+        if (is_string($value) && ! empty($value)) {
+            $this->endDate = Carbon::parse($value);
+        }
+
+        $this->loadExistingReflection();
+    }
+
+    public function updatedChurchSelect(int|string|null $value): void
+    {
+        parent::updatedChurchSelect($value);
+
+        $this->loadExistingReflection();
     }
 
     /**
@@ -60,6 +91,8 @@ class WartaJemaat extends BaseReportPage
             'thisMonth' => $this->setMonthRange($now),
             default => $this->setWeekRange($now),
         };
+
+        $this->loadExistingReflection();
     }
 
     /**
@@ -69,6 +102,201 @@ class WartaJemaat extends BaseReportPage
     {
         $base = $this->startDate?->copy()->addWeeks($weeks) ?? Carbon::now();
         $this->setWeekRange($base);
+
+        $this->loadExistingReflection();
+    }
+
+    /**
+     * Muat renungan yang sudah tersimpan untuk edisi & gereja yang aktif jika ada.
+     */
+    public function loadExistingReflection(): void
+    {
+        $publication = $this->getActivePublication();
+
+        $this->reflection = $publication
+            ? ($publication->content['reflection'] ?? $publication->content['renungan'] ?? null)
+            : null;
+    }
+
+    /**
+     * Mengambil publikasi aktif untuk periode dan gereja saat ini.
+     */
+    public function getActivePublication(): ?WartaPublication
+    {
+        $churchId = $this->activeChurchId() ?? auth()->user()?->church_id;
+        if (! $churchId || ! $this->startDate || ! $this->endDate) {
+            return null;
+        }
+
+        $startDateStr = $this->startDate instanceof Carbon
+            ? $this->startDate->toDateString()
+            : Carbon::parse((string) $this->startDate)->toDateString();
+
+        $endDateStr = $this->endDate instanceof Carbon
+            ? $this->endDate->toDateString()
+            : Carbon::parse((string) $this->endDate)->toDateString();
+
+        return WartaPublication::query()
+            ->withoutGlobalScopes()
+            ->with('church')
+            ->where('church_id', $churchId)
+            ->whereDate('period_start', $startDateStr)
+            ->whereDate('period_end', $endDateStr)
+            ->latest('published_at')
+            ->first();
+    }
+
+    /**
+     * URL publik warta untuk edisi yang sudah dipublikasikan.
+     */
+    public function getActivePublicationUrl(): ?string
+    {
+        $publication = $this->getActivePublication();
+        if (! $publication) {
+            return null;
+        }
+
+        $church = $publication->church ?? $this->activeChurchModel();
+        $churchCode = $church?->code;
+        if (! $churchCode) {
+            return null;
+        }
+
+        return route('public.warta.show', [
+            'church' => $churchCode,
+            'publication' => $publication->id,
+        ]);
+    }
+
+    /**
+     * Hak akses penerbitan warta (super_admin, church_admin, warta_editor).
+     */
+    public function canPublishWarta(): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && in_array($user->role, ['super_admin', 'church_admin', 'warta_editor'], true);
+    }
+
+    /**
+     * Publikasikan warta jemaat dan renungan ke portal publik.
+     */
+    public function publishWarta(): void
+    {
+        $user = auth()->user();
+        abort_unless(
+            $user !== null && in_array($user->role, ['super_admin', 'church_admin', 'warta_editor'], true),
+            403,
+            'Tidak diizinkan mempublikasikan warta.'
+        );
+
+        $churchId = $this->activeChurchId() ?? $user->church_id;
+        if (! $churchId) {
+            Notification::make()
+                ->title('Pilih Gereja Terlebih Dahulu')
+                ->body('Silakan pilih salah satu gereja sebelum mempublikasikan warta jemaat.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $startDate = $this->startDate instanceof Carbon
+            ? $this->startDate
+            : Carbon::parse((string) ($this->startDate ?? Carbon::now()->startOfWeek(Carbon::SUNDAY)));
+
+        $endDate = $this->endDate instanceof Carbon
+            ? $this->endDate
+            : Carbon::parse((string) ($this->endDate ?? Carbon::now()->endOfWeek(Carbon::SATURDAY)));
+
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+
+        $targetChurch = Church::query()->withoutGlobalScopes()->find($churchId);
+        $data = $this->getReportData();
+
+        $snapshot = $this->buildSnapshot($data, $targetChurch);
+        $title = $data['periodLabel'] ?? ('Warta '.$startDate->format('d-m-Y'));
+
+        WartaPublication::withoutGlobalScopes()->updateOrCreate(
+            [
+                'church_id' => $churchId,
+                'period_start' => $startDate->toDateString(),
+                'period_end' => $endDate->toDateString(),
+            ],
+            [
+                'title' => $title,
+                'content' => $snapshot,
+                'status' => 'published',
+                'published_at' => now(),
+                'created_by' => $user->id,
+            ]
+        );
+
+        Notification::make()
+            ->title('Warta Jemaat & Renungan Berhasil Dipublikasikan')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Susun snapshot konten lengkap warta untuk portal jemaat & publik.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function buildSnapshot(array $data, ?Church $church = null): array
+    {
+        $church ??= ($data['church'] ?? $this->activeChurchModel());
+
+        $events = collect($data['events'] ?? [])->map(fn ($event) => [
+            'name' => $event->name ?? $event->title ?? 'Ibadah',
+            'start' => optional($event->start_datetime)->format('d/m/Y H:i'),
+            'location' => $event->location ?? '',
+            'officials' => collect($event->rosters ?? [])
+                ->map(fn ($r) => $r->member?->full_name ?? $r->official?->display_name)
+                ->filter()
+                ->implode(', '),
+        ])->all();
+
+        $birthdays = collect($data['birthdays'] ?? [])->map(fn ($m) => [
+            'name' => $m->full_name ?? $m->name,
+            'date' => optional($m->birth_date)->format('d/m/Y'),
+        ])->all();
+
+        $sacraments = collect($data['sacraments'] ?? [])->map(fn ($s) => [
+            'date' => optional($s->sacrament_date)->format('d/m/Y'),
+            'type' => $s->type,
+            'name' => $s->member?->full_name ?? '',
+            'official' => $s->official?->display_name ?? '',
+        ])->all();
+
+        return [
+            'church' => [
+                'name' => $church?->name ?? $data['churchName'] ?? 'Gereja',
+                'synod' => $church?->synod,
+                'address' => $church?->address ?? $data['churchAddress'] ?? '',
+                'phone' => $church?->phone,
+                'email' => $church?->email,
+                'logo_url' => $church?->logo_url,
+            ],
+            'church_name' => $church?->name ?? $data['churchName'] ?? 'Gereja',
+            'church_address' => $church?->address ?? $data['churchAddress'] ?? '',
+            'period_label' => $data['periodLabel'] ?? null,
+            'edition_label' => $data['editionLabel'] ?? null,
+            'reflection' => $this->reflection,
+            'renungan' => $this->reflection,
+            'events' => $events,
+            'birthdays' => $birthdays,
+            'sacraments' => $sacraments,
+            'finance' => [
+                'opening_balance' => (int) ($data['openingBalance'] ?? 0),
+                'total_income' => (int) ($data['totalIncome'] ?? 0),
+                'total_expenses' => (int) ($data['totalExpenses'] ?? 0),
+                'closing_balance' => (int) ($data['closingBalance'] ?? 0),
+                'funds' => $data['fundsReport'] ?? $data['fundBreakdowns'] ?? $data['funds_report'] ?? [],
+            ],
+        ];
     }
 
     private function setWeekRange(Carbon $anchor): void
@@ -310,6 +538,8 @@ class WartaJemaat extends BaseReportPage
             'fundsReport' => $fundBreakdowns,
             'periodLabel' => $this->formatPeriodLabel($startDate, $endDate),
             'editionLabel' => $this->formatEditionLabel($startDate),
+            'reflection' => $this->reflection,
+            'renungan' => $this->reflection,
         ];
     }
 
