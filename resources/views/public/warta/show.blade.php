@@ -96,12 +96,12 @@
             <header class="border-b border-slate-200 bg-[#fbfcfd] px-6 sm:px-12 py-8 sm:py-10 text-center relative">
                 
                 <!-- Logo -->
-                <div class="mx-auto mb-4 flex items-center justify-center">
+                <div class="mx-auto mb-3 flex items-center justify-center">
                     @if ($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Logo Gereja" class="h-16 w-auto max-h-16 object-contain">
+                        <img src="{{ $logoUrl }}" alt="Logo Gereja" class="h-10 sm:h-11 w-auto max-h-11 object-contain">
                     @else
-                        <div class="h-16 w-16 rounded-2xl bg-gksbs-forest/10 border border-gksbs-forest/20 flex items-center justify-center text-gksbs-forest shadow-xs">
-                            <svg viewBox="0 0 100 100" class="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <div class="h-11 w-11 rounded-xl bg-gksbs-forest/10 border border-gksbs-forest/20 flex items-center justify-center text-gksbs-forest shadow-xs mx-auto mb-3">
+                            <svg viewBox="0 0 100 100" class="w-6 h-6" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
                                 <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
                                 <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>

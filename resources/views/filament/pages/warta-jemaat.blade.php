@@ -235,7 +235,7 @@
 
         {{-- 1. Header / Kop --}}
         <div class="px-8 py-10 text-center border-b-2 border-amber-500/30 bg-gradient-to-b from-amber-50/60 to-white dark:from-amber-900/10 dark:to-gray-800 print:bg-white print:border-b-2">
-            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-3xl shadow-md">
+            <div class="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-xl shadow-md">
                 <span>⛪</span>
             </div>
             <h1 class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase sm:text-3xl print:text-2xl">

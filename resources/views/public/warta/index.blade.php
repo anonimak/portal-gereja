@@ -105,11 +105,11 @@
         
         <!-- Church Banner & Sacred Kop Header -->
         <header class="mb-10 sm:mb-12 text-center space-y-4">
-            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gksbs-forest/10 border border-gksbs-forest/20 text-gksbs-forest shadow-xs">
+            <div class="mx-auto flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gksbs-forest/10 border border-gksbs-forest/20 text-gksbs-forest shadow-xs">
                 @if ($logoUrl)
-                    <img src="{{ $logoUrl }}" alt="{{ $church->name }}" class="h-10 w-auto max-w-[50px] object-contain">
+                    <img src="{{ $logoUrl }}" alt="{{ $church->name }}" class="h-8 sm:h-9 w-auto max-w-[45px] object-contain">
                 @else
-                    <svg viewBox="0 0 100 100" class="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg viewBox="0 0 100 100" class="w-6 h-6 sm:w-7 sm:h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M50 8 C46 22 42 34 50 48 C58 34 54 22 50 8Z" fill="#16a34a"/>
                         <path d="M38 16 C30 27 30 38 43 47 C43 33 42 24 38 16Z" fill="#22c55e"/>
                         <path d="M62 16 C70 27 70 38 57 47 C57 33 58 24 62 16Z" fill="#22c55e"/>
