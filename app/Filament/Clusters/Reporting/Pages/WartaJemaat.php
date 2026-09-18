@@ -22,7 +22,7 @@ class WartaJemaat extends BaseReportPage
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-newspaper';
 
-    protected static ?string $navigationLabel = 'Warta Jemaat';
+    protected static string|\UnitEnum|null $navigationGroup = 'Laporan';
 
     protected static ?string $title = 'Warta Jemaat';
 

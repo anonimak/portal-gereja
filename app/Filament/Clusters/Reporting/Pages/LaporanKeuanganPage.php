@@ -11,6 +11,7 @@ class LaporanKeuanganPage extends BaseReportPage
 {
     protected string $view = 'filament.pages.laporan-keuangan';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Laporan';
     protected static ?string $navigationLabel = 'Laporan Keuangan';
 
     protected static ?string $title = 'Laporan Keuangan per Dana/Kas';

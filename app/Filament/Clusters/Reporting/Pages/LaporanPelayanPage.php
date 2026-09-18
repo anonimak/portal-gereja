@@ -11,6 +11,7 @@ class LaporanPelayanPage extends BaseReportPage
 {
     protected string $view = 'filament.pages.laporan-pelayan';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Laporan';
     protected static ?string $navigationLabel = 'Laporan Pelayan';
 
     protected static ?string $title = 'Laporan Pelayan / Official';
